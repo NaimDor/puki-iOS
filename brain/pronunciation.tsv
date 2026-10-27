@@ -1,0 +1,80 @@
+# Words RenikudPlus says wrong, and how Puki says them (IPA as RenikudPlus writes it, ˈ before the
+# stressed syllable). when: all, or girl / boy for words that differ by the child's gender.
+# Found by reviewing every word in the small model's dataset (train/phonemes.py), checked by ear.
+word	ipa	when	note
+וואו	wˈaw	all	interjection "wow" is one syllable; model splits it into wa-u with a glottal stop
+פוקי	pˈuki	all	the parrot's name is Puki (u), not Poki
+תוכי	tˈuki	all	parrot = tuki; the model already gets התוכי right (hatˈuki)
+א	ʔˈalef	all	used as a letter name ("the letter א"); must be said as alef
+ב	bˈet	all	letter name bet ("the letter ב")
+ג	ɡˈimel	all	letter name gimel
+ד	dˈalet	all	letter name dalet ("ד זה כמו דג")
+ה	hˈe	all	letter name he
+ו	vˈav	all	letter name vav
+ת	tˈaf	all	letter name taf ("כמעט מצאנו ת")
+ב-ו	be vˈav	all	starts with vav: the letter must be read as its name
+בד	be dˈalet	all	דג מתחיל בד = starts with dalet; model reads it as the word bad (cloth)
+בב	be bˈet	all	בית מתחיל בב = starts with bet
+חום	χˈum	all	in this game it is the color brown (χum); χom means heat
+מממ	mːː	all	a hum (mmm), not a word with vowels
+מו	mˈu	all	cow sound is moo (mu)
+מוו	mˈuː	all	cow sound moo; model invents a v consonant
+מואו	mˈuː	all	cow sound moo; o and glottal stop are wrong
+מיאו	mjˈau	all	cat sound is miau, the a is missing
+מה	mˈe	all	הכבשה אומרת מה = sheep bleat meh, not the word "what"
+אופס	ʔˈups	all	oops is said with u
+אופסי	ʔˈupsi	all	oopsie is said with u
+ואוו	wˈaw	all	variant spelling of wow; one syllable
+ואאו	wˈaw	all	variant spelling of wow; one syllable
+ורום	vʁˈum	all	car sound vroom, not ve+rom
+שוקולד	ʃokolˈad	all	Hebrew stress is on the last syllable (shokolad)
+צפרדע	tsfaʁdˈea	all	frog = tsfardea, stress on dE; model stresses an invented final syllable
+הצפרדע	hatsfaʁdˈea	all	same as צפרדע
+דובי	dˈubi	all	teddy = dubi (u); model already gets הדובי right
+לדובי	ledˈubi	all	teddy = dubi (u)
+תירס	tˈiʁas	all	corn = tiras (i), not teras
+גבוהה	ɡvohˈa	all	tall (fem.) = gvoha, stress on the last syllable
+שמנו	sˈamnu	all	we put (שמנו נרות / גרביים) = samnu with sin; ʃamenu is a different word
+סיבנו	sibˈanu	all	we soaped (the car) = sibanu; model produced a nonsense form
+הצלחת	hatsalˈaχat	all	הצלחת על השולחן = the plate; model read it as "you succeeded"
+בתוכי	batˈuki	all	נוגעת בתוכי = touching the parrot; model read it as "inside me"
+שרה	ʃaʁˈa	all	המדבקה שרה = (she) sings, present tense, stress on the last syllable
+הצעצועים	hatsaʔatsuʔˈim	all	the toys: a whole syllable is missing
+מרים	miʁjˈam	all	in "תוף מרים" (tambourine) the word is miryam, not marim (lifting)
+ספרי	sifʁˈi	all	ספרי אותם/את הציפורים = count! (imperative), not "tell"
+ספרו	sifʁˈu	all	ספרו חמש ציפורים = count! (imperative plural), not "tell"
+בכל	beχˈol	all	b'chol: the kaf is soft (χ) after the prefix
+קישטת	kiʃˈatet	all	you decorated: model produces a garbled 4-syllable form; to a girl it is kishatet (masculine would be kishatta)
+הורד	havˈeʁed	all	לחצנו על הורד = the rose; model collapses it to one syllable
+כיפית	kefˈit	all	fun (fem.) is stressed on the last syllable
+מצאת	matsˈat	girl	the game speaks to a girl (בואי, את); matsata is the masculine form. Same for the ones below
+ומצאת	vematsˈat	girl	addressed to a girl; feminine form
+בחרת	baχˈaʁt	girl	addressed to a girl ("בחרת חום. נכון!"); feminine form
+שבחרת	ʃebaχˈaʁt	girl	addressed to a girl; feminine form
+לחצת	laχˈatst	girl	mostly addressed to a girl; note one line uses אתה, so this is masculine there
+ספרת	safˈaʁt	girl	addressed to a girl ("ספרת עד תשע"); feminine form
+נתת	natˈat	girl	addressed to a girl; feminine form
+נגעת	naɡˈaʔat	girl	addressed to a girl; feminine form
+ראית	ʁaʔˈit	girl	addressed to a girl; feminine form
+שמת	sˈamt	girl	addressed to a girl; feminine form
+באת	bˈat	girl	addressed to a girl; feminine form
+שבאת	ʃebˈat	girl	addressed to a girl; feminine form
+לך	lˈaχ	girl	דובי מחכה לך said to a girl = lach
+המשושה	hameʃuʃˈa	all	hexagon = meshusha; model already gets משושה right
+האו	hˈaw	all	dog bark "hau hau" is one syllable
+ווף	wˈuf	all	dog sound woof is said with u
+קו	kˈo	all	hen clucking "ko ko ko" (some say ku); ka is clearly wrong
+היי	hˈaj	all	greeting "hi" in Hebrew is usually hai; hej is possible but less natural
+ררר	ʁːː	all	a lion's growl: a long r, no inserted e vowel
+גררר	ɡʁːː	all	growl: g + long r, no inserted vowels
+אררר	ʔaʁːː	all	growl: long r, the final e is invented
+ברררם	bʁːˈum	all	truck engine "brrrm/brum"; the model inserts three vowels
+איתך	ʔitˈaχ	girl	said to the girl ("אני כאן, איתך") = itach; uncertain who is addressed
+שלך	ʃelˈaχ	girl	התוכי שלך said to the girl = shelach; uncertain who is addressed
+מחפשים	meχapʃˈim	all	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin
+מחפש	meχapˈeʃ	all	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin
+נחפש	neχapˈeʃ	all	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin
+חיפשנו	χipˈaʃnu	all	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin
+חפשי	χapʃˈi	all	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin
+חיפשת	χipˈaʃt	girl	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin
+חיפשת	χipˈaʃta	boy	the root ח-פ-ש (search) has shin, which RenikudPlus reads as sin

@@ -32,6 +32,7 @@ import soundfile as sf
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from doorbell import CFG, HERE, LLAMA_URL, log  # noqa: E402
 import memory  # noqa: E402
+import pronunciation  # noqa: E402
 import persona  # noqa: E402
 import safety  # noqa: E402
 from persona import (  # noqa: E402
@@ -377,7 +378,12 @@ def speak(text, lang, speed=0.92):
     text = re.sub(r"[\u0591-\u05C7]", "", text)
     text = fix_misreads(text)
     text = tag_english(text) if lang == "he" else tag_hebrew(text)
-    samples, sr = TTS.synthesize(text, lang=lang, total_step=8, speed=speed)
+    # Words RenikudPlus says wrong ("אופס" is oops; Puki, not Poki): their phonemes from Puki's table
+    ph = pronunciation.phonemes(text, lang, persona.GIRL, TTS.tts.g2p._phonemize_segment)
+    if ph:
+        samples, sr = TTS.synthesize(ph, lang=lang, total_step=8, speed=speed, text_is_phonemes=True, normalize_text=False)
+    else:
+        samples, sr = TTS.synthesize(text, lang=lang, total_step=8, speed=speed)
     samples = np.concatenate([samples, np.zeros(int(sr * 0.15), dtype=np.float32)])
     buf = io.BytesIO()
     sf.write(buf, samples, sr, format="OGG", subtype="VORBIS")

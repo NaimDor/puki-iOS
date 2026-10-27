@@ -1,5 +1,6 @@
 """Puki remembers: exchanges are logged, a diary entry covers them, and the prompt gets the
 profile, the last week's diary and today's session so far."""
+import datetime
 import os
 import sys
 import time
@@ -12,8 +13,9 @@ DAY = 24 * 3600
 
 
 def at(days_ago, hour=10):
-    t = time.localtime(time.time() - days_ago * DAY)
-    return time.mktime((t.tm_year, t.tm_mon, t.tm_mday, hour, 0, 0, 0, 0, -1))
+    """[hour] o'clock, [days_ago] calendar days ago (by date, so a clock change doesn't shift the day)."""
+    d = datetime.date.today() - datetime.timedelta(days=days_ago)
+    return time.mktime((d.year, d.month, d.day, hour, 0, 0, 0, 0, -1))
 
 
 def test_nothing_to_remember_yet(tmp_path):
