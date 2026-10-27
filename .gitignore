@@ -40,3 +40,6 @@ __pycache__/
 /brain/pack/
 # What Puki remembers about the child (memory.py): never in git
 /brain/memory/
+# The small model's dataset and checkpoints (train/): made locally, never in git
+/train/data/
+/train/out/
