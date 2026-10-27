@@ -84,7 +84,10 @@ def inputs(tasks, pilot, rng):
                                      "earlier": f"{when[0] if lang == 'en' else when[1]}: {o[lang]}", "group": m["template"]})
     if "talk" in tasks:
         for lang in ("he", "en"):
-            phrases = {p for s in range(1 if pilot else 4) for p in teacher.toddler_phrases(lang, "play", 40, s)}
+            sets = 1 if pilot else (10 if lang == "he" else 4)  # (Hebrew needs more: the writer drifts to English)
+            phrases = {p for s in range(sets) for p in teacher.toddler_phrases(lang, "play", 40, s)
+                       # (the writer slips into English now and then: only phrases in the asked language)
+                       if any("א" <= ch <= "ת" for ch in p) == (lang == "he")}
             for p in sorted(phrases):
                 for girl in (True, False):
                     jobs.append({"task": "talk", "lang": lang, "girl": girl, "input": p, "group": p})
