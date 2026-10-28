@@ -391,16 +391,28 @@ class Companion(
     }
 
     /**
-     * Records [millis] of the microphone (the parrot glows meanwhile), or null if it couldn't
-     * start. However this ends, the microphone goes off: also when the screen closes or the
-     * round moves on mid-listen, which cancels the waiting.
+     * Records up to [millis] of the microphone (the parrot glows meanwhile), stopping early once
+     * the child has spoken and gone quiet ([listenDone]), or null if it couldn't start. However
+     * this ends, the microphone goes off: also when the screen closes or the round moves on
+     * mid-listen, which cancels the waiting.
      */
     private suspend fun record(millis: Long): ByteArray? {
         if (paused) return null
         _listening.value = true
         try {
             if (!recorder.start()) return null
-            delay(millis)
+            val start = System.currentTimeMillis()
+            var lastLoud = -1L
+            while (true) {
+                delay(50)
+                val t = System.currentTimeMillis() - start
+                if (recorder.level > SPEECH_LEVEL) lastLoud = t
+                if (listenDone(t, lastLoud, millis)) {
+                    // (only how long, never what: for tuning the stop rule)
+                    android.util.Log.i("PukiListen", "listened ${t} ms of $millis, ${if (lastLoud < 0) "no speech" else "stopped ${t - lastLoud} ms after speech"}")
+                    break
+                }
+            }
             return recorder.stop()
         } finally {
             if (recorder.isRecording) recorder.stop()
@@ -586,10 +598,23 @@ class Companion(
         return result
     }
 
-    private companion object {
+    internal companion object {
         const val LISTEN_MILLIS = 3500L
         const val WORD_LISTEN_MILLIS = 4000L  // toddlers take a moment to start
         const val ANSWER_LISTEN_MILLIS = 4000L
+
+        /** The recorder's level for "someone is talking" (as [hasSpeech]'s, about 1200 of 32768). */
+        const val SPEECH_LEVEL = 0.15f
+        /** Quiet this long after speaking means she's done (toddlers pause mid-phrase, so not less). */
+        const val QUIET_AFTER_SPEECH_MILLIS = 800L
+
+        /**
+         * Whether a listen [t] ms in can stop: at [max], or once she has spoken ([lastLoud], -1 if
+         * not yet) and been quiet since for [QUIET_AFTER_SPEECH_MILLIS]. Before she speaks it
+         * waits the whole time: toddlers take a moment to start.
+         */
+        fun listenDone(t: Long, lastLoud: Long, max: Long): Boolean =
+            t >= max || (lastLoud >= 0 && t - lastLoud >= QUIET_AFTER_SPEECH_MILLIS)
         const val NAME_LINES_VERSION = 1
     }
 }

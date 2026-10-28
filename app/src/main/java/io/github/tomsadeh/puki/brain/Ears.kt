@@ -44,8 +44,14 @@ class Ears(model: File) {
         val samples = pcm16(wav)
         if (samples.isEmpty()) return ""
         val seconds = samples.size / 16000f
-        // The full window is 30 s (1500); a shorter one is far less work for a word or two
-        val audioCtx = if (seconds <= 10f) 512 else 0
+        // The full window is 30 s (1500); a shorter one is far less work. Not under 320: measured on
+        // a Galaxy S25, a lone word ("כחול") came out wrong ("תחול") in any smaller window, even
+        // though sentences were fine; 320 took a third off 512's time (about 1.07 s against 1.66)
+        val audioCtx = when {
+            seconds <= 6f -> 320
+            seconds <= 10f -> 512
+            else -> 0
+        }
         val heard = WhisperNative.transcribe(ctx, samples, lang, hints, audioCtx, THREADS).trim()
         // Whisper "hears" these in silence or noise; treat them as nothing heard (as on the PC)
         if (HALLUCINATIONS.any { it in heard.lowercase() }) return ""
