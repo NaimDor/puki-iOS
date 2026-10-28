@@ -44,26 +44,22 @@ class DeviceModels(context: Context) {
         hf("notmax123/RenikudPlus", "model_int8.onnx", "voice/renikud_int8.onnx", 311605741, "0337468fad56eadf5ecc7becfdf21648a4d668de41de5bc27e860141b5afcadd"),
         // Puki's thinking: Gemma 4 E4B for LiteRT-LM
         hf("litert-community/gemma-4-E4B-it-litert-lm", "gemma-4-E4B-it.litertlm", "gemma.litertlm", 3659530240, "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"),
-        // Puki's ears: ivrit.ai's Hebrew Whisper (turbo). It comes as f16; the phone makes the
-        // faster q8_0 from it once, then drops the f16 (see whisperModel)
-        hf("ivrit-ai/whisper-large-v3-turbo-ggml", "ggml-model.bin", WHISPER_F16, 1624555275, "c8090411113357097bfafc2b8e228ec1639fa7f5fe4ecb5d054ac0ccef8641b1"),
+        // Puki's ears: kol-stream (Hebrew and English, Apache 2.0, on EmbeddingGemma 2), made
+        // ready for phones by train/kolstream_export.py (int8, optimized) and kept on Hugging Face
+        hf(EARS_REPO, "encoder.onnx", "$EARS/encoder.onnx", 357955315, "4193fc7e9a39bb33e3d1fbc645db39f9a917d6996aa0d4f9aba5080b0c77dd3d"),
+        hf(EARS_REPO, "step.onnx", "$EARS/step.onnx", 5535895, "438b04f5eb825103fdb9f03fc06a4f91827aac8ef3d92837c4f20db4ec834bba"),
+        hf(EARS_REPO, "tokens.txt", "$EARS/tokens.txt", 17060, "1dfdd2c55ec357b9b2dd575b2dcf4c729774155097416fa5d7c3f3565f4f16ae"),
     )
-
-    private val whisperQ8 get() = File(dir, "whisper/ivrit-q8_0.bin")
-
-    /** The Whisper model the ears load (the q8_0 made from the download). */
-    fun whisperModel(): File = whisperQ8
 
     val totalBytes get() = models.sumOf { it.size }
 
     fun file(name: String) = File(dir, name)
     private fun okMark(m: Model) = File(dir, m.name + ".ok")
 
-    private fun done(m: Model) = okMark(m).exists() &&
-        (File(dir, m.name).length() == m.size || (m.name == WHISPER_F16 && whisperQ8.exists()))
+    private fun done(m: Model) = okMark(m).exists() && File(dir, m.name).length() == m.size
 
     /** Everything downloaded, checked and ready to load. */
-    fun ready() = models.all { done(it) } && whisperQ8.exists()
+    fun ready() = models.all { done(it) }
 
     fun downloadedBytes() = models.sumOf { m -> if (done(m)) m.size else File(dir, m.name + ".part").length() }
 
@@ -75,14 +71,7 @@ class DeviceModels(context: Context) {
         try {
             _progress.value = downloadedBytes().toFloat() / totalBytes
             for (m in models) if (!done(m)) ensure(m)
-            if (!whisperQ8.exists()) {
-                // f16 -> q8_0 on the phone: a few seconds, and almost half the size and memory
-                val tmp = File(whisperQ8.path + ".tmp")
-                WhisperNative.load()
-                check(WhisperNative.quantizeQ8(File(dir, WHISPER_F16).path, tmp.path)) { "couldn't prepare the Whisper model" }
-                tmp.renameTo(whisperQ8)
-                File(dir, WHISPER_F16).delete()
-            }
+            File(dir, "whisper").deleteRecursively()  // the ears before kol-stream (1.6 GB)
         } finally {
             _progress.value = null
         }
@@ -161,7 +150,9 @@ class DeviceModels(context: Context) {
     }
 
     companion object {
-        private const val WHISPER_F16 = "whisper/ivrit-f16.bin"
+        /** The ears' folder in [dir]. */
+        const val EARS = "ears"
+        private const val EARS_REPO = "TomSadeh/puki-ears"
 
         /** Phones that can run it: 64-bit ARM with about 12 GB of memory (tested on a Galaxy S25). */
         fun capable(context: Context): Boolean {

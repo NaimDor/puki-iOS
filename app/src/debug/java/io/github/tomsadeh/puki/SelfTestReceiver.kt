@@ -8,14 +8,13 @@ import io.github.tomsadeh.puki.audio.Companion
 import io.github.tomsadeh.puki.audio.Connection
 import io.github.tomsadeh.puki.audio.VoicePlayer
 import io.github.tomsadeh.puki.brain.Persona
-import io.github.tomsadeh.puki.brain.WhisperNative
 import io.github.tomsadeh.puki.brain.voice.VoiceText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.thread
 
-/** Runs the device brain's text handling on Android's own regex engine, and checks the whisper library loads (debug builds only). */
+/** Runs the device brain's text handling on Android's own regex engine (debug builds only). */
 class SelfTestReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val tag = "PukiSelfTest"
@@ -36,9 +35,6 @@ class SelfTestReceiver : BroadcastReceiver() {
             check("geresh", VoiceText.prepareTextForSynthesis("ג'ירפה גבוהה."), "ג׳ירפה גבוהה.")
             check("chunks", VoiceText.chunkText("ʔˈejze tsijˈuʁ jafˈe! ʃˈemeʃ.").size, 1)
             check("tags", VoiceText.stripLangTags("<he>ʃalˈom</he>"), "ʃalˈom")
-            // The whisper library's functions are named after the package: this fails if they don't match
-            WhisperNative.load()
-            check("whisper binding", WhisperNative.init("/no/such/model.bin"), 0L)
             // With -e echotest 1: play a short tone through the echo parrot's voice (high and fast)
             if (intent.getStringExtra("echotest") != null) {
                 val rate = io.github.tomsadeh.puki.audio.MicRecorder.RATE

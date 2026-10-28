@@ -48,8 +48,8 @@ app/src/main/java/io/github/tomsadeh/puki/
 ├── audio/                       # VoicePlayer, SfxPlayer, MusicPlayer, MicRecorder, EchoVoice,
 │                                #   Companion (talks to a brain)
 ├── brain/                       # Brain, HttpBrain + PinnedTls (the PC, over pinned HTTPS); the brain on a
-│                                #   high-end phone: LocalBrain, Persona, Mind (Gemma), Ears (whisper.cpp
-│                                #   JNI), voice/ (BlueTTS port), DeviceModels
+│                                #   high-end phone: LocalBrain, Persona, Mind (Gemma), KolEars (kol-stream,
+│                                #   ONNX), voice/ (BlueTTS port), DeviceModels
 ├── update/Updater.kt            # In-app updates from GitHub releases
 └── theme/
 brain/                           # The PC brain (Python): doorbell.py (HTTPS), brain.py, persona.py, safety.py, tls.py,
@@ -58,7 +58,6 @@ brain/                           # The PC brain (Python): doorbell.py (HTTPS), b
                                  #   update_signers, bundle.py, tray.py / build_exe.py (Puki.exe)
 scripts/                         # Voices (generate/check), release.py, safety_eval.py (the stress test),
                                  #   sync_safety_kt.py (safety.py's word lists -> Safety.kt)
-native/whisper/                  # Builds libpuki_whisper.so (prebuilt copies are in jniLibs)
 ```
 
 ---

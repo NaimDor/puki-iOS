@@ -12,14 +12,15 @@ import kotlin.concurrent.thread
 /**
  * Puki's brain on this device: answers the same requests as the PC brain (see [Brain]) with
  * Gemma ([Mind]), the BlueTTS voice ([BlueVoice]) and the same personality ([Persona]).
- * It hears with ivrit.ai's Whisper ([Ears], loaded the first time she talks, to save memory
- * until then). For now it speaks Hebrew only: English lines fall back to the recorded ones.
+ * It hears with kol-stream ([KolEars], loaded in the background once the rest is ready).
+ * For now it speaks Hebrew only: English lines fall back to the recorded ones.
  */
 class LocalBrain(private val models: DeviceModels) : Brain {
     private val persona = Persona()
     private var mind: Mind? = null
     private var voice: BlueVoice? = null
-    private var ears: Ears? = null
+    private var ears: KolEars? = null
+    private val earsLock = Any()  // around loading the ears (see ears())
     @Volatile private var state = "asleep"
 
     // Two locks: [lifecycle] for waking and closing (quick), [work] around the models while they
@@ -51,6 +52,10 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                     synchronized(work) { voice = v; mind = m }
                     state = "ready"
                 }
+                // The ears last (about 17 s on a slow tablet), so Puki is ready sooner; a listen
+                // that comes before they're loaded waits for them
+                runCatching { synchronized(earsLock) { if (gen == generation) ears() } }
+                    .onFailure { Log.e(TAG, "the ears didn't load: ${it.message}") }
             } catch (e: Throwable) {
                 Log.e(TAG, "the device brain didn't load: ${e.message}")
                 runCatching { m?.close() }
@@ -69,9 +74,11 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         synchronized(work) {
             runCatching { mind?.close() }
             runCatching { voice?.close() }
-            runCatching { ears?.close() }
             mind = null
             voice = null
+        }
+        synchronized(earsLock) {
+            runCatching { ears?.close() }
             ears = null
         }
     }
@@ -123,21 +130,20 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
                         val target = query["target"]?.firstOrNull()?.take(40) ?: ""
                         val alts = (query["alt"] ?: emptyList()).filter { it.isNotEmpty() }.map { it.take(40) }.take(4)
-                        val heard = ears().transcribe(body ?: ByteArray(0), lang, (listOf(target) + alts).joinToString(" "))
+                        val heard = ears().transcribe(body ?: ByteArray(0))
                         val match = persona.wordMatch(heard, target, alts)
                         JSONObject().put("heard", heard).put("match", match).toString().toByteArray()
                     }
                     "/hear" -> {
                         // She answered a game out loud: just the words (the game decides which answer, SpokenAnswer)
-                        val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
-                        val hints = (query["hint"] ?: emptyList()).filter { it.isNotEmpty() }.map { it.take(40) }.take(16)
-                        val heard = ears().transcribe(body ?: ByteArray(0), lang, hints.joinToString(" "))
+                        // (?hint= is for the PC's Whisper; these ears don't take hints)
+                        val heard = ears().transcribe(body ?: ByteArray(0))
                         JSONObject().put("heard", heard).toString().toByteArray()
                     }
                     "/listen" -> {
                         // She talked to Puki (optionally answering ?context=, what he just asked)
                         val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
-                        val heard = ears().transcribe(body ?: ByteArray(0), lang, if (lang == "he") persona.hotwords() else "")
+                        val heard = ears().transcribe(body ?: ByteArray(0))
                         heardNow = heard
                         // Hurt, danger, big questions and the like get a fixed, kind reply (Safety)
                         guardedReply(mind, heard, lang, query["game"]?.firstOrNull()?.take(40) ?: "")?.let { (cat, text) ->
@@ -158,7 +164,10 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         }
     }
 
-    private fun ears(): Ears = ears ?: Ears(models.whisperModel()).also { ears = it }
+    /** The ears, loaded now if the background load in [wake] hasn't yet (or failed). */
+    private fun ears(): KolEars = synchronized(earsLock) {
+        ears ?: KolEars(OrtEnvironment.getEnvironment(), models.file(DeviceModels.EARS)).also { ears = it }
+    }
 
     /** A cleaned line from Gemma about [situation], or null (three tries, like the PC). */
     private fun line(mind: Mind, situation: String, lang: String, listening: Boolean = false): String? {

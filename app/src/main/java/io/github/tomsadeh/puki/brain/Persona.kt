@@ -206,10 +206,6 @@ class Persona(
         return "tried"
     }
 
-    /** Words Whisper should expect: the parrot's and child's names and things from the games. */
-    fun hotwords(): String = listOf(stripNikud(companion), name, "היי", "שלום", "פרה", "כלב", "חתול", "סוס", "פיל", "אריה",
-        "ברווז", "תרנגולת", "קוף", "אדום", "כחול", "צהוב", "ירוק", "עיגול", "משולש", "ריבוע").filter { it.isNotEmpty() }.joinToString(" ")
-
     companion object {
         private val HEBREW_LETTER = Regex("[א-ת]")
         private val HEBREW_OK = Regex("^[֐-׿\\s,.!?'\"׳״\\-–]+$")

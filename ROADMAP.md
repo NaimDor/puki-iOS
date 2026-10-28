@@ -100,7 +100,6 @@ cooking, the car wash, offline Puki, Dance and Freeze, tracing)
      BlueTTS stays Puki's Hebrew voice. (The alternative is Kokoro; BlueTTS's English needs
      espeak, which phones don't have.)
    - Faster start: Gemma takes about 18 s the first time.
-   - Whisper on the phone's GPU (about 2 s a word now).
    - Check the phone layouts on the S25: the food now sits beside the animal and the hub's
      islands scale down on short screens (0.5.1), but neither has been seen on a phone yet.
 3. **Games that feel better** (S–M each)

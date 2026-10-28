@@ -549,8 +549,8 @@ private fun AboutCard() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             BilingualText(
-                "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-Gemma של Google, ל-BlueTTS, ל-ivrit.ai, ל-whisper.cpp, ל-ONNX Runtime, ל-LiteRT-LM ול-ZXing.",
-                "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to Google's Gemma, BlueTTS, ivrit.ai, whisper.cpp, ONNX Runtime, LiteRT-LM and ZXing."
+                "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-Gemma של Google, ל-BlueTTS, ל-ivrit.ai, ל-kol-stream, ל-ONNX Runtime, ל-LiteRT-LM ול-ZXing.",
+                "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to Google's Gemma, BlueTTS, ivrit.ai, kol-stream, ONNX Runtime, LiteRT-LM and ZXing."
             ).resolve(language),
             style = MaterialTheme.typography.bodyMedium,
             color = EarthBrown,

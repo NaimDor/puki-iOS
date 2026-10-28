@@ -7,15 +7,15 @@ Puki uses these, with thanks:
 - ZXing Android Embedded (QR codes), by JourneyApps, and ZXing: Apache License 2.0
 - LiteRT-LM (the on-phone brain), by Google: Apache License 2.0
 - ONNX Runtime, by Microsoft: MIT License (Copyright (c) Microsoft Corporation)
-- whisper.cpp, by the ggml authors: MIT License (Copyright (c) 2023-2026 The ggml authors)
 - Gemma, by Google: downloaded separately, under the Gemma Terms of Use (ai.google.dev/gemma/terms)
 - BlueTTS, by Max Melichov: Puki's voice; with RenikudPlus (Apache License 2.0) for Hebrew pronunciation
-- ivrit.ai's Hebrew Whisper: downloaded separately, for listening on the phone
+- kol-stream, by MaorB, on Google's EmbeddingGemma 2 (trained on ivrit.ai's Hebrew speech): downloaded
+  separately, for listening on the phone; Apache License 2.0
 - Music: by the project's author (piano, produced with Suno)
 
 
 ========================================================================
-MIT License (Puki, ONNX Runtime, whisper.cpp; each with its copyright above)
+MIT License (Puki, ONNX Runtime; each with its copyright above)
 ========================================================================
 
 Copyright (c) 2026 TomSadeh

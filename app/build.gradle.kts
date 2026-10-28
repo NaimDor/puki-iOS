@@ -54,6 +54,12 @@ android {
         debug {
             ndk { abiFilters += listOf("x86_64") }
             signingConfig = pukiSigning
+            // -Ppuki.bench: a separate app beside the real one, for the on-device measurements in
+            // androidTest (connectedGithubDebugAndroidTest), on ARM
+            if (project.hasProperty("puki.bench")) {
+                applicationIdSuffix = ".bench"
+                ndk { abiFilters.clear(); abiFilters += listOf("arm64-v8a") }
+            }
         }
         release {
             signingConfig = pukiSigning

@@ -96,10 +96,10 @@ so the tablet stays the screen and a PC on the home network does the thinking.
 
 **Or on a high-end phone.** On a phone with about 12 GB of memory (tested on a Galaxy S25), Puki
 can think, talk and listen on the device itself, away from home too. In parent settings,
-"Puki on this phone" downloads the models once (about 5.9 GB: Gemma 4 E4B for LiteRT-LM, the
-BlueTTS voice and the Hebrew Whisper) and switches over. On the phone Gemma runs on the GPU
-(the first word in under a second), the voice takes about 0.6 s for a line, and Whisper about
-2 s for a word. For now it speaks Hebrew only there; English falls back to the recorded lines
+"Puki on this phone" downloads the models once (about 4.6 GB: Gemma 4 E4B for LiteRT-LM, the
+BlueTTS voice and kol-stream's ears) and switches over. On the phone Gemma runs on the GPU
+(the first word in under a second), the voice takes about 0.6 s for a line, and the ears hear
+a word in about 0.6 s even on a slow tablet. For now it speaks Hebrew only there; English falls back to the recorded lines
 (the plan is Android's own offline voices, see the [roadmap](ROADMAP.md)).
 
 ## Privacy and security
@@ -191,7 +191,6 @@ brain/                     companion server for the PC: doorbell.py (HTTPS front
                            brain.py + persona.py (Gemma, the voice, Whisper), tls.py
                            (its certificate), dashboard, install.py, pins.json (pinned
                            downloads; make_pins.py), tray.py / build_exe.py (Puki.exe)
-native/whisper/            builds whisper.cpp for the phone (prebuilt in app/src/main/jniLibs)
 scripts/generate_voices.py all voice lines, generated with BlueTTS
 scripts/check_voices.py    checks every voice line the app plays has audio
 scripts/generate_instruments.py  the music game's instrument sounds
@@ -209,8 +208,9 @@ CLAUDE.md                  conventions for working on the code (also read by Cla
   same requests as the PC brain, with `Persona` (a port of persona.py's and brain.py's prompts and line filter) and `Safety`
   (safety.py's nets),
   `voice/` (a Kotlin port of BlueTTS's pipeline, checked to match Python sample for sample),
-  `Mind` (Gemma through LiteRT-LM) and `Ears` (whisper.cpp). The whisper.cpp library is prebuilt
-  in `app/src/main/jniLibs`; rebuild it with `python native/whisper/build.py` (needs the NDK).
+  `Mind` (Gemma through LiteRT-LM) and `KolEars` (kol-stream through ONNX Runtime; its ONNX files
+  come from `train/kolstream_export.py`). `KolEarsBench` in `androidTest` times it on a device:
+  `gradlew connectedGithubDebugAndroidTest -Ppuki.bench` installs it as a separate app.
 - **Releasing:** bump `pukiVersion` in `app/build.gradle.kts`, commit, then run
   `python scripts/release.py --publish` from this checkout. It refuses if personal voice lines
   (`voice_*_name*`) are in `res/raw`, so a release never carries a child's name, and if the APK
@@ -242,8 +242,9 @@ CLAUDE.md                  conventions for working on the code (also read by Cla
   [faster-whisper](https://github.com/SYSTRAN/faster-whisper)
 - On the phone: [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) (Apache-2.0) runs Gemma,
   [ONNX Runtime](https://onnxruntime.ai) (MIT) runs BlueTTS and
-  [RenikudPlus](https://huggingface.co/notmax123/RenikudPlus) (Hebrew pronunciation), and
-  [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (MIT) runs ivrit.ai's Whisper
+  [RenikudPlus](https://huggingface.co/notmax123/RenikudPlus) (Hebrew pronunciation) and
+  [kol-stream](https://huggingface.co/MaorB/kol-stream-he-en) by MaorB (Apache-2.0, on Google's
+  EmbeddingGemma 2, trained on ivrit.ai's data), which hears Hebrew and English
 
 Models are downloaded separately and are not part of this repository.
 

@@ -29,10 +29,6 @@ __pycache__/
 # Release APKs (scripts/release.py)
 /dist/
 
-# whisper.cpp source and build folders (native/whisper/build.py)
-/native/whisper/.whisper.cpp/
-/native/whisper/.build/
-
 # Kotlin compiler caches
 .kotlin/
 # Puki's line packs (lines may say the child's name)
