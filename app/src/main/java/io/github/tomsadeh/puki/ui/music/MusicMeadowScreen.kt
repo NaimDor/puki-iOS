@@ -78,6 +78,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import io.github.tomsadeh.puki.audio.reactOr
+import io.github.tomsadeh.puki.ui.common.GameSession
 import kotlinx.coroutines.launch
 
 enum class MusicPhase { FREE_PLAY, SHOW_PATTERN, PLAYER_TURN, SUCCESS, SESSION_COMPLETE }
@@ -95,15 +97,14 @@ data class MusicState(
 )
 
 class MusicMeadowViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
+    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(MusicState())
     val state: StateFlow<MusicState> = _state.asStateFlow()
-    private var mistakes = 0
 
     init {
         // Tunes start one note longer at each level
         viewModelScope.launch {
-            val level = progressRepository.getDifficulty(ISLAND)
+            val level = session.level()
             _state.value = _state.value.copy(patternLength = level)
         }
     }
@@ -131,7 +132,7 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
         if (newInput != expectedSoFar) {
             // Wrong: play her the same tune again (no grown-up needed to start over)
             _state.value = current.copy(playerInput = emptyList(), phase = MusicPhase.SHOW_PATTERN, isReplay = true)
-            mistakes++
+            session.slip()
             return false
         }
 
@@ -146,10 +147,8 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
                 roundIndex = nextRound,
                 patternLength = current.patternLength + if (nextRound % 2 == 0) 1 else 0
             )
-            viewModelScope.launch {
-                progressRepository.addStars(1)
-                if (nextRound >= current.totalRounds) progressRepository.recordSession(ISLAND, current.totalRounds, mistakes)
-            }
+            session.star()
+            if (nextRound >= current.totalRounds) session.finish(current.totalRounds)
             return true
         }
 
@@ -201,7 +200,7 @@ fun MusicMeadowScreen(
     LaunchedEffect(state.phase) {
         if (state.phase == MusicPhase.PLAYER_TURN) voicePlayer.play("voice_music_your_turn", language)
         if (state.phase == MusicPhase.SUCCESS) {
-            if (companion != null) companion.react("ניגנו את המנגינה בדיוק נכון!", "The child played the tune back just right!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
+            companion.reactOr("ניגנו את המנגינה בדיוק נכון!", "The child played the tune back just right!") { voicePlayer.playPraise(language) }
         }
         if (state.phase == MusicPhase.SHOW_PATTERN) {
             // "Listen and remember!" first, then the pattern (after a wrong note, let "try again" finish)

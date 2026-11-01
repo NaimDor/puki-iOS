@@ -627,3 +627,8 @@ class Companion(
         const val NAME_LINES_VERSION = 1
     }
 }
+
+/** Puki's line for this moment; with no companion at all, [fallback] (a recorded line). */
+fun Companion?.reactOr(he: String, en: String, fallback: () -> Unit) {
+    if (this != null) react(he, en, fallback) else fallback()
+}

@@ -77,6 +77,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import io.github.tomsadeh.puki.ui.common.GameSession
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -91,7 +92,7 @@ data class SayState(
 }
 
 class SayItViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
+    private val session = GameSession("say", (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(SayState())
     val state: StateFlow<SayState> = _state.asStateFlow()
 
@@ -101,11 +102,12 @@ class SayItViewModel(application: Application) : AndroidViewModel(application) {
 
     fun award() {
         _state.value = _state.value.copy(starsEarned = _state.value.starsEarned + 1)
-        viewModelScope.launch { progressRepository.addStars(1) }
+        session.star()
     }
 
     fun next() {
         val s = _state.value
+        if (s.roundIndex + 1 >= s.words.size) session.finish(s.words.size)
         _state.value = if (s.roundIndex + 1 >= s.words.size) s.copy(sessionComplete = true)
             else s.copy(roundIndex = s.roundIndex + 1)
     }

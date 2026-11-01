@@ -65,8 +65,10 @@ import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.reaction
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberRoundFlow
 import io.github.tomsadeh.puki.ui.components.rememberSessionSeed
 import kotlinx.coroutines.delay
+import io.github.tomsadeh.puki.audio.reactOr
 import kotlinx.coroutines.launch
 
 /**
@@ -87,7 +89,7 @@ fun CountingGardenScreen(
     val companion = LocalCompanion.current
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
-    var showRoundSuccess by remember { mutableStateOf(false) }
+    val flow = rememberRoundFlow()
 
     if (state.isLoading) return
 
@@ -103,23 +105,20 @@ fun CountingGardenScreen(
     )
 
     // Stuck? Ask again after a quiet moment; then the next thing to count (or the answer) glows
-    val help = rememberHelp(state.roundIndex to state.phase, active = !showRoundSuccess && !state.roundComplete) {
+    val help = rememberHelp(state.roundIndex to state.phase, active = !flow.won && !state.roundComplete) {
         voicePlayer.play(if (state.phase == CountingPhase.HOW_MANY) "voice_prompt_how_many" else "voice_prompt_count_along", language)
     }
 
     // All the things hop one after another, the number is said once more, and on to the next round
     fun celebrate() {
         sfxPlayer.play(Sfx.SUCCESS)
-        showRoundSuccess = true
         itemReactions.forEachIndexed { i, r -> scope.launch { delay(i * 90L); r.celebrate() } }
         val counted = "ספרו $target ${round.itemName.he}!"
         val countedEn = "The child counted $target ${round.itemName.en.lowercase()}!"
         voicePlayer.play("voice_number_$target", language) {
-            if (companion != null) companion.react(counted, countedEn) { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
+            companion.reactOr(counted, countedEn) { voicePlayer.playPraise(language) }
         }
-        scope.launch {
-            delay(if (companion?.isReady == true) 4200 else 3000)
-            showRoundSuccess = false
+        flow.win(3000, 4200) {
             viewModel.nextRound()
         }
     }
@@ -149,7 +148,7 @@ fun CountingGardenScreen(
     AnswerOutLoud(
         state.roundIndex to state.phase,
         state.choices.map { numberWords(it, language == Language.ENGLISH) },
-        active = state.phase == CountingPhase.HOW_MANY && !showRoundSuccess && !state.roundComplete,
+        active = state.phase == CountingPhase.HOW_MANY && !flow.won && !state.roundComplete,
         askedAfterMs = 1900
     ) { i -> state.choices.getOrNull(i)?.let { answer(it) } }
 
@@ -259,7 +258,7 @@ fun CountingGardenScreen(
             }
         }
 
-        ConfettiOverlay(show = showRoundSuccess)
+        ConfettiOverlay(show = flow.won)
 
         if (state.sessionComplete) {
             RoundCompleteSheet(

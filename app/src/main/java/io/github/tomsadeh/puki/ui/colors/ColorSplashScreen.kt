@@ -7,6 +7,7 @@ import io.github.tomsadeh.puki.data.content.ColorDef
 import io.github.tomsadeh.puki.ui.components.hintGlow
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberRoundFlow
 import io.github.tomsadeh.puki.ui.components.rememberSessionSeed
 import io.github.tomsadeh.puki.ui.components.scatterTilt
 import io.github.tomsadeh.puki.ui.components.Scatter
@@ -56,6 +57,7 @@ import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.GameTopBar
 import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
 import kotlinx.coroutines.delay
+import io.github.tomsadeh.puki.audio.reactOr
 import kotlinx.coroutines.launch
 
 @Composable
@@ -71,12 +73,12 @@ fun ColorSplashScreen(
     val companion = LocalCompanion.current
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
-    var showRoundSuccess by remember { mutableStateOf(false) }
+    val round = rememberRoundFlow()
 
     if (state.isLoading) return
 
     // Stuck? Ask again after a quiet moment; after misses, the right balloon wiggles
-    val help = rememberHelp(state.roundIndex, active = !showRoundSuccess) {
+    val help = rememberHelp(state.roundIndex, active = !round.won) {
         voicePlayer.playSequence(listOf("voice_prompt_tap_the", "voice_color_${state.targetColor.id}"), language)
     }
 
@@ -95,24 +97,21 @@ fun ColorSplashScreen(
         val correct = viewModel.onColorTapped(color.id) ?: return
         if (correct) {
             sfxPlayer.play(Sfx.SUCCESS)
-            if (companion != null) companion.react("במשחק הצבעים בחרו ${color.name.he}. זה נכון!", "In the color game the child picked ${color.name.en.lowercase()}. That's right!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
-            showRoundSuccess = true
+            companion.reactOr("במשחק הצבעים בחרו ${color.name.he}. זה נכון!", "In the color game the child picked ${color.name.en.lowercase()}. That's right!") { voicePlayer.playPraise(language) }
             scope.launch { blobReaction.celebrate() }
-            scope.launch {
-                delay(if (companion?.isReady == true) 3400 else 2000)
-                showRoundSuccess = false
+            round.win(2000, 3400) {
                 viewModel.nextRound()
             }
         } else {
             sfxPlayer.play(Sfx.WRONG_GENTLE)
-            if (companion != null) companion.react("במשחק הצבעים בחרו ${color.name.he}, אבל חיפשנו ${state.targetColor.name.he}.", "In the color game the child picked ${color.name.en.lowercase()}, but we were looking for ${state.targetColor.name.en.lowercase()}.") { voicePlayer.playSequence(listOf("voice_color_${color.id}", "voice_prompt_try_again"), language) } else voicePlayer.playSequence(listOf("voice_color_${color.id}", "voice_prompt_try_again"), language)
+            companion.reactOr("במשחק הצבעים בחרו ${color.name.he}, אבל חיפשנו ${state.targetColor.name.he}.", "In the color game the child picked ${color.name.en.lowercase()}, but we were looking for ${state.targetColor.name.en.lowercase()}.") { voicePlayer.playSequence(listOf("voice_color_${color.id}", "voice_prompt_try_again"), language) }
             help.missed()
             scope.launch { blobReaction.shake() }
         }
     }
 
     // "אדום!" picks the red balloon
-    AnswerOutLoud(state.roundIndex, state.colorChoices.map { listOf(it.name.resolve(language)) }, active = !showRoundSuccess) { i ->
+    AnswerOutLoud(state.roundIndex, state.colorChoices.map { listOf(it.name.resolve(language)) }, active = !round.won) { i ->
         state.colorChoices.getOrNull(i)?.let { pick(it) }
     }
 
@@ -158,7 +157,7 @@ fun ColorSplashScreen(
             }
         }
 
-        ConfettiOverlay(show = showRoundSuccess)
+        ConfettiOverlay(show = round.won)
 
         if (state.sessionComplete) {
             RoundCompleteSheet(

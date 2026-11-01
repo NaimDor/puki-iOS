@@ -72,6 +72,7 @@ import io.github.tomsadeh.puki.ui.components.reaction
 import io.github.tomsadeh.puki.ui.components.rememberHelp
 import io.github.tomsadeh.puki.ui.components.rememberReactionState
 import kotlinx.coroutines.delay
+import io.github.tomsadeh.puki.audio.reactOr
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
@@ -141,11 +142,11 @@ fun PeekabooScreen(
                     HidingSpot.HAY -> "behind the haystack"
                     HidingSpot.STUMP -> "in the tree stump"
                 }
-                if (companion != null) companion.react(
+                companion.reactOr(
                     "מצאו את ה${animal.name.he}! ${if (she) "היא התחבאה" else "הוא התחבא"} $where.",
                     "The child found the ${animal.name.en.lowercase()}! It was hiding $whereEn.",
                     cheer
-                ) else cheer()
+                )
                 scope.launch {
                     delay(if (companion?.isReady == true) 4000 else 3200)
                     viewModel.nextRound()

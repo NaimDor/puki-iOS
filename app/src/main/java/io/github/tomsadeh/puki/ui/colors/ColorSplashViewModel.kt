@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tomsadeh.puki.PukiApplication
 import io.github.tomsadeh.puki.ui.common.GameSession
+import io.github.tomsadeh.puki.ui.common.pickChoices
 import io.github.tomsadeh.puki.data.content.ColorDef
 import io.github.tomsadeh.puki.data.content.colorsForLevel
 import io.github.tomsadeh.puki.data.content.level1Colors
@@ -53,7 +54,7 @@ class ColorSplashViewModel(application: Application) : AndroidViewModel(applicat
         val choiceCount = if (level == 1) 3 else 4
         _state.value = ColorRoundState(
             targetColor = target,
-            colorChoices = (listOf(target) + allColors.filter { it.id != target.id }.shuffled().take(choiceCount - 1)).shuffled(),
+            colorChoices = pickChoices(target, allColors, choiceCount) { it.id },
             roundIndex = index,
             totalRounds = rounds.size,
             totalStarsEarned = _state.value.totalStarsEarned,

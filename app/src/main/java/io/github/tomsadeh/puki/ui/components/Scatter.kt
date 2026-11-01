@@ -27,37 +27,7 @@ fun Scatter(
         val tallest = placeables.maxOfOrNull { it.height } ?: 0
         val h = if (constraints.hasBoundedHeight) constraints.maxHeight else (tallest * 1.7f).toInt()
         val n = placeables.size
-        val rnd = Random(seed * 7919 + n)
-        val flip = rnd.nextBoolean()  // whether the first one starts high or low
-        val flat = h < tallest * 1.5f  // a short area: no room for high and low
-
-        val centers = if (flat && aroundCenter) {
-            // In a line on each side of the target, instead of on top of each other
-            val left = (n + 1) / 2
-            List(n) { i ->
-                val onLeft = i < left
-                val k = if (onLeft) i else i - left
-                (if (onLeft) 0.08f + k * 0.14f else 0.92f - k * 0.14f) to 0.5f
-            }
-        } else if (!aroundCenter) {
-            List(n) { i ->
-                // (the first one never starts low: that's Puki's corner)
-                val high = i == 0 || (i % 2 == 0) != flip
-                val x = (i + 0.5f) / n + (rnd.nextFloat() - 0.5f) * 0.25f / n
-                val y = if (flat) 0.5f else (if (high) 0.3f else 0.7f) + (rnd.nextFloat() - 0.5f) * 0.12f
-                x to y
-            }
-        } else {
-            val left = (n + 1) / 2
-            List(n) { i ->
-                val onLeft = i < left
-                val k = if (onLeft) i else i - left
-                val m = if (onLeft) left else n - left
-                val x = (if (onLeft) 0.15f else 0.85f) + (if (k % 2 == 0) -0.04f else 0.04f) + (rnd.nextFloat() - 0.5f) * 0.04f
-                val y = (k + 0.5f) / m + (rnd.nextFloat() - 0.5f) * 0.1f
-                x to y
-            }
-        }
+        val centers = scatterCenters(n, seed, aroundCenter, flat = h < tallest * 1.5f)
 
         layout(w, h) {
             placeables.forEachIndexed { i, p ->
@@ -66,6 +36,42 @@ fun Scatter(
                 val y = (h * fy - p.height / 2f).toInt().coerceIn(0, (h - p.height).coerceAtLeast(0))
                 p.placeRelative(x, y)  // mirrors in Hebrew, so the first one is where reading starts
             }
+        }
+    }
+}
+
+/**
+ * Where [n] scattered things stand, as fractions of the area. [flat]: the area is too short for
+ * high and low, so they stand in a line.
+ */
+internal fun scatterCenters(n: Int, seed: Int, aroundCenter: Boolean, flat: Boolean): List<Pair<Float, Float>> {
+    val rnd = Random(seed * 7919 + n)
+    val flip = rnd.nextBoolean()  // whether the first one starts high or low
+    return if (flat && aroundCenter) {
+        // In a line on each side of the target, instead of on top of each other
+        val left = (n + 1) / 2
+        List(n) { i ->
+            val onLeft = i < left
+            val k = if (onLeft) i else i - left
+            (if (onLeft) 0.08f + k * 0.14f else 0.92f - k * 0.14f) to 0.5f
+        }
+    } else if (!aroundCenter) {
+        List(n) { i ->
+            // (the first one never starts low: that's Puki's corner)
+            val high = i == 0 || (i % 2 == 0) != flip
+            val x = (i + 0.5f) / n + (rnd.nextFloat() - 0.5f) * 0.25f / n
+            val y = if (flat) 0.5f else (if (high) 0.3f else 0.7f) + (rnd.nextFloat() - 0.5f) * 0.12f
+            x to y
+        }
+    } else {
+        val left = (n + 1) / 2
+        List(n) { i ->
+            val onLeft = i < left
+            val k = if (onLeft) i else i - left
+            val m = if (onLeft) left else n - left
+            val x = (if (onLeft) 0.15f else 0.85f) + (if (k % 2 == 0) -0.04f else 0.04f) + (rnd.nextFloat() - 0.5f) * 0.04f
+            val y = (k + 0.5f) / m + (rnd.nextFloat() - 0.5f) * 0.1f
+            x to y
         }
     }
 }

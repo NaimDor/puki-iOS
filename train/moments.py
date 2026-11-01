@@ -1,6 +1,6 @@
 """The game moments Puki reacts to, read from the app's own code so the dataset follows the games.
 
-Every `companion.react("...", "...")`, `RoundPrompt(..., scene = "...", sceneEn = "...")` and
+Every `companion.react("...", "...")` or `reactOr`, `RoundPrompt(..., scene = "...", sceneEn = "...")` and
 `setScene(...)` call is a template: a Hebrew and an English sentence with blanks such as
 `${color.name.he}`. The blanks are filled from the app's content files (animals and their food,
 colors, shapes, letters, counting things, stickers), keeping each template's sense: a success
@@ -18,7 +18,7 @@ import re
 APP = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "app", "src", "main", "java", "io", "github", "tomsadeh", "puki")
 STR = r'"((?:[^"\\]|\\.)*)"'
-CALL = re.compile(r'(?:react|RoundPrompt|setScene)\((?:[^"()]*?,)?\s*(?:scene\s*=\s*)?' + STR +
+CALL = re.compile(r'(?:reactOr|react|RoundPrompt|setScene)\((?:[^"()]*?,)?\s*(?:scene\s*=\s*)?' + STR +
                   r'\s*,\s*(?:sceneEn\s*=\s*)?' + STR)
 BLANK = re.compile(r"\$\{([^}]*)\}")
 

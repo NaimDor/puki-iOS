@@ -4,6 +4,7 @@ import io.github.tomsadeh.puki.ui.components.RoundPrompt
 import io.github.tomsadeh.puki.ui.components.hintGlow
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberRoundFlow
 import io.github.tomsadeh.puki.ui.components.rememberSessionSeed
 import androidx.compose.foundation.layout.fillMaxWidth
 import io.github.tomsadeh.puki.ui.components.Scatter
@@ -59,6 +60,7 @@ import io.github.tomsadeh.puki.ui.components.DropZone
 import io.github.tomsadeh.puki.ui.components.LocalDragDropState
 import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
 import kotlinx.coroutines.delay
+import io.github.tomsadeh.puki.audio.reactOr
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
@@ -77,13 +79,13 @@ fun ShapePlaygroundScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
     val dragDropState = remember { DragDropState() }
-    var showRoundSuccess by remember { mutableStateOf(false) }
+    val round = rememberRoundFlow()
     val targetReaction = rememberReactionState(state.roundIndex)
 
     if (state.isLoading) return
 
     // Stuck? Ask again after a quiet moment; after misses, the right piece wiggles
-    val help = rememberHelp(state.roundIndex, active = !showRoundSuccess) {
+    val help = rememberHelp(state.roundIndex, active = !round.won) {
         voicePlayer.playSequence(listOf("voice_prompt_drag_it", "voice_shape_${state.targetShape.id}"), language)
     }
 
@@ -144,17 +146,14 @@ fun ShapePlaygroundScreen(
                                             val correct = viewModel.onShapeDropped(shape.id)
                                             if (correct == true) {
                                                 sfxPlayer.play(Sfx.SUCCESS)
-                                                if (companion != null) companion.react("במשחק הצורות שמו את ה${shape.name.he} במקום הנכון!", "In the shape game the child put the ${shape.name.en.lowercase()} in the right place!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
-                                                showRoundSuccess = true
+                                                companion.reactOr("במשחק הצורות שמו את ה${shape.name.he} במקום הנכון!", "In the shape game the child put the ${shape.name.en.lowercase()} in the right place!") { voicePlayer.playPraise(language) }
                                                 scope.launch { targetReaction.celebrate() }
-                                                scope.launch {
-                                                    delay(if (companion?.isReady == true) 3400 else 2000)
-                                                    showRoundSuccess = false
+                                                round.win(2000, 3400) {
                                                     viewModel.nextRound()
                                                 }
                                             } else if (correct == false) {
                                                 sfxPlayer.play(Sfx.WRONG_GENTLE)
-                                                if (companion != null) companion.react("במשחק הצורות ניסו לשים ${shape.name.he} במקום של ${state.targetShape.name.he}.", "In the shape game the child tried to put the ${shape.name.en.lowercase()} where the ${state.targetShape.name.en.lowercase()} goes.") { voicePlayer.play("voice_prompt_try_again", language) } else voicePlayer.play("voice_prompt_try_again", language)
+                                                companion.reactOr("במשחק הצורות ניסו לשים ${shape.name.he} במקום של ${state.targetShape.name.he}.", "In the shape game the child tried to put the ${shape.name.en.lowercase()} where the ${state.targetShape.name.en.lowercase()} goes.") { voicePlayer.play("voice_prompt_try_again", language) }
                                                 help.missed()
                                                 scope.launch { shapeReaction.shake() }
                                             }
@@ -172,7 +171,7 @@ fun ShapePlaygroundScreen(
                 }
             }
 
-            ConfettiOverlay(show = showRoundSuccess)
+            ConfettiOverlay(show = round.won)
 
             if (state.sessionComplete) {
                 RoundCompleteSheet(

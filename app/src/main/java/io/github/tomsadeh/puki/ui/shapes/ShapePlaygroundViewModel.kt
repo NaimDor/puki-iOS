@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tomsadeh.puki.PukiApplication
 import io.github.tomsadeh.puki.ui.common.GameSession
+import io.github.tomsadeh.puki.ui.common.pickChoices
 import io.github.tomsadeh.puki.data.content.ShapeDef
 import io.github.tomsadeh.puki.data.content.level1Shapes
 import io.github.tomsadeh.puki.data.content.shapesForLevel
@@ -53,7 +54,7 @@ class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(appl
         val choiceCount = if (level == 1) 3 else 4
         _state.value = ShapeRoundState(
             targetShape = target,
-            shapeChoices = (listOf(target) + allShapes.filter { it.id != target.id }.shuffled().take(choiceCount - 1)).shuffled(),
+            shapeChoices = pickChoices(target, allShapes, choiceCount) { it.id },
             roundIndex = index,
             totalRounds = rounds.size,
             totalStarsEarned = _state.value.totalStarsEarned,

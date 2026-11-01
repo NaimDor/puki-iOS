@@ -3,6 +3,7 @@ package io.github.tomsadeh.puki.ui.words
 import io.github.tomsadeh.puki.ui.components.hintGlow
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberRoundFlow
 import io.github.tomsadeh.puki.ui.components.rememberSessionSeed
 import io.github.tomsadeh.puki.ui.components.scatterTilt
 import io.github.tomsadeh.puki.ui.components.Scatter
@@ -76,6 +77,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import io.github.tomsadeh.puki.audio.reactOr
+import io.github.tomsadeh.puki.ui.common.GameSession
+import io.github.tomsadeh.puki.ui.common.pickChoices
 import kotlinx.coroutines.launch
 
 /** Toy-block colors for the letters. */
@@ -92,13 +96,12 @@ data class WordState(
 )
 
 class WordGardenViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
+    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(WordState())
     val state: StateFlow<WordState> = _state.asStateFlow()
     private var letters = emptyList<LetterDef>()  // the whole alphabet, for the other blocks
     private var rounds = emptyList<LetterDef>()   // this session's letters
     private var choices = 2  // blocks to pick from: 2 at first, 3 from level 2
-    private var mistakes = 0
 
     fun initialize(language: Language) {
         letters = when (language) {
@@ -106,7 +109,7 @@ class WordGardenViewModel(application: Application) : AndroidViewModel(applicati
             Language.ENGLISH -> englishLetters
         }
         viewModelScope.launch {
-            choices = if (progressRepository.getDifficulty(ISLAND) == 1) 2 else 3
+            choices = if (session.level() == 1) 2 else 3
             // A short session of letters from anywhere in the alphabet, not always from א
             rounds = letters.shuffled().take(4)
             startRound(0)
@@ -116,14 +119,13 @@ class WordGardenViewModel(application: Application) : AndroidViewModel(applicati
     private fun startRound(index: Int) {
         if (index >= rounds.size) {
             _state.value = _state.value.copy(sessionComplete = true)
-            viewModelScope.launch { progressRepository.recordSession(ISLAND, rounds.size, mistakes) }
+            session.finish(rounds.size)
             return
         }
         val target = rounds[index]
-        val distractors = letters.filter { it.id != target.id }.shuffled().take(choices - 1)
         _state.value = WordState(
             targetLetter = target,
-            letterChoices = (listOf(target) + distractors).shuffled(),
+            letterChoices = pickChoices(target, letters, choices) { it.id },
             roundIndex = index,
             totalRounds = rounds.size,
             totalStarsEarned = _state.value.totalStarsEarned
@@ -137,9 +139,9 @@ class WordGardenViewModel(application: Application) : AndroidViewModel(applicati
         if (isCorrect) {
             val newStars = _state.value.totalStarsEarned + 1
             _state.value = _state.value.copy(showSuccess = true, totalStarsEarned = newStars)
-            viewModelScope.launch { progressRepository.addStars(1) }
+            session.star()
         } else {
-            mistakes++
+            session.slip()
         }
         return isCorrect
     }
@@ -162,14 +164,14 @@ fun WordGardenScreen(
     val companion = LocalCompanion.current
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
-    var showRoundSuccess by remember { mutableStateOf(false) }
+    val round = rememberRoundFlow()
 
     LaunchedEffect(language) {
         viewModel.initialize(language)
     }
 
     // Stuck? Say the letter again after a quiet moment; after misses, the right block wiggles
-    val help = rememberHelp(state.roundIndex, active = !showRoundSuccess && state.letterChoices.isNotEmpty()) {
+    val help = rememberHelp(state.roundIndex, active = !round.won && state.letterChoices.isNotEmpty()) {
         voicePlayer.play("voice_letter_${state.targetLetter.id}", language)
     }
 
@@ -261,17 +263,14 @@ fun WordGardenScreen(
                                 val correct = viewModel.onLetterTapped(letter.id) ?: return@clickable
                                 if (correct) {
                                     sfxPlayer.play(Sfx.SUCCESS)
-                                    if (companion != null) companion.react("מצאו את האות ${letter.hebrewLetter}, כמו ${state.targetLetter.exampleWord.he}!", "The child found the letter ${letter.englishLetter}, like ${state.targetLetter.exampleWord.en.lowercase()}!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
-                                    showRoundSuccess = true
+                                    companion.reactOr("מצאו את האות ${letter.hebrewLetter}, כמו ${state.targetLetter.exampleWord.he}!", "The child found the letter ${letter.englishLetter}, like ${state.targetLetter.exampleWord.en.lowercase()}!") { voicePlayer.playPraise(language) }
                                     scope.launch { letterReaction.celebrate() }
-                                    scope.launch {
-                                        delay(if (companion?.isReady == true) 3400 else 2000)
-                                        showRoundSuccess = false
+                                    round.win(2000, 3400) {
                                         viewModel.nextRound()
                                     }
                                 } else {
                                     sfxPlayer.play(Sfx.WRONG_GENTLE)
-                                    if (companion != null) companion.react("בחרו את האות ${letter.hebrewLetter}, אבל חיפשנו את ${state.targetLetter.hebrewLetter}.", "The child picked the letter ${letter.englishLetter}, but we were looking for ${state.targetLetter.englishLetter}.") { voicePlayer.playSequence(listOf("voice_letter_${letter.id}", "voice_prompt_try_again"), language) } else voicePlayer.playSequence(listOf("voice_letter_${letter.id}", "voice_prompt_try_again"), language)
+                                    companion.reactOr("בחרו את האות ${letter.hebrewLetter}, אבל חיפשנו את ${state.targetLetter.hebrewLetter}.", "The child picked the letter ${letter.englishLetter}, but we were looking for ${state.targetLetter.englishLetter}.") { voicePlayer.playSequence(listOf("voice_letter_${letter.id}", "voice_prompt_try_again"), language) }
                                     help.missed()
                                     scope.launch { letterReaction.shake() }
                                 }
@@ -290,7 +289,7 @@ fun WordGardenScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        ConfettiOverlay(show = showRoundSuccess)
+        ConfettiOverlay(show = round.won)
 
         if (state.sessionComplete) {
             RoundCompleteSheet(starsEarned = state.totalStarsEarned, onContinue = onPlayAgain, onHome = onBack)

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import io.github.tomsadeh.puki.ui.components.RoundPrompt
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberRoundFlow
 import io.github.tomsadeh.puki.ui.components.Scene
 import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.ui.common.LocalCompanion
@@ -55,6 +56,7 @@ import io.github.tomsadeh.puki.ui.components.GameTopBar
 import io.github.tomsadeh.puki.ui.components.LocalDragDropState
 import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
 import kotlinx.coroutines.delay
+import io.github.tomsadeh.puki.audio.reactOr
 import kotlinx.coroutines.launch
 
 /** Animals whose Hebrew name is feminine ("מה הפרה אומרת?"). */
@@ -72,7 +74,7 @@ fun AnimalGardenScreen(
     val scope = rememberCoroutineScope()
     val dragDropState = remember { DragDropState() }
 
-    var showRoundSuccess by remember { mutableStateOf(false) }
+    val round = rememberRoundFlow()
     val animalReaction = rememberReactionState(state.roundIndex)
 
     if (state.isLoading) return
@@ -108,15 +110,12 @@ fun AnimalGardenScreen(
         val correct = animalViewModel.onAnimalDropped(animal.id) ?: return  // (the round's already won)
         if (correct) {
             sfxPlayer.play(Sfx.SUCCESS)
-            showRoundSuccess = true
             scope.launch { animalReaction.celebrate() }
             // The shadow turns into the animal, which says its name and its sound
             voicePlayer.playSequence(listOf("voice_animal_${target.id}", "voice_sound_${target.id}"), language) {
-                if (companion != null) companion.react("במשחק הצללים מצאו של מי הצל: ${target.name.he}!", "In the shadow game the child found whose shadow it was: the ${target.name.en.lowercase()}!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
+                companion.reactOr("במשחק הצללים מצאו של מי הצל: ${target.name.he}!", "In the shadow game the child found whose shadow it was: the ${target.name.en.lowercase()}!") { voicePlayer.playPraise(language) }
             }
-            scope.launch {
-                delay(if (companion?.isReady == true) 4600 else 3600)
-                showRoundSuccess = false
+            round.win(3600, 4600) {
                 animalViewModel.nextRound()
             }
         } else {
@@ -205,17 +204,14 @@ fun AnimalGardenScreen(
                                         val correct = animalViewModel.onFoodDropped(food.id)
                                         if (correct == true) {
                                             sfxPlayer.play(Sfx.SUCCESS)
-                                            if (companion != null) companion.react("נתנו ל${state.currentAnimal.name.he} ${food.name.he}. זה האוכל הנכון!", "The child fed the ${state.currentAnimal.name.en.lowercase()} ${food.name.en.lowercase()}. That's the right food!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
-                                            showRoundSuccess = true
+                                            companion.reactOr("נתנו ל${state.currentAnimal.name.he} ${food.name.he}. זה האוכל הנכון!", "The child fed the ${state.currentAnimal.name.en.lowercase()} ${food.name.en.lowercase()}. That's the right food!") { voicePlayer.playPraise(language) }
                                             scope.launch {
                                                 // Swallowed first, then a munch and a happy hop
                                                 delay(220)
                                                 animalReaction.munch()
                                                 animalReaction.celebrate()
                                             }
-                                            scope.launch {
-                                                delay(if (companion?.isReady == true) 3600 else 2400)
-                                                showRoundSuccess = false
+                                            round.win(2400, 3600) {
                                                 // Every other round, Puki asks what the animal says and listens for an answer
                                                 val animal = state.currentAnimal
                                                 if (companion?.isReady == true && state.roundIndex % 2 == 0) {
@@ -234,7 +230,7 @@ fun AnimalGardenScreen(
                                             // The animal shakes its head, makes its sound and says what it eats: a little fact, not a "no"
                                             val animal = state.currentAnimal
                                             val teach = { voicePlayer.playSequence(listOf("voice_sound_${animal.id}", "voice_eats_${animal.id}"), language) }
-                                            if (companion != null) companion.react("ניסו לתת ל${animal.name.he} ${food.name.he}, אבל זה לא האוכל שלו.", "The child tried to give the ${animal.name.en.lowercase()} ${food.name.en.lowercase()}, but that's not its food.", teach) else teach()
+                                            companion.reactOr("ניסו לתת ל${animal.name.he} ${food.name.he}, אבל זה לא האוכל שלו.", "The child tried to give the ${animal.name.en.lowercase()} ${food.name.en.lowercase()}, but that's not its food.", teach)
                                             help.missed()
                                             scope.launch { animalReaction.shake() }
                                         }
@@ -261,7 +257,7 @@ fun AnimalGardenScreen(
                 }
             }
 
-            ConfettiOverlay(show = showRoundSuccess)
+            ConfettiOverlay(show = round.won)
 
             if (state.sessionComplete) {
                 RoundCompleteSheet(
