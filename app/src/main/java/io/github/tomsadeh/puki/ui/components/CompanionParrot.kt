@@ -83,7 +83,7 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
 
     val recorder = remember { MicRecorder() }
     var listening by remember { mutableStateOf(false) }
-    DisposableEffect(Unit) { onDispose { if (recorder.isRecording) recorder.stop() } }
+    DisposableEffect(Unit) { onDispose { recorder.stopInBackground() } }
 
     // Asked once; a parent approves the microphone the first time someone holds the parrot
     val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -166,16 +166,20 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
                                     askMic.launch(Manifest.permission.RECORD_AUDIO)
                                 } else {
                                     voicePlayer.stop()  // so the mic doesn't hear the app
-                                    listening = recorder.start()
+                                    listening = recorder.startOffMain()
                                 }
                             }
                             val released = tryAwaitRelease()
+                            val quick = !hold.isCompleted
                             hold.cancel()
+                            hold.join()  // (the microphone may have been opening)
                             if (listening) {
                                 listening = false
-                                val wav = recorder.stop()
-                                if (released) companion.listen(wav)
-                            } else if (released && !hold.isCompleted) {
+                                scope.launch {
+                                    val wav = recorder.stopOffMain()
+                                    if (released) companion.listen(wav)
+                                }
+                            } else if (released && quick) {
                                 scope.launch { mood?.hop() }  // he noticed, right away
                                 companion.chat()
                             }

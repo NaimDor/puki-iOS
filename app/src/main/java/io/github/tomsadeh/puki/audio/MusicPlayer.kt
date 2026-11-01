@@ -74,10 +74,16 @@ class MusicPlayer(val context: Context) {
         }
         fade = ValueAnimator.ofFloat(currentVolume, target).apply {
             duration = FADE_MILLIS
+            // About ten steps a second: each volume change is a call into the system
+            var step = -1
             addUpdateListener {
                 val v = it.animatedValue as Float
                 currentVolume = v
-                runCatching { player.setVolume(v, v) }
+                val now = (it.animatedFraction * FADE_MILLIS / 100).toInt()
+                if (now != step || it.animatedFraction >= 1f) {
+                    step = now
+                    runCatching { player.setVolume(v, v) }
+                }
             }
             // Runs even when a newer fade cancels this one, so an old track is always released
             addListener(object : AnimatorListenerAdapter() {

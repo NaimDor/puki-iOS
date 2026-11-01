@@ -1,6 +1,9 @@
 package io.github.tomsadeh.puki.audio
 
 import android.annotation.SuppressLint
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.Dispatchers
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -12,8 +15,8 @@ import kotlin.concurrent.thread
  * wants), returned as a WAV file. Stops on its own after [MAX_SECONDS].
  */
 class MicRecorder {
-    private var record: AudioRecord? = null
-    private var worker: Thread? = null
+    @Volatile private var record: AudioRecord? = null
+    @Volatile private var worker: Thread? = null
     private val pcm = ByteArrayOutputStream()
     @Volatile private var running = false
 
@@ -56,6 +59,17 @@ class MicRecorder {
             level = 0f
         }
         return true
+    }
+
+    /** [start], off the main thread: opening the microphone takes a while. */
+    suspend fun startOffMain(): Boolean = withContext(NonCancellable + Dispatchers.IO) { start() }
+
+    /** [stop], off the main thread: it waits for the recording thread to finish. */
+    suspend fun stopOffMain(): ByteArray = withContext(NonCancellable + Dispatchers.IO) { stop() }
+
+    /** For a screen closing, which can't wait: the microphone goes off, just not on this thread. */
+    fun stopInBackground() {
+        if (isRecording) thread(name = "mic-stop") { stop() }
     }
 
     /** Stops recording and returns the WAV bytes (empty if nothing was recorded). */

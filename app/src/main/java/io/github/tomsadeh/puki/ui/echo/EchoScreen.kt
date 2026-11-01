@@ -111,7 +111,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
             delay(50)
         }
     }
-    DisposableEffect(Unit) { onDispose { if (recorder.isRecording) recorder.stop() } }
+    DisposableEffect(Unit) { onDispose { recorder.stopInBackground() } }
 
     // The microphone is asked for once, the first time she talks to Puki
     val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -129,9 +129,9 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     }
 
     fun echo() {
-        val wav = recorder.stop()
         mode = EchoMode.ECHOING
         scope.launch {
+            val wav = recorder.stopOffMain()
             EchoVoice.play(wav, voicePlayer.level, ECHO_PITCHES[echoes % ECHO_PITCHES.size])
             mode = EchoMode.IDLE
             lastActive = SystemClock.uptimeMillis()
@@ -150,13 +150,13 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     }
 
     /** Starts listening; with [untilQuiet] it stops by itself once she pauses (a tap), else on release. */
-    fun listen(untilQuiet: Boolean): Boolean {
+    suspend fun listen(untilQuiet: Boolean): Boolean {
         if (!hasMic()) {
             askMic.launch(Manifest.permission.RECORD_AUDIO)
             return false
         }
         voicePlayer.stop()  // so the microphone doesn't hear the app
-        if (!recorder.start()) return false
+        if (!recorder.startOffMain()) return false
         mode = EchoMode.LISTENING
         lastActive = SystemClock.uptimeMillis()
         if (untilQuiet) scope.launch {
@@ -170,7 +170,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
                 if ((heard && quietMs >= 900) || elapsed > 7000 || (!heard && elapsed > 4500)) {
                     if (heard) echo() else {
                         // Quiet: not a dead end, Puki tilts his head and asks again
-                        recorder.stop()
+                        recorder.stopOffMain()
                         mode = EchoMode.IDLE
                         lastActive = SystemClock.uptimeMillis()
                         voicePlayer.play("voice_say_again", language)
@@ -230,9 +230,13 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
                             }
                             val released = tryAwaitRelease()
                             hold.cancel()
+                            hold.join()  // (the microphone may have been opening)
                             when {
-                                holding && mode == EchoMode.LISTENING -> if (released) echo() else { recorder.stop(); mode = EchoMode.IDLE }
-                                !holding && released -> listen(untilQuiet = true)
+                                holding && mode == EchoMode.LISTENING -> if (released) echo() else {
+                                    mode = EchoMode.IDLE
+                                    scope.launch { recorder.stopOffMain() }
+                                }
+                                !holding && released -> scope.launch { listen(untilQuiet = true) }
                             }
                         })
                     },

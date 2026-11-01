@@ -409,7 +409,7 @@ class Companion(
         if (paused) return null
         _listening.value = true
         try {
-            if (!recorder.start()) return null
+            if (!recorder.startOffMain()) return null
             val start = System.currentTimeMillis()
             var lastLoud = -1L
             while (true) {
@@ -422,9 +422,9 @@ class Companion(
                     break
                 }
             }
-            return recorder.stop()
+            return recorder.stopOffMain()
         } finally {
-            if (recorder.isRecording) recorder.stop()
+            if (recorder.isRecording) recorder.stopOffMain()
             _listening.value = false
         }
     }
@@ -432,8 +432,8 @@ class Companion(
     private fun hasMic() = hasMicPermission(context)
 
     /** Rough voice-activity check: a few 50 ms windows clearly louder than room noise. */
-    private fun hasSpeech(wav: ByteArray): Boolean {
-        if (wav.size <= 44) return false
+    private suspend fun hasSpeech(wav: ByteArray): Boolean = withContext(Dispatchers.Default) {
+        if (wav.size <= 44) return@withContext false
         val pcm = ByteBuffer.wrap(wav, 44, wav.size - 44).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
         val window = MicRecorder.RATE / 20
         var loud = 0
@@ -444,7 +444,7 @@ class Companion(
             if (sqrt(sum / window) > 1200) loud++
             i += window
         }
-        return loud >= 3
+        loud >= 3
     }
 
     private suspend fun postListen(wav: ByteArray, context: String): ByteArray? = withContext(Dispatchers.IO) {
