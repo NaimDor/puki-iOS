@@ -271,6 +271,20 @@ fun DrawScope.drawMudSplat(c: Offset, r: Float, seed: Int, amount: Float = 1f) {
     drawCircle(Color(0xFF8D6E63).copy(alpha = 0.8f * amount), rr * 0.2f, center + Offset(-rr * 0.25f, -rr * 0.22f))
 }
 
+/** A drop of water left on her after the rinse, at [c] (fractions), [left] of it left. */
+fun DrawScope.drawWaterDrop(c: Offset, left: Float) {
+    val center = p(c)
+    val r = u(0.022f) * (0.5f + 0.5f * left)
+    val drop = Path().apply {
+        moveTo(center.x, center.y - r * 1.8f)
+        cubicTo(center.x + r * 1.2f, center.y - r * 0.2f, center.x + r, center.y + r, center.x, center.y + r)
+        cubicTo(center.x - r, center.y + r, center.x - r * 1.2f, center.y - r * 0.2f, center.x, center.y - r * 1.8f)
+        close()
+    }
+    drawPath(drop, Color(0xFF4FC3F7).copy(alpha = left))
+    drawCircle(Color.White.copy(alpha = 0.7f * left), r * 0.3f, center + Offset(-r * 0.3f, -r * 0.1f))
+}
+
 /** Soap bubbles where the mud was, drifting up a little with [wave]; [left] fades them as the rinse washes them off. */
 fun DrawScope.drawSoapBubbles(c: Offset, r: Float, wave: Float, left: Float = 1f) {
     if (left <= 0f) return

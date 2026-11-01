@@ -246,6 +246,9 @@ voice_lines = [
     ("voice_prompt_see_you_soon", "See you soon!", "נתראה בקרוב!"),
 
     # --- Body parts ---
+    ("voice_bath_rinse", "Now rinse off in the shower!", "עכשיו שוטפים במקלחת!"),
+    ("voice_bath_dry", "Now dry off with the towel!", "עכשיו מתנגבים במגבת!"),
+    ("voice_bath_clean", "All clean!", "נקי נקי!"),
     ("voice_body_arms", "Arms", "אלה ידיים."),
     ("voice_body_legs", "Legs", "אלה רגליים."),
     ("voice_body_tummy", "Tummy", "זאת בטן."),
