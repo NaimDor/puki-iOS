@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Slipper -->
+    <path android:fillColor="#F48FB1"
+        android:pathData="M12,74 Q12,50 34,50 L60,50 Q92,52 92,74 Z"/>
+    <!-- The soft opening -->
+    <path android:fillColor="#FCE4EC"
+        android:pathData="M11,52 A17,6 0 1,1 45,52 A17,6 0 1,1 11,52 Z"/>
+    <!-- Sole -->
+    <path android:fillColor="#EC407A"
+        android:pathData="M15,70 L89,70 A7,7 0 0,1 96,77 L96,77 A7,7 0 0,1 89,84 L15,84 A7,7 0 0,1 8,77 L8,77 A7,7 0 0,1 15,70 Z"/>
+    <!-- Pompom -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M56,52 A12,12 0 1,1 80,52 A12,12 0 1,1 56,52 Z"/>
+    <path android:fillColor="#FCE4EC"
+        android:pathData="M60,49 A5,5 0 1,1 70,49 A5,5 0 1,1 60,49 Z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M46,60 L34,62"/>
+</vector>

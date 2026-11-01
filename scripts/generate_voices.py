@@ -250,12 +250,20 @@ voice_lines = [
     ("voice_car_rinse", "Now rinse it with the hose!", ("עכשיו תשטפי עם הצינור!", "עכשיו תשטוף עם הצינור!")),
     ("voice_car_dry", "Dry it with the towel!", ("עכשיו תנגבי עם המגבת!", "עכשיו תנגב עם המגבת!")),
     ("voice_car_clean", "Beep beep! The car is clean!", "טוט טוט! המכונית נקייה!"),
+    ("voice_truck_intro", "The truck is all muddy! Scrub it with the sponge.", ("המשאית מלאה בוץ! תשפשפי אותה עם הספוג.", "המשאית מלאה בוץ! תשפשף אותה עם הספוג.")),
+    ("voice_truck_clean", "Honk honk! The truck is clean!", "טוט טוט! המשאית נקייה!"),
+    ("voice_bike_intro", "The bike is all muddy! Scrub it with the sponge.", ("האופניים מלאים בוץ! תשפשפי אותם עם הספוג.", "האופניים מלאים בוץ! תשפשף אותם עם הספוג.")),
+    ("voice_bike_clean", "Ring ring! The bike is clean!", "דינג דינג! האופניים נקיים!"),
     # --- Brushing Teddy's teeth ---
     ("voice_teeth_intro", "Let's brush Teddy's teeth! Put toothpaste on the brush.", ("בואי נצחצח לדובי את השיניים! תשימי משחה על המברשת.", "בוא נצחצח לדובי את השיניים! תשים משחה על המברשת.")),
     ("voice_teeth_paste", "Tap the toothpaste!", ("תלחצי על המשחה!", "תלחץ על המשחה!")),
     ("voice_teeth_scrub", "Brush every tooth!", ("תצחצחי כל שן!", "תצחצח כל שן!")),
     ("voice_teeth_rinse", "Now give Teddy some water!", ("עכשיו תני לדובי מים!", "עכשיו תן לדובי מים!")),
     ("voice_teeth_clean", "Sparkly teeth! What a big smile!", "שיניים מבריקות! איזה חיוך גדול!"),
+    ("voice_teeth_intro_lion", "Let's brush the lion's teeth! Put toothpaste on the brush.", ("בואי נצחצח לאריה את השיניים! תשימי משחה על המברשת.", "בוא נצחצח לאריה את השיניים! תשים משחה על המברשת.")),
+    ("voice_teeth_rinse_lion", "Now give the lion some water!", ("עכשיו תני לאריה מים!", "עכשיו תן לאריה מים!")),
+    ("voice_teeth_intro_croc", "Let's brush the crocodile's teeth! Put toothpaste on the brush.", ("בואי נצחצח לתנין את השיניים! תשימי משחה על המברשת.", "בוא נצחצח לתנין את השיניים! תשים משחה על המברשת.")),
+    ("voice_teeth_rinse_croc", "Now give the crocodile some water!", ("עכשיו תני לתנין מים!", "עכשיו תן לתנין מים!")),
 
     # --- My Day prompts ---
     ("voice_prompt_bath", "Let's take a bath!", ("בואי נתרחץ!", "בוא נתרחץ!")),
@@ -263,6 +271,10 @@ voice_lines = [
     ("voice_prompt_get_dressed", "Let's get dressed! What goes on first?",
      ("בואי נתלבש! מה שמים קודם?", "בוא נתלבש! מה שמים קודם?")),
     ("voice_prompt_set_table", "Let's set the table!", ("בואי נערוך את השולחן!", "בוא נערוך את השולחן!")),
+    ("voice_prompt_table_teddy", "Let's set the table for Teddy!", ("בואי נערוך את השולחן לדובי!", "בוא נערוך את השולחן לדובי!")),
+    ("voice_prompt_table_puki", "Let's set the table for Puki!", ("בואי נערוך את השולחן לפוקי!", "בוא נערוך את השולחן לפוקי!")),
+    ("voice_prompt_table_cat", "Let's set the table for the cat!", ("בואי נערוך את השולחן לחתול!", "בוא נערוך את השולחן לחתול!")),
+    ("voice_prompt_table_rabbit", "Let's set the table for the rabbit!", ("בואי נערוך את השולחן לארנב!", "בוא נערוך את השולחן לארנב!")),
     ("voice_prompt_time_break", "Time for a break!", "הגיע הזמן להפסקה!"),
     ("voice_prompt_see_you_soon", "See you soon!", "נתראה בקרוב!"),
 
@@ -277,10 +289,21 @@ voice_lines = [
 
     # --- Clothing ---
     ("voice_dress_done", "All dressed! Let's go!", "התלבשנו! אפשר לצאת!"),
+    ("voice_dress_done_pajama", "All cozy! A pajama day!", "איזה נעים! יום פיג'מה!"),
+    ("voice_dress_sunny", "The sun is out! Let's get dressed for it!", ("יש שמש בחוץ! בואי נתלבש!", "יש שמש בחוץ! בוא נתלבש!")),
+    ("voice_dress_rainy", "It's raining! Let's get dressed for the rain!", ("יורד גשם! בואי נתלבש לגשם!", "יורד גשם! בוא נתלבש לגשם!")),
+    ("voice_dress_pajama", "It's a pajama day! Let's put on pajamas!", ("היום יום פיג'מה! בואי נלבש פיג'מה!", "היום יום פיג'מה! בוא נלבש פיג'מה!")),
     ("voice_clothing_shirt", "Shirt", "זאת חולצה."),
     ("voice_clothing_pants", "Pants", "אלה מכנסיים."),
     ("voice_clothing_socks", "Socks", "אלה גרביים."),
     ("voice_clothing_shoes", "Shoes", "אלה נעליים."),
+    ("voice_clothing_shorts", "Shorts", "אלה מכנסיים קצרים."),
+    ("voice_clothing_hat", "Hat", "זה כובע."),
+    ("voice_clothing_raincoat", "Raincoat", "זה מעיל גשם."),
+    ("voice_clothing_boots", "Boots", "אלה מגפיים."),
+    ("voice_clothing_pajama_top", "Pajama top", "זאת חולצת פיג'מה."),
+    ("voice_clothing_pajama_pants", "Pajama pants", "אלה מכנסי פיג'מה."),
+    ("voice_clothing_slippers", "Slippers", "אלה נעלי בית."),
 
     # --- Table items ---
     ("voice_table_done", "Dinner's ready! Yum!", "הארוחה מוכנה! יאמי!"),
@@ -289,12 +312,19 @@ voice_lines = [
     ("voice_table_cup", "Cup", "זאת כוס."),
     ("voice_table_fork", "Fork", "זה מזלג."),
     ("voice_table_spoon", "Spoon", "זאת כפית."),
+    ("voice_table_bowl", "Bowl", "זאת קערה."),
 
     # --- Tidy items ---
     ("voice_tidy_teddy", "Teddy", "זה דובי."),
     ("voice_tidy_book", "Book", "זה ספר."),
     ("voice_tidy_shirt", "Shirt", "זאת חולצה."),
     ("voice_tidy_ball", "Ball", "זה כדור."),
+    ("voice_tidy_bunny", "Bunny", "זה ארנב."),
+    ("voice_tidy_storybook", "Story book", "זה ספר סיפורים."),
+    ("voice_tidy_socks", "Socks", "אלה גרביים."),
+    ("voice_tidy_pants", "Pants", "אלה מכנסיים."),
+    ("voice_tidy_car", "Car", "זאת מכונית."),
+    ("voice_tidy_blocks", "Blocks", "אלה קוביות."),
 
     # --- Sticker names ---
     ("voice_sticker_cow", "Cow", "זאת פרה."),

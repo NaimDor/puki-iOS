@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- A toy car with a big white stripe -->
+    <path android:fillColor="#EF5350"
+        android:pathData="M8,74 L8,58 Q9,50 18,49 L30,48 L39,32 Q42,28 47,28 L64,28 Q69,28 72,33 L79,48 Q91,50 92,60 L92,74 Z"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M9,60 L92,60 L92,66 L8,66 Z"/>
+    <path android:fillColor="#B3E5FC"
+        android:pathData="M37,48 L44,34 L56,34 L56,48 Z"/>
+    <path android:fillColor="#B3E5FC"
+        android:pathData="M60,34 L69,34 L75,48 L60,48 Z"/>
+    <path android:fillColor="#FFF59D"
+        android:pathData="M10.5,55 A4.5,4.5 0 1,1 19.5,55 A4.5,4.5 0 1,1 10.5,55 Z"/>
+    <path android:fillColor="#37474F"
+        android:pathData="M15,76 A11,11 0 1,1 37,76 A11,11 0 1,1 15,76 Z"/>
+    <path android:fillColor="#37474F"
+        android:pathData="M63,76 A11,11 0 1,1 85,76 A11,11 0 1,1 63,76 Z"/>
+    <path android:fillColor="#FFCA28"
+        android:pathData="M21,76 A5,5 0 1,1 31,76 A5,5 0 1,1 21,76 Z"/>
+    <path android:fillColor="#FFCA28"
+        android:pathData="M69,76 A5,5 0 1,1 79,76 A5,5 0 1,1 69,76 Z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M47,33 L43,41"/>
+</vector>

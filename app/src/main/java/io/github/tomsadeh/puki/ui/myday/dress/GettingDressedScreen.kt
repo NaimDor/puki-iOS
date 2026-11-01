@@ -79,13 +79,35 @@ import kotlinx.coroutines.launch
 
 data class ClothingItem(val id: String, val name: BilingualText, @DrawableRes val icon: Int, val order: Int)
 
-data class DressState(
-    val clothes: List<ClothingItem> = listOf(
+/** What goes on the feet after the socks. */
+private val FEET = setOf("shoes", "boots", "slippers")
+
+/** Today's outfit, by what's out of the window. */
+private fun outfitFor(weather: Weather) = when (weather) {
+    Weather.SUN -> listOf(
         ClothingItem("shirt", BilingualText("חולצה", "Shirt"), R.drawable.ic_clothing_shirt, 0),
-        ClothingItem("pants", BilingualText("מכנסיים", "Pants"), R.drawable.ic_clothing_pants, 1),
+        ClothingItem("shorts", BilingualText("מכנסיים קצרים", "Shorts"), R.drawable.ic_clothing_shorts, 1),
         ClothingItem("socks", BilingualText("גרביים", "Socks"), R.drawable.ic_clothing_socks, 2),
-        ClothingItem("shoes", BilingualText("נעליים", "Shoes"), R.drawable.ic_clothing_shoes, 3)
-    ),
+        ClothingItem("shoes", BilingualText("נעליים", "Shoes"), R.drawable.ic_clothing_shoes, 3),
+        ClothingItem("hat", BilingualText("כובע", "Hat"), R.drawable.ic_clothing_hat, 4)
+    )
+    Weather.RAIN -> listOf(
+        ClothingItem("pants", BilingualText("מכנסיים", "Pants"), R.drawable.ic_clothing_pants, 0),
+        ClothingItem("raincoat", BilingualText("מעיל גשם", "Raincoat"), R.drawable.ic_clothing_raincoat, 1),
+        ClothingItem("socks", BilingualText("גרביים", "Socks"), R.drawable.ic_clothing_socks, 2),
+        ClothingItem("boots", BilingualText("מגפיים", "Boots"), R.drawable.ic_clothing_boots, 3)
+    )
+    Weather.PAJAMA -> listOf(
+        ClothingItem("pajama_top", BilingualText("חולצת פיג'מה", "Pajama top"), R.drawable.ic_clothing_pajamas, 0),
+        ClothingItem("pajama_pants", BilingualText("מכנסי פיג'מה", "Pajama pants"), R.drawable.ic_clothing_pajama_pants, 1),
+        ClothingItem("socks", BilingualText("גרביים", "Socks"), R.drawable.ic_clothing_socks, 2),
+        ClothingItem("slippers", BilingualText("נעלי בית", "Slippers"), R.drawable.ic_clothing_slippers, 3)
+    )
+}
+
+data class DressState(
+    val weather: Weather = Weather.entries.random(),
+    val clothes: List<ClothingItem> = outfitFor(weather),
     val worn: Set<String> = emptySet()
 ) {
     val isComplete get() = worn.size == clothes.size
@@ -98,10 +120,10 @@ class GettingDressedViewModel(application: Application) : AndroidViewModel(appli
     private val _state = MutableStateFlow(DressState())
     val state: StateFlow<DressState> = _state.asStateFlow()
 
-    /** She can dress in any order; only shoes wait for socks. False when they have to wait. */
+    /** She can dress in any order; only what goes on the feet waits for socks. False when it has to wait. */
     fun onClothingTapped(clothingId: String): Boolean {
         val current = _state.value
-        if (clothingId == "shoes" && "socks" !in current.worn) {
+        if (clothingId in FEET && "socks" !in current.worn) {
             session.slip()
             return false
         }
@@ -121,7 +143,11 @@ fun GettingDressedScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    RoundPrompt(0, "בהתלבשות: בוחרים בגדים מהארון ומתלבשים.", "Getting dressed: picking clothes from the wardrobe.", "voice_prompt_get_dressed")
+    when (state.weather) {
+        Weather.SUN -> RoundPrompt(0, "בהתלבשות: בחלון יש שמש, בוחרים מהארון מכנסיים קצרים וכובע.", "Getting dressed: it's sunny in the window, picking shorts and a hat from the wardrobe.", "voice_dress_sunny")
+        Weather.RAIN -> RoundPrompt(0, "בהתלבשות: בחלון יורד גשם, בוחרים מהארון מעיל גשם ומגפיים.", "Getting dressed: it's raining in the window, picking a raincoat and boots from the wardrobe.", "voice_dress_rainy")
+        Weather.PAJAMA -> RoundPrompt(0, "בהתלבשות: היום יום פיג'מה, בוחרים מהארון פיג'מה ונעלי בית.", "Getting dressed: today is a pajama day, picking pajamas and slippers from the wardrobe.", "voice_dress_pajama")
+    }
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
     val sfxPlayer = LocalSfxPlayer.current
@@ -138,8 +164,16 @@ fun GettingDressedScreen(
     // All dressed: she hops, and then the end card
     LaunchedEffect(state.isComplete) {
         if (!state.isComplete) return@LaunchedEffect
-        voicePlayer.play("voice_dress_done", language) {
-            companion?.react("התלבשו מכף רגל ועד ראש, עד הנעליים!", "The child got dressed from head to toe, shoes and all!")
+        when (state.weather) {
+            Weather.SUN -> voicePlayer.play("voice_dress_done", language) {
+                companion?.react("התלבשו מכף רגל ועד ראש, עד הנעליים!", "The child got dressed from head to toe, shoes and all!")
+            }
+            Weather.RAIN -> voicePlayer.play("voice_dress_done", language) {
+                companion?.react("התלבשו לגשם, עם מעיל ומגפיים!", "The child got dressed for the rain, raincoat, boots and all!")
+            }
+            Weather.PAJAMA -> voicePlayer.play("voice_dress_done_pajama", language) {
+                companion?.react("לבשו פיג'מה ונעלי בית, איזה יום נעים!", "The child put on pajamas and slippers, what a cozy day!")
+            }
         }
         launch { childReaction.celebrate() }
         delay(3000)
@@ -155,13 +189,15 @@ fun GettingDressedScreen(
         ) {
             GameTopBar(onBack = onBack, roundIndex = state.worn.size, totalRounds = state.clothes.size, starsEarned = state.worn.size)
 
-            // The child, dressed as far as we've got, and the open wardrobe (clear of Puki's corner)
+            // The child by the window, dressed as far as we've got, and the open wardrobe (clear of Puki's corner)
+            BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth().padding(start = PukiCorner)) {
+            val wardrobeW = 430.dp * minOf(1f, maxHeight / 540.dp)  // as wide as it's drawn, so the room gets the rest
             Row(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(start = PukiCorner),
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                DressedChild(worn = state.worn, reaction = childReaction, modifier = Modifier.weight(1f).fillMaxHeight())
-                Wardrobe(modifier = Modifier.width(430.dp).fillMaxHeight()) { s ->
+                DressedChild(clothes = state.clothes, worn = state.worn, weather = state.weather, reaction = childReaction, modifier = Modifier.weight(1f).fillMaxHeight())
+                Wardrobe(modifier = Modifier.width(wardrobeW).fillMaxHeight()) { s ->
                     state.clothes.forEach { item ->
                         if (item.id !in state.worn) {
                             val spot = WARDROBE_SPOTS.getValue(item.id)
@@ -184,7 +220,7 @@ fun GettingDressedScreen(
                                             voicePlayer.play("voice_clothing_${item.id}", language)
                                             scope.launch { childReaction.hop() }
                                         } else {
-                                            // Shoes wait for socks: a puzzled look, and the socks
+                                            // Feet wait for socks: a puzzled look, and the socks
                                             sfxPlayer.play(Sfx.WRONG_GENTLE)
                                             voicePlayer.play("voice_clothing_socks", language)
                                             help.missed()
@@ -197,6 +233,7 @@ fun GettingDressedScreen(
                     }
                 }
             }
+            }
         }
 
         ConfettiOverlay(show = state.isComplete)
@@ -207,12 +244,11 @@ fun GettingDressedScreen(
 }
 
 
-/** The big child, drawn with whatever's been put on so far (each piece grows into place). */
+/** The big child by the window, drawn with whatever's been put on so far (each piece grows into place). */
 @Composable
-private fun DressedChild(worn: Set<String>, reaction: ReactionState, modifier: Modifier = Modifier) {
+private fun DressedChild(clothes: List<ClothingItem>, worn: Set<String>, weather: Weather, reaction: ReactionState, modifier: Modifier = Modifier) {
     val girl = LocalGender.current == Gender.GIRL
-    val ids = listOf("shirt", "pants", "socks", "shoes")
-    val shown = ids.associateWith { id ->
+    val shown = clothes.map { it.id }.associateWith { id ->
         animateFloatAsState(
             targetValue = if (id in worn) 1f else 0f,
             animationSpec = spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow),
@@ -221,6 +257,14 @@ private fun DressedChild(worn: Set<String>, reaction: ReactionState, modifier: M
     }
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
+        // The window hangs on the wall beside her: what's left of the width, and up to her arm
+        val windowW = minOf(side * 0.42f, (maxWidth - side) / 2 + side * 0.27f)
+        Canvas(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(windowW, windowW * 1.25f)
+                .graphicsLayer()
+        ) { drawWindow(weather) }
         Canvas(modifier = Modifier.reaction(reaction, jumpHeight = 24.dp).size(side)) { drawToddler(girl, shown + ("underwear" to 1f)) }
     }
 }
@@ -230,9 +274,16 @@ private data class WardrobeSpot(val x: Float, val y: Float, val size: Float, val
 
 private val WARDROBE_SPOTS = mapOf(
     "shirt" to WardrobeSpot(55f, 70f, 140f, -4f),
+    "raincoat" to WardrobeSpot(55f, 70f, 140f, -4f),
+    "pajama_top" to WardrobeSpot(55f, 70f, 140f, -4f),
     "pants" to WardrobeSpot(225f, 70f, 140f, 5f),
+    "shorts" to WardrobeSpot(225f, 70f, 140f, 5f),
+    "pajama_pants" to WardrobeSpot(225f, 70f, 140f, 5f),
     "socks" to WardrobeSpot(150f, 262f, 120f, 8f),
+    "hat" to WardrobeSpot(280f, 245f, 120f, -6f),  // on the shelf, by the socks
     "shoes" to WardrobeSpot(140f, 390f, 130f, 0f),
+    "boots" to WardrobeSpot(140f, 390f, 130f, 0f),
+    "slippers" to WardrobeSpot(140f, 390f, 130f, 0f),
 )
 
 /** An open wardrobe: a rail with hangers, a shelf, and the floor for shoes. Drawn 430 × 540 dp,

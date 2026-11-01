@@ -79,25 +79,20 @@ import kotlin.random.Random
 
 private enum class WashStep { SCRUB, RINSE, DRY }
 
-/** The mud (and later the drops) on the car: where (fractions of the car's box) and how big. */
-private val spots = listOf(
-    Offset(0.2f, 0.55f), Offset(0.36f, 0.38f), Offset(0.52f, 0.6f),
-    Offset(0.66f, 0.42f), Offset(0.82f, 0.58f), Offset(0.42f, 0.7f)
-)
-/** Which of the [spots] are muddy at each level: the rest of the car starts out clean. */
+/** Which of a vehicle's six [Vehicle.spots] are muddy at each level: the rest starts out clean. */
 private fun muddySpots(level: Int) = when (level) {
     1 -> setOf(0, 2, 4)
     2 -> setOf(0, 1, 3, 4)
-    else -> spots.indices.toSet()
+    else -> (0..5).toSet()
 }
-private const val SPOT_R = 0.11f  // as a fraction of the car's width
+private const val SPOT_R = 0.11f  // as a fraction of the vehicle's width
 private val carColors = listOf(Color(0xFFE53935), Color(0xFF1E88E5), Color(0xFFFDD835), Color(0xFF43A047), Color(0xFF8E24AA))
 
 class CarWashViewModel(application: Application) : AndroidViewModel(application) {
     val session = GameSession("garage", (application as PukiApplication).progressRepository, viewModelScope)
 }
 
-/** Washing a muddy car: scrub with the sponge, rinse with the hose, dry with the towel. */
+/** Washing a muddy car, truck or bike: scrub with the sponge, rinse with the hose, dry with the towel. */
 @Composable
 fun CarWashScreen(
     onBack: () -> Unit,
@@ -117,6 +112,8 @@ fun CarWashScreen(
     val step = game.step
     val celebrate = game.celebrate
     val carColor = remember { carColors.random() }
+    val vehicle = remember { Vehicle.entries.random() }
+    val spots = vehicle.spots
     val muddy = remember { muddySpots(level) }
     val mud = remember { mutableStateListOf(*Array(spots.size) { if (it in muddy) 1f else 0f }) }    // 1: muddy, 0: clean
     val drops = remember { mutableStateListOf(*Array(spots.size) { if (it in muddy) 1f else 0f }) }  // water left after the rinse
@@ -148,8 +145,16 @@ fun CarWashScreen(
             if (step == WashStep.SCRUB) game.done(WashStep.RINSE)
             else {
                 // All dry: it shines, beeps and drives off
-                voicePlayer.play("voice_car_clean", language) {
-                    companion?.react("בשטיפת המכונית: סיבנו, שטפו וניגבו, והמכונית נקייה!", "At the car wash the child scrubbed, rinsed and dried the car, and it's clean!") { }
+                when (vehicle) {
+                    Vehicle.CAR -> voicePlayer.play("voice_car_clean", language) {
+                        companion?.react("בשטיפת המכונית: סיבנו, שטפו וניגבו, והמכונית נקייה!", "At the car wash the child scrubbed, rinsed and dried the car, and it's clean!") { }
+                    }
+                    Vehicle.TRUCK -> voicePlayer.play("voice_truck_clean", language) {
+                        companion?.react("בשטיפת המשאית: סיבנו, שטפו וניגבו, והמשאית נקייה!", "At the car wash the child scrubbed, rinsed and dried the truck, and it's clean!") { }
+                    }
+                    Vehicle.BIKE -> voicePlayer.play("voice_bike_clean", language) {
+                        companion?.react("בשטיפת האופניים: סיבנו, שטפו וניגבו, והאופניים נקיים!", "At the car wash the child scrubbed, rinsed and dried the bike, and it's clean!") { }
+                    }
                 }
                 game.done(null)
                 scope.launch {
@@ -173,10 +178,22 @@ fun CarWashScreen(
             language
         )
     }
-    when (step) {
-        WashStep.SCRUB -> RoundPrompt(0, "בשטיפת המכונית: המכונית מלאה בוץ, משפשפים עם ספוג.", "At the car wash: the car is all muddy, scrubbing it with a sponge.", "voice_car_intro")
-        WashStep.RINSE -> RoundPrompt(1, "בשטיפת המכונית: שוטפים את הקצף עם הצינור.", "At the car wash: rinsing the bubbles off with the hose.", "voice_car_rinse")
-        WashStep.DRY -> RoundPrompt(2, "בשטיפת המכונית: מנגבים את המכונית עם מגבת.", "At the car wash: drying the car with a towel.", "voice_car_dry")
+    when (vehicle) {
+        Vehicle.CAR -> when (step) {
+            WashStep.SCRUB -> RoundPrompt(0, "בשטיפת המכונית: המכונית מלאה בוץ, משפשפים עם ספוג.", "At the car wash: the car is all muddy, scrubbing it with a sponge.", "voice_car_intro")
+            WashStep.RINSE -> RoundPrompt(1, "בשטיפת המכונית: שוטפים את הקצף עם הצינור.", "At the car wash: rinsing the bubbles off with the hose.", "voice_car_rinse")
+            WashStep.DRY -> RoundPrompt(2, "בשטיפת המכונית: מנגבים את המכונית עם מגבת.", "At the car wash: drying the car with a towel.", "voice_car_dry")
+        }
+        Vehicle.TRUCK -> when (step) {
+            WashStep.SCRUB -> RoundPrompt(0, "בשטיפת המשאית: המשאית מלאה בוץ, משפשפים עם ספוג.", "At the car wash: the truck is all muddy, scrubbing it with a sponge.", "voice_truck_intro")
+            WashStep.RINSE -> RoundPrompt(1, "בשטיפת המשאית: שוטפים את הקצף עם הצינור.", "At the car wash: rinsing the bubbles off the truck with the hose.", "voice_car_rinse")
+            WashStep.DRY -> RoundPrompt(2, "בשטיפת המשאית: מנגבים את המשאית עם מגבת.", "At the car wash: drying the truck with a towel.", "voice_car_dry")
+        }
+        Vehicle.BIKE -> when (step) {
+            WashStep.SCRUB -> RoundPrompt(0, "בשטיפת האופניים: האופניים מלאים בוץ, משפשפים עם ספוג.", "At the car wash: the bike is all muddy, scrubbing it with a sponge.", "voice_bike_intro")
+            WashStep.RINSE -> RoundPrompt(1, "בשטיפת האופניים: שוטפים את הקצף עם הצינור.", "At the car wash: rinsing the bubbles off the bike with the hose.", "voice_car_rinse")
+            WashStep.DRY -> RoundPrompt(2, "בשטיפת האופניים: מנגבים את האופניים עם מגבת.", "At the car wash: drying the bike with a towel.", "voice_car_dry")
+        }
     }
 
     CompositionLocalProvider(LocalDragDropState provides remember { DragDropState() }) {
@@ -214,7 +231,11 @@ fun CarWashScreen(
                                     )
                                 }
                         ) {
-                            drawCar(carColor)
+                            when (vehicle) {
+                                Vehicle.CAR -> drawCar(carColor)
+                                Vehicle.TRUCK -> drawTruck(carColor)
+                                Vehicle.BIKE -> drawBike(carColor)
+                            }
                             spots.forEachIndexed { i, s ->
                                 if (mud[i] > 0f) drawMud(s, mud[i], i)
                                 if (step == WashStep.DRY && drops[i] > 0f) drawDrop(s, drops[i])

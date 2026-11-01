@@ -49,7 +49,8 @@ private fun mix(a: Offset, b: Offset, t: Float) = a + (b - a) * t
 
 /**
  * The child. [worn] says how far each piece of clothing has appeared (0 = not on, 1 = on;
- * underwear, shirt, pants, socks, shoes), so a piece can grow into place as it's put on.
+ * underwear, shirt, shorts, pants, socks, shoes, boots, slippers, raincoat, hat, and the pajama
+ * top and pants), so a piece can grow into place as it's put on. "pajamas" is both at once.
  */
 fun DrawScope.drawToddler(girl: Boolean, worn: Map<String, Float> = emptyMap()) {
     fun on(id: String) = worn[id] ?: 0f
@@ -61,9 +62,16 @@ fun DrawScope.drawToddler(girl: Boolean, worn: Map<String, Float> = emptyMap()) 
     // Clothes, from the skin out
     piece(on("underwear"), Offset(0.5f, 0.63f)) { drawUnderwear() }
     piece(on("pants"), Offset(0.5f, 0.72f)) { drawPants() }
+    piece(on("shorts"), Offset(0.5f, 0.66f)) { drawShorts() }
+    piece(on("pajama_pants"), Offset(0.5f, 0.72f)) { drawPajamaPants() }
     piece(on("shirt"), Offset(0.5f, 0.5f)) { drawShirt() }
+    piece(on("pajama_top"), Offset(0.5f, 0.5f)) { drawPajamaTop() }
+    piece(on("raincoat"), Offset(0.5f, 0.55f)) { drawRaincoat() }
     piece(on("socks"), Offset(0.5f, 0.87f)) { drawSocks() }
     piece(on("shoes"), Offset(0.5f, 0.88f)) { drawShoes() }
+    piece(on("boots"), Offset(0.5f, 0.86f)) { drawBoots() }
+    piece(on("slippers"), Offset(0.5f, 0.88f)) { drawSlippers() }
+    piece(on("hat"), Offset(0.5f, 0.15f)) { drawSunHat() }
     piece(on("pajamas"), Offset(0.5f, 0.6f)) { drawPajamas() }
 }
 
@@ -171,14 +179,58 @@ private fun DrawScope.drawUnderwear() {
 
 /** Soft pajamas, all in one go: long sleeves, long legs and little moons. */
 private fun DrawScope.drawPajamas() {
-    val color = Color(0xFFB39DDB)
-    val dark = lerp(color, Color.Black, 0.18f)
-    for ((s, h) in listOf(ShoulderL to HandL, ShoulderR to HandR)) limb(s, mix(s, h, 0.88f), ArmW + 0.03f, color)
-    for ((hip, ankle) in listOf(HipL to AnkleL, HipR to AnkleR)) limb(hip, mix(hip, ankle, 0.95f), LegW + 0.03f, color)
-    drawRoundRect(color, Offset(u(0.35f), u(0.375f)), Size(u(0.3f), u(0.32f)), CornerRadius(u(0.09f)))
+    drawPajamaPants()
+    drawPajamaTop()
+}
+
+private val PajamaColor = Color(0xFFB39DDB)
+
+private fun DrawScope.drawPajamaPants() {
+    for ((hip, ankle) in listOf(HipL to AnkleL, HipR to AnkleR)) limb(hip, mix(hip, ankle, 0.95f), LegW + 0.03f, PajamaColor)
+    drawRoundRect(PajamaColor, Offset(u(0.35f), u(0.56f)), Size(u(0.3f), u(0.135f)), CornerRadius(u(0.06f)))
+    for ((x, y) in listOf(0.42f to 0.76f, 0.58f to 0.8f)) drawStar(p(Offset(x, y)), u(0.016f), Color(0xFFFFF59D))
+}
+
+private fun DrawScope.drawPajamaTop() {
+    val dark = lerp(PajamaColor, Color.Black, 0.18f)
+    for ((s, h) in listOf(ShoulderL to HandL, ShoulderR to HandR)) limb(s, mix(s, h, 0.88f), ArmW + 0.03f, PajamaColor)
+    drawRoundRect(PajamaColor, Offset(u(0.35f), u(0.375f)), Size(u(0.3f), u(0.27f)), CornerRadius(u(0.09f)))
     drawArc(dark, 0f, 180f, false, Offset(u(0.45f), u(0.36f)), Size(u(0.1f), u(0.05f)), style = Stroke(u(0.012f), cap = StrokeCap.Round))
     for (y in listOf(0.45f, 0.53f, 0.61f)) drawCircle(Color(0xFFFFF59D), u(0.012f), p(Offset(0.5f, y)))
-    for ((x, y) in listOf(0.41f to 0.5f, 0.59f to 0.57f, 0.42f to 0.76f, 0.58f to 0.8f)) drawStar(p(Offset(x, y)), u(0.016f), Color(0xFFFFF59D))
+    for ((x, y) in listOf(0.41f to 0.5f, 0.59f to 0.57f)) drawStar(p(Offset(x, y)), u(0.016f), Color(0xFFFFF59D))
+}
+
+/** A yellow raincoat down to her knees: long sleeves, big buttons, the hood resting behind her neck. */
+private fun DrawScope.drawRaincoat() {
+    val color = Color(0xFFFFCA28)
+    val dark = Color(0xFFF9A825)
+    for ((s, h) in listOf(ShoulderL to HandL, ShoulderR to HandR)) limb(s, mix(s, h, 0.88f), ArmW + 0.034f, color)
+    // It flares out towards the hem
+    val coat = Path().apply {
+        moveTo(u(0.42f), u(0.375f))
+        lineTo(u(0.58f), u(0.375f))
+        quadraticBezierTo(u(0.66f), u(0.385f), u(0.665f), u(0.47f))
+        lineTo(u(0.695f), u(0.71f))
+        quadraticBezierTo(u(0.7f), u(0.75f), u(0.66f), u(0.75f))
+        lineTo(u(0.34f), u(0.75f))
+        quadraticBezierTo(u(0.3f), u(0.75f), u(0.305f), u(0.71f))
+        lineTo(u(0.335f), u(0.47f))
+        quadraticBezierTo(u(0.34f), u(0.385f), u(0.42f), u(0.375f))
+        close()
+    }
+    drawPath(coat, color)
+    // The hem, the front and its buttons, and two pockets
+    drawLine(dark, Offset(u(0.32f), u(0.725f)), Offset(u(0.68f), u(0.725f)), u(0.014f), StrokeCap.Round)
+    drawLine(dark, Offset(u(0.5f), u(0.41f)), Offset(u(0.5f), u(0.74f)), u(0.012f), StrokeCap.Round)
+    for (y in listOf(0.46f, 0.54f, 0.62f)) {
+        drawCircle(Color(0xFF42A5F5), u(0.017f), p(Offset(0.53f, y)))
+        drawCircle(Color.White.copy(alpha = 0.5f), u(0.006f), p(Offset(0.525f, y - 0.005f)))
+    }
+    for (x in listOf(0.36f, 0.56f)) drawRoundRect(dark, Offset(u(x), u(0.635f)), Size(u(0.08f), u(0.012f)), CornerRadius(u(0.006f)))
+    // The hood, down, like a soft collar
+    drawArc(dark, 0f, 180f, false, Offset(u(0.415f), u(0.325f)), Size(u(0.17f), u(0.095f)), style = Stroke(u(0.03f), cap = StrokeCap.Round))
+    // A shine
+    drawLine(Color.White.copy(alpha = 0.45f), Offset(u(0.365f), u(0.47f)), Offset(u(0.35f), u(0.6f)), u(0.012f), StrokeCap.Round)
 }
 
 private fun DrawScope.drawShirt() {
@@ -202,6 +254,19 @@ private fun DrawScope.drawPants() {
     }
     drawRoundRect(color, Offset(u(0.37f), u(0.58f)), Size(u(0.26f), u(0.11f)), CornerRadius(u(0.04f)))
     drawRoundRect(Color(0xFF1565C0), Offset(u(0.365f), u(0.578f)), Size(u(0.27f), u(0.028f)), CornerRadius(u(0.014f)))
+    drawCircle(Color(0xFFFFCA28), u(0.011f), p(Offset(0.5f, 0.592f)))
+}
+
+private fun DrawScope.drawShorts() {
+    val color = Color(0xFFFF8A65)
+    val light = Color(0xFFFFCCBC)
+    for ((hip, ankle) in listOf(HipL to AnkleL, HipR to AnkleR)) {
+        val cuff = mix(hip, ankle, 0.42f)
+        limb(hip, cuff, LegW + 0.03f, color)
+        drawLine(light, p(cuff) - Offset(u(0.052f), 0f), p(cuff) + Offset(u(0.052f), 0f), u(0.016f), StrokeCap.Round)
+    }
+    drawRoundRect(color, Offset(u(0.365f), u(0.58f)), Size(u(0.27f), u(0.11f)), CornerRadius(u(0.04f)))
+    drawRoundRect(Color(0xFFF4511E), Offset(u(0.365f), u(0.578f)), Size(u(0.27f), u(0.028f)), CornerRadius(u(0.014f)))
     drawCircle(Color(0xFFFFCA28), u(0.011f), p(Offset(0.5f, 0.592f)))
 }
 
@@ -236,6 +301,51 @@ private fun DrawScope.drawShoes() {
             drawLine(Color.White, Offset(lx, a.y - u(0.008f)), Offset(lx + w * 0.1f, a.y + u(0.012f)), u(0.008f), StrokeCap.Round)
         }
     }
+}
+
+private fun DrawScope.drawBoots() {
+    val color = Color(0xFF66BB6A)
+    val dark = Color(0xFF388E3C)
+    for ((ankle, dir) in listOf(AnkleL to -1f, AnkleR to 1f)) {
+        val a = p(ankle)
+        val left = a.x + u(-0.068f + dir * 0.014f)
+        val w = u(0.136f)
+        // Green rain boots: a tall leg, a round toe, a dark sole
+        drawRoundRect(color, a + Offset(u(-0.056f), u(-0.085f)), Size(u(0.112f), u(0.125f)), CornerRadius(u(0.02f)))
+        drawOval(color, Offset(left, a.y - u(0.012f)), Size(w, u(0.066f)))
+        drawRoundRect(dark, Offset(left - u(0.004f), a.y + u(0.04f)), Size(w + u(0.008f), u(0.022f)), CornerRadius(u(0.011f)))
+        drawRoundRect(Color(0xFFA5D6A7), a + Offset(u(-0.06f), u(-0.095f)), Size(u(0.12f), u(0.024f)), CornerRadius(u(0.012f)))
+        drawLine(Color.White.copy(alpha = 0.45f), a + Offset(u(-0.034f), u(-0.06f)), a + Offset(u(-0.034f), u(-0.012f)), u(0.01f), StrokeCap.Round)
+    }
+}
+
+private fun DrawScope.drawSlippers() {
+    for ((ankle, dir) in listOf(AnkleL to -1f, AnkleR to 1f)) {
+        val a = p(ankle)
+        val left = a.x + u(-0.068f + dir * 0.014f)
+        val w = u(0.136f)
+        // Soft pink slippers with a white pompom
+        drawOval(Color(0xFFF48FB1), Offset(left, a.y - u(0.012f)), Size(w, u(0.07f)))
+        drawRoundRect(Color(0xFFEC407A), Offset(left, a.y + u(0.04f)), Size(w, u(0.018f)), CornerRadius(u(0.009f)))
+        drawCircle(Color.White, u(0.024f), Offset(left + w * 0.5f, a.y + u(0.008f)))
+        drawCircle(Color(0xFFFCE4EC), u(0.01f), Offset(left + w * 0.5f - u(0.006f), a.y + u(0.003f)))
+    }
+}
+
+/** A straw sun hat with a wide brim and a red ribbon, on top of her hair. */
+private fun DrawScope.drawSunHat() {
+    val straw = Color(0xFFFFE082)
+    val dark = Color(0xFFFFCA28)
+    drawOval(straw, Offset(u(0.285f), u(0.125f)), Size(u(0.43f), u(0.075f)))
+    drawArc(dark, 20f, 140f, false, Offset(u(0.3f), u(0.125f)), Size(u(0.4f), u(0.07f)), style = Stroke(u(0.008f), cap = StrokeCap.Round))
+    val crown = Path().apply {
+        moveTo(u(0.385f), u(0.16f))
+        cubicTo(u(0.385f), u(0.005f), u(0.615f), u(0.005f), u(0.615f), u(0.16f))
+        close()
+    }
+    drawPath(crown, straw)
+    drawRoundRect(Color(0xFFEF5350), Offset(u(0.383f), u(0.125f)), Size(u(0.234f), u(0.036f)), CornerRadius(u(0.012f)))
+    drawArc(Color.White.copy(alpha = 0.5f), 200f, 60f, false, Offset(u(0.41f), u(0.06f)), Size(u(0.13f), u(0.09f)), style = Stroke(u(0.01f), cap = StrokeCap.Round))
 }
 
 private fun DrawScope.drawStar(c: Offset, r: Float, color: Color) {

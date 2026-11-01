@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Boot -->
+    <path android:fillColor="#66BB6A"
+        android:pathData="M24,10 L60,10 L60,50 L80,58 Q94,63 94,76 L94,84 L24,84 Z"/>
+    <!-- Toe cap -->
+    <path android:fillColor="#43A047"
+        android:pathData="M74,56 L80,58 Q94,63 94,76 L94,84 L70,84 Q78,70 74,56 Z"/>
+    <!-- Cuff -->
+    <path android:fillColor="#A5D6A7"
+        android:pathData="M24,6 L60,6 A4,4 0 0,1 64,10 L64,14 A4,4 0 0,1 60,18 L24,18 A4,4 0 0,1 20,14 L20,10 A4,4 0 0,1 24,6 Z"/>
+    <!-- Sole -->
+    <path android:fillColor="#2E7D32"
+        android:pathData="M24,78 L90,78 A6,6 0 0,1 96,84 L96,84 A6,6 0 0,1 90,90 L24,90 A6,6 0 0,1 18,84 L18,84 A6,6 0 0,1 24,78 Z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M32,26 L32,62"/>
+</vector>

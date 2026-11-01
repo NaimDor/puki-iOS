@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Raincoat -->
+    <path android:fillColor="#FFCA28"
+        android:pathData="M36,14 Q50,24 64,14 L84,22 L94,66 L80,70 L72,44 L78,90 L22,90 L28,44 L20,70 L6,66 L16,22 Z"/>
+    <!-- Cuffs -->
+    <path android:fillColor="#F9A825"
+        android:pathData="M6,66 L20,70 L21.5,65 L7.5,61 Z"/>
+    <path android:fillColor="#F9A825"
+        android:pathData="M94,66 L80,70 L78.5,65 L92.5,61 Z"/>
+    <!-- Hood -->
+    <path android:fillColor="#F9A825"
+        android:pathData="M32,14 Q50,0 68,14 Q50,32 32,14 Z"/>
+    <path android:fillColor="#FFE082"
+        android:pathData="M39,14 Q50,6 61,14 Q50,24 39,14 Z"/>
+    <!-- Front and buttons -->
+    <path android:strokeColor="#F9A825" android:strokeWidth="2.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M50,26 L50,90"/>
+    <path android:fillColor="#42A5F5"
+        android:pathData="M53.5,38 A3.5,3.5 0 1,1 60.5,38 A3.5,3.5 0 1,1 53.5,38 Z"/>
+    <path android:fillColor="#42A5F5"
+        android:pathData="M53.5,54 A3.5,3.5 0 1,1 60.5,54 A3.5,3.5 0 1,1 53.5,54 Z"/>
+    <path android:fillColor="#42A5F5"
+        android:pathData="M53.5,70 A3.5,3.5 0 1,1 60.5,70 A3.5,3.5 0 1,1 53.5,70 Z"/>
+    <!-- Pockets -->
+    <path android:strokeColor="#F9A825" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M28,74 L42,74"/>
+    <path android:strokeColor="#F9A825" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M60,74 L72,74"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M31,30 Q29,26 24,26"/>
+</vector>

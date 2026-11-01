@@ -5,6 +5,7 @@ import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.idleBob
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.geometry.Size
@@ -49,6 +50,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.LinearEasing
 import io.github.tomsadeh.puki.ui.myday.PukiCorner
+import io.github.tomsadeh.puki.ui.components.rememberCompact
 import io.github.tomsadeh.puki.ui.components.rememberHelp
 import io.github.tomsadeh.puki.ui.components.reaction
 import io.github.tomsadeh.puki.ui.components.noticeTouches
@@ -82,18 +84,34 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class PlaceSetting(val id: String, val name: BilingualText, @DrawableRes val icon: Int, val placed: Boolean = false)
 
-data class TableState(
-    val items: List<PlaceSetting> = listOf(
-        PlaceSetting("plate", BilingualText("צלחת", "Plate"), R.drawable.ic_table_plate),
-        PlaceSetting("cup", BilingualText("כוס", "Cup"), R.drawable.ic_table_cup),
-        PlaceSetting("fork", BilingualText("מזלג", "Fork"), R.drawable.ic_table_fork),
-        PlaceSetting("spoon", BilingualText("כפית", "Spoon"), R.drawable.ic_table_spoon)
-    ),
-    val isComplete: Boolean = false
+/** Who's coming to eat today. */
+enum class Guest(@DrawableRes val icon: Int) {
+    TEDDY(R.drawable.ic_tidy_teddy),
+    PUKI(R.drawable.ic_companion_parrot),
+    CAT(R.drawable.ic_animal_cat),
+    RABBIT(R.drawable.ic_animal_rabbit),
+}
+
+/** What to lay: sometimes a bowl instead of the plate. */
+private fun todaysSetting() = listOf(
+    if (Random.nextInt(3) == 0) PlaceSetting("bowl", BilingualText("קערה", "Bowl"), R.drawable.ic_table_bowl)
+    else PlaceSetting("plate", BilingualText("צלחת", "Plate"), R.drawable.ic_table_plate),
+    PlaceSetting("cup", BilingualText("כוס", "Cup"), R.drawable.ic_table_cup),
+    PlaceSetting("fork", BilingualText("מזלג", "Fork"), R.drawable.ic_table_fork),
+    PlaceSetting("spoon", BilingualText("כפית", "Spoon"), R.drawable.ic_table_spoon)
 )
+
+data class TableState(
+    val items: List<PlaceSetting> = todaysSetting(),
+    val guest: Guest = Guest.entries.random(),
+    val isComplete: Boolean = false
+) {
+    val hasBowl get() = items.any { it.id == "bowl" }
+}
 
 class TableTimeViewModel(application: Application) : AndroidViewModel(application) {
     val session = GameSession("table", (application as PukiApplication).progressRepository, viewModelScope)
@@ -122,7 +140,12 @@ fun TableTimeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    RoundPrompt(0, "בעריכת השולחן: שמים צלחת, כוס, מזלג וכף.", "Setting the table: plate, cup, fork and spoon.", "voice_prompt_set_table")
+    when (state.guest) {
+        Guest.TEDDY -> RoundPrompt(0, "בעריכת השולחן: עורכים את השולחן לדובי, הוא כבר יושב ומחכה.", "Setting the table for Teddy, who's sitting there waiting.", "voice_prompt_table_teddy")
+        Guest.PUKI -> RoundPrompt(0, "בעריכת השולחן: עורכים את השולחן בשבילך, אתה כבר יושב ומחכה.", "Setting the table for you: you're sitting there waiting.", "voice_prompt_table_puki")
+        Guest.CAT -> RoundPrompt(0, "בעריכת השולחן: עורכים את השולחן לחתול, הוא כבר יושב ומחכה.", "Setting the table for the cat, who's sitting there waiting.", "voice_prompt_table_cat")
+        Guest.RABBIT -> RoundPrompt(0, "בעריכת השולחן: עורכים את השולחן לארנב, הוא כבר יושב ומחכה.", "Setting the table for the rabbit, who's sitting there waiting.", "voice_prompt_table_rabbit")
+    }
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
     val sfxPlayer = LocalSfxPlayer.current
@@ -131,15 +154,18 @@ fun TableTimeScreen(
     val done = state.items.count { it.placed }
     val next = state.items.firstOrNull { !it.placed }
     val itemReactions = remember { state.items.associate { it.id to ReactionState() } }
+    val guestReaction = remember { ReactionState() }
     var showCard by remember { mutableStateOf(false) }
     val help = rememberHelp(done, active = !state.isComplete) { voicePlayer.play("voice_prompt_set_table", language) }
 
-    // All set: dinner's served, and then the end card
+    // All set: dinner's served, the guest hops for joy, and then the end card
     LaunchedEffect(state.isComplete) {
         if (!state.isComplete) return@LaunchedEffect
         voicePlayer.play("voice_table_done", language) {
-            companion?.react("ערכו את כל השולחן: צלחת, כוס, מזלג וכף!", "The child set the whole table: plate, cup, fork and spoon!")
+            if (state.hasBowl) companion?.react("ערכו את כל השולחן: קערה, כוס, מזלג וכף!", "The child set the whole table: bowl, cup, fork and spoon!")
+            else companion?.react("ערכו את כל השולחן: צלחת, כוס, מזלג וכף!", "The child set the whole table: plate, cup, fork and spoon!")
         }
+        launch { guestReaction.celebrate() }
         delay(3400)
         showCard = true
     }
@@ -163,6 +189,8 @@ fun TableTimeScreen(
                 ) {
                     TableScene(
                         items = state.items,
+                        guest = state.guest,
+                        guestReaction = guestReaction,
                         served = state.isComplete,
                         hintId = if (help.showHint) next?.id else null,
                         modifier = Modifier.weight(1f).fillMaxHeight()
@@ -223,6 +251,7 @@ private data class Place(val id: String, val x: Float, val y: Float, val w: Floa
 
 private val PLACES = listOf(
     Place("plate", 0.50f, 0.56f, 0.34f, 0.34f),
+    Place("bowl", 0.50f, 0.56f, 0.34f, 0.34f),
     Place("fork", 0.24f, 0.56f, 0.13f, 0.34f),
     Place("spoon", 0.76f, 0.56f, 0.13f, 0.34f),
     Place("cup", 0.74f, 0.20f, 0.16f, 0.16f),
@@ -233,11 +262,25 @@ private val BASKET_SPOTS = listOf(Triple(40f, 70f, -12f), Triple(150f, 40f, 10f)
 
 /** A wooden table seen from above, with a placemat and a faint outline where each thing goes. */
 @Composable
-private fun TableScene(items: List<PlaceSetting>, served: Boolean, hintId: String?, modifier: Modifier = Modifier) {
+private fun TableScene(items: List<PlaceSetting>, guest: Guest, guestReaction: ReactionState, served: Boolean, hintId: String?, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
-        val w = minOf(maxWidth, maxHeight * 1.35f)
+        // Room above the table for the guest's head; on a short screen the table gives up less
+        val above = maxHeight * (if (rememberCompact()) 0.17f else 0.2f)
+        val w = minOf(maxWidth, (maxHeight - above) * 1.35f)
         val h = w / 1.35f
-        Box(modifier = Modifier.size(w, h)) {
+        val guestSize = above / 0.6f  // the head is the top part of the picture
+        // The guest sits on the far side, so the table hides the rest of them
+        Image(
+            painter = painterResource(guest.icon),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .absoluteOffset(y = (h + above) / -2 + guestSize / 2)
+                .reaction(guestReaction, jumpHeight = 14.dp)
+                .idleBob(5, 0.5f)
+                .size(guestSize)
+        )
+        Box(modifier = Modifier.align(Alignment.Center).absoluteOffset(y = above / 2).size(w, h)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 // Table top with wood grain
                 drawRoundRect(Color(0xFFB07A45), cornerRadius = CornerRadius(size.height * 0.08f))
@@ -268,7 +311,8 @@ private fun TableScene(items: List<PlaceSetting>, served: Boolean, hintId: Strin
                         if (item.placed) {
                             Image(painter = painterResource(item.icon), contentDescription = null,
                                 modifier = Modifier.popIn().fillMaxSize(0.95f))
-                            if (served && place.id == "plate") Dinner(Modifier.popIn().fillMaxSize())
+                            if (served && place.id == "plate") Dinner(Modifier.popIn().fillMaxSize(), inBowl = false)
+                            if (served && place.id == "bowl") Dinner(Modifier.popIn().fillMaxSize(), inBowl = true)
                         } else {
                             // A faint outline of what goes here
                             Image(painter = painterResource(item.icon), contentDescription = null,
@@ -282,23 +326,25 @@ private fun TableScene(items: List<PlaceSetting>, served: Boolean, hintId: Strin
     }
 }
 
-/** Dinner on the plate, with steam going up. */
+/** Dinner on the plate, or lying flat inside the bowl, with steam going up. */
 @Composable
-private fun Dinner(modifier: Modifier) {
+private fun Dinner(modifier: Modifier, inBowl: Boolean) {
     val rise by rememberInfiniteTransition(label = "steam").animateFloat(
         0f, 1f, infiniteRepeatable(tween(1800, easing = LinearEasing)), label = "steam_rise"
     )
     Canvas(modifier = modifier) {
-        val c = Offset(size.width / 2, size.height / 2)
-        val r = size.minDimension * 0.27f
+        val c = Offset(size.width / 2, size.height * (if (inBowl) 0.44f else 0.5f))
+        val r = size.minDimension * (if (inBowl) 0.32f else 0.27f)
         // Noodles in a heap, with peas and a slice of carrot
-        drawCircle(Color(0xFFFFD54F), r, c)
-        for (k in 0 until 5) {
-            drawArc(Color(0xFFFFB300), 20f + k * 70f, 170f, false, c - Offset(r * (0.8f - k * 0.1f), r * (0.8f - k * 0.1f)),
-                Size(r * (1.6f - k * 0.2f), r * (1.6f - k * 0.2f)), style = Stroke(r * 0.08f, cap = StrokeCap.Round))
+        scale(1f, if (inBowl) 0.36f else 1f, pivot = c) {
+            drawCircle(Color(0xFFFFD54F), r, c)
+            for (k in 0 until 5) {
+                drawArc(Color(0xFFFFB300), 20f + k * 70f, 170f, false, c - Offset(r * (0.8f - k * 0.1f), r * (0.8f - k * 0.1f)),
+                    Size(r * (1.6f - k * 0.2f), r * (1.6f - k * 0.2f)), style = Stroke(r * 0.08f, cap = StrokeCap.Round))
+            }
+            for ((dx, dy) in listOf(-0.4f to -0.2f, 0.3f to -0.45f, 0.45f to 0.25f, -0.15f to 0.5f)) drawCircle(Color(0xFF66BB6A), r * 0.13f, c + Offset(r * dx, r * dy))
+            drawCircle(Color(0xFFFF7043), r * 0.2f, c + Offset(r * 0.05f, r * 0.02f))
         }
-        for ((dx, dy) in listOf(-0.4f to -0.2f, 0.3f to -0.45f, 0.45f to 0.25f, -0.15f to 0.5f)) drawCircle(Color(0xFF66BB6A), r * 0.13f, c + Offset(r * dx, r * dy))
-        drawCircle(Color(0xFFFF7043), r * 0.2f, c + Offset(r * 0.05f, r * 0.02f))
         for (k in 0..2) {
             val t = (rise + k / 3f) % 1f
             val x = c.x + (k - 1) * r * 0.7f

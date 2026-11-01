@@ -63,17 +63,30 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class TidyItem(val id: String, val name: BilingualText, @DrawableRes val icon: Int, val homeId: String, val tidied: Boolean = false)
 data class TidyHome(val id: String, val name: BilingualText, @DrawableRes val icon: Int)
 
+/** Everything that can end up on the floor, each with its home in the room. */
+private val ALL_TOYS = listOf(
+    TidyItem("teddy", BilingualText("דובי", "Teddy"), R.drawable.ic_tidy_teddy, "shelf"),
+    TidyItem("bunny", BilingualText("ארנב", "Bunny"), R.drawable.ic_tidy_bunny, "shelf"),
+    TidyItem("book", BilingualText("ספר", "Book"), R.drawable.ic_tidy_book, "bookcase"),
+    TidyItem("storybook", BilingualText("ספר סיפורים", "Story book"), R.drawable.ic_tidy_storybook, "bookcase"),
+    TidyItem("shirt", BilingualText("חולצה", "Shirt"), R.drawable.ic_clothing_shirt, "hamper"),
+    TidyItem("socks", BilingualText("גרביים", "Socks"), R.drawable.ic_clothing_socks, "hamper"),
+    TidyItem("pants", BilingualText("מכנסיים", "Pants"), R.drawable.ic_clothing_pants, "hamper"),
+    TidyItem("ball", BilingualText("כדור", "Ball"), R.drawable.ic_tidy_ball, "toybox"),
+    TidyItem("car", BilingualText("מכונית", "Car"), R.drawable.ic_tidy_car, "toybox"),
+    TidyItem("blocks", BilingualText("קוביות", "Blocks"), R.drawable.ic_tidy_blocks, "toybox"),
+)
+
+/** Today's mess: 3 or 4 toys, each with a home of its own, so each home shows what came back to it. */
+private fun todaysToys() = ALL_TOYS.groupBy { it.homeId }.values.shuffled().take(Random.nextInt(3, 5)).map { it.random() }
+
 data class TidyState(
-    val items: List<TidyItem> = listOf(
-        TidyItem("teddy", BilingualText("דובי", "Teddy"), R.drawable.ic_tidy_teddy, "shelf"),
-        TidyItem("book", BilingualText("ספר", "Book"), R.drawable.ic_tidy_book, "bookcase"),
-        TidyItem("shirt", BilingualText("חולצה", "Shirt"), R.drawable.ic_clothing_shirt, "hamper"),
-        TidyItem("ball", BilingualText("כדור", "Ball"), R.drawable.ic_tidy_ball, "toybox")
-    ),
+    val items: List<TidyItem> = todaysToys(),
     val homes: List<TidyHome> = listOf(
         TidyHome("shelf", BilingualText("מדף", "Shelf"), R.drawable.ic_tidy_shelf),
         TidyHome("bookcase", BilingualText("ארון ספרים", "Bookcase"), R.drawable.ic_tidy_bookcase),
@@ -124,6 +137,7 @@ fun TidyUpScreen(
     val itemReactions = remember { state.items.associate { it.id to ReactionState() } }
     var showCard by remember { mutableStateOf(false) }
     val help = rememberHelp(done, active = !state.isComplete) { voicePlayer.play("voice_prompt_tidy_up", language) }
+    val floorSpots = remember { FLOOR_SPOTS.shuffled() }  // the toys lie somewhere else every time
 
     // All put away: every home hops, and then the end card
     LaunchedEffect(state.isComplete) {
@@ -183,7 +197,7 @@ fun TidyUpScreen(
                     }
                     state.items.forEachIndexed { i, item ->
                         if (!item.tidied) {
-                            val spot = FLOOR_SPOTS[i]
+                            val spot = floorSpots[i]
                             DragTarget(
                                 itemId = item.id,
                                 modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(w * spot.first, h * spot.second),
@@ -195,7 +209,7 @@ fun TidyUpScreen(
                                             sfxPlayer.play(Sfx.DROP)
                                             voicePlayer.play("voice_tidy_${item.id}", language)
                                             scope.launch { homeReactions[item.homeId]?.celebrate() }
-                                            if (done + 1 == 2) companion?.react("בסידור החדר: חצי מהצעצועים כבר במקום.", "Tidying up: half the toys are back in their places.")
+                                            if (done + 1 == 2 && state.items.size == 4) companion?.react("בסידור החדר: חצי מהצעצועים כבר במקום.", "Tidying up: half the toys are back in their places.")
                                         } else {
                                             sfxPlayer.play(Sfx.WRONG_GENTLE)
                                             voicePlayer.playSequence(listOf("voice_tidy_${item.id}", "voice_prompt_try_again"), language)
@@ -242,10 +256,10 @@ private val HOME_SPOTS = mapOf(
     "hamper" to HomeSpot(0.79f, 0.36f, 0.17f, 0.42f, 0.22f, 0.30f, 0.55f),
 )
 
-/** Where each toy lies on the floor (fractions of the play area) and how it's tilted. */
+/** Where a toy can lie on the floor (fractions of the play area) and how it's tilted. */
 private val FLOOR_SPOTS = listOf(
-    Triple(0.29f, 0.66f, -14f),  // teddy
-    Triple(0.66f, 0.74f, 22f),   // book, by the toy box (not its home)
-    Triple(0.46f, 0.72f, 9f),    // shirt
-    Triple(0.16f, 0.72f, 0f),    // ball, in front of the bookcase (and clear of Puki's corners)
+    Triple(0.29f, 0.66f, -14f),
+    Triple(0.66f, 0.74f, 22f),   // by the toy box
+    Triple(0.46f, 0.72f, 9f),
+    Triple(0.16f, 0.72f, 0f),    // in front of the bookcase (and clear of Puki's corners)
 )

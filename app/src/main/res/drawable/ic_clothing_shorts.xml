@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Shorts -->
+    <path android:fillColor="#FF8A65"
+        android:pathData="M26,20 L74,20 L84,70 L56,74 L50,46 L44,74 L16,70 Z"/>
+    <!-- Waistband -->
+    <path android:fillColor="#F4511E"
+        android:pathData="M28,14 L72,14 A3,3 0 0,1 75,17 L75,23 A3,3 0 0,1 72,26 L28,26 A3,3 0 0,1 25,23 L25,17 A3,3 0 0,1 28,14 Z"/>
+    <path android:strokeColor="#F4511E" android:strokeWidth="2.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M50,26 L50,46"/>
+    <!-- Cuffs -->
+    <path android:strokeColor="#FFCCBC" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M18,64 L44,68"/>
+    <path android:strokeColor="#FFCCBC" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M56,68 L82,64"/>
+    <path android:fillColor="#FFD54F"
+        android:pathData="M47.6,20 A2.4,2.4 0 1,1 52.4,20 A2.4,2.4 0 1,1 47.6,20 Z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M31,32 L24,58"/>
+</vector>

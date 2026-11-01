@@ -80,7 +80,7 @@ import kotlin.random.Random
 
 private enum class BrushStep { PASTE, SCRUB, RINSE }
 
-/** Teddy's teeth, as fractions of his face's (square) box: five on top, five below. */
+/** The teeth, as fractions of the face's (square) box: five on top, five below. The same in every mouth. */
 private val teeth = List(10) { i ->
     Offset(0.304f + (i % 5) * 0.098f, if (i < 5) 0.595f else 0.805f)
 }
@@ -97,7 +97,7 @@ class BrushyBrushyViewModel(application: Application) : AndroidViewModel(applica
     val session = GameSession("brush", (application as PukiApplication).progressRepository, viewModelScope)
 }
 
-/** Brushing Teddy's teeth: toothpaste on the brush, scrub every tooth, a sip of water, a big smile. */
+/** Brushing Teddy's, a lion's or a crocodile's teeth: toothpaste on the brush, scrub every tooth, a sip of water, a big smile. */
 @Composable
 fun BrushyBrushyScreen(
     onBack: () -> Unit,
@@ -114,6 +114,7 @@ fun BrushyBrushyScreen(
     if (level == 0) return
 
     val game = rememberStepGame(BrushStep.PASTE, BrushStep.entries.size, viewModel.session)
+    val patient = remember { Patient.entries.random() }
     val step = game.step
     val celebrate = game.celebrate
     val dirt = remember { mutableStateListOf(*Array(teeth.size) { if (dirtyTooth(it, level)) 1f else 0f }) }  // 1: dirty, 0: clean
@@ -157,15 +158,31 @@ fun BrushyBrushyScreen(
             when (step) {
                 BrushStep.PASTE -> "voice_teeth_paste"
                 BrushStep.SCRUB -> "voice_teeth_scrub"
-                BrushStep.RINSE -> "voice_teeth_rinse"
+                BrushStep.RINSE -> when (patient) {
+                    Patient.TEDDY -> "voice_teeth_rinse"
+                    Patient.LION -> "voice_teeth_rinse_lion"
+                    Patient.CROCODILE -> "voice_teeth_rinse_croc"
+                }
             },
             language
         )
     }
-    when (step) {
-        BrushStep.PASTE -> RoundPrompt(0, "בצחצוח שיניים: מצחצחים לדובי את השיניים. קודם שמים משחה על המברשת.", "Brushing teeth: brushing Teddy's teeth. First, toothpaste on the brush.", "voice_teeth_intro")
-        BrushStep.SCRUB -> RoundPrompt(1, "בצחצוח שיניים: מצחצחים כל שן של דובי עד שהיא מבריקה.", "Brushing teeth: brushing each of Teddy's teeth until it sparkles.", "voice_teeth_scrub")
-        BrushStep.RINSE -> RoundPrompt(2, "בצחצוח שיניים: נותנים לדובי מים לשטוף את הפה.", "Brushing teeth: giving Teddy water to rinse his mouth.", "voice_teeth_rinse")
+    when (patient) {
+        Patient.TEDDY -> when (step) {
+            BrushStep.PASTE -> RoundPrompt(0, "בצחצוח שיניים: מצחצחים לדובי את השיניים. קודם שמים משחה על המברשת.", "Brushing teeth: brushing Teddy's teeth. First, toothpaste on the brush.", "voice_teeth_intro")
+            BrushStep.SCRUB -> RoundPrompt(1, "בצחצוח שיניים: מצחצחים כל שן של דובי עד שהיא מבריקה.", "Brushing teeth: brushing each of Teddy's teeth until it sparkles.", "voice_teeth_scrub")
+            BrushStep.RINSE -> RoundPrompt(2, "בצחצוח שיניים: נותנים לדובי מים לשטוף את הפה.", "Brushing teeth: giving Teddy water to rinse his mouth.", "voice_teeth_rinse")
+        }
+        Patient.LION -> when (step) {
+            BrushStep.PASTE -> RoundPrompt(0, "בצחצוח שיניים: מצחצחים לאריה את השיניים. קודם שמים משחה על המברשת.", "Brushing teeth: brushing the lion's teeth. First, toothpaste on the brush.", "voice_teeth_intro_lion")
+            BrushStep.SCRUB -> RoundPrompt(1, "בצחצוח שיניים: מצחצחים כל שן של האריה עד שהיא מבריקה.", "Brushing teeth: brushing each of the lion's teeth until it sparkles.", "voice_teeth_scrub")
+            BrushStep.RINSE -> RoundPrompt(2, "בצחצוח שיניים: נותנים לאריה מים לשטוף את הפה.", "Brushing teeth: giving the lion water to rinse his mouth.", "voice_teeth_rinse_lion")
+        }
+        Patient.CROCODILE -> when (step) {
+            BrushStep.PASTE -> RoundPrompt(0, "בצחצוח שיניים: מצחצחים לתנין את השיניים. קודם שמים משחה על המברשת.", "Brushing teeth: brushing the crocodile's teeth. First, toothpaste on the brush.", "voice_teeth_intro_croc")
+            BrushStep.SCRUB -> RoundPrompt(1, "בצחצוח שיניים: מצחצחים כל שן של התנין עד שהיא מבריקה.", "Brushing teeth: brushing each of the crocodile's teeth until it sparkles.", "voice_teeth_scrub")
+            BrushStep.RINSE -> RoundPrompt(2, "בצחצוח שיניים: נותנים לתנין מים לשטוף את הפה.", "Brushing teeth: giving the crocodile water to rinse his mouth.", "voice_teeth_rinse_croc")
+        }
     }
 
     GameBackground {
@@ -176,7 +193,7 @@ fun BrushyBrushyScreen(
         ) {
             GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = BrushStep.entries.size, starsEarned = game.stars)
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                // Teddy as big as the screen allows (the teeth are the targets), the tool beside him
+                // The face as big as the screen allows (the teeth are the targets), the tool beside it
                 val faceW = minOf(maxHeight * 0.95f, maxWidth * 0.62f)
                 val idle = rememberInfiniteTransition(label = "teddy")
                 val blink by idle.animateFloat(0f, 1f, infiniteRepeatable(tween(3600, easing = LinearEasing)), label = "blink")
@@ -210,12 +227,13 @@ fun BrushyBrushyScreen(
                             }
                     ) {
                         val swishing = swish.value > 0f && swish.value < 1f
-                        drawTeddy(
-                            happy = brush != null || smile.value > 0f,
-                            eyesShut = eyesShut,
-                            puff = if (swishing) sin(swish.value * Math.PI).toFloat() else 0f,
-                            smile = smile.value
-                        )
+                        val happy = brush != null || smile.value > 0f
+                        val puff = if (swishing) sin(swish.value * Math.PI).toFloat() else 0f
+                        when (patient) {
+                            Patient.TEDDY -> drawTeddy(happy, eyesShut, puff, smile.value)
+                            Patient.LION -> drawLion(happy, eyesShut, puff, smile.value)
+                            Patient.CROCODILE -> drawCrocodile(happy, eyesShut, puff, smile.value)
+                        }
                         if (smile.value < 0.5f && !swishing) {
                             teeth.forEachIndexed { i, t -> drawTooth(t, dirt[i], i) }
                             foam.forEachIndexed { i, f -> drawFoam(f, i, foamLeft) }
@@ -255,7 +273,11 @@ fun BrushyBrushyScreen(
                                         foam.clear()
                                         smile.animateTo(1f, tween(700, easing = FastOutSlowInEasing))
                                         voicePlayer.play("voice_teeth_clean", language) {
-                                            companion?.react("בצחצוח שיניים: צחצחו לדובי את כל השיניים, הוא שטף את הפה ועכשיו הוא מחייך חיוך מבריק!", "Brushing teeth: the child brushed all of Teddy's teeth, he rinsed, and now he has a sparkly smile!") { }
+                                            when (patient) {
+                                                Patient.TEDDY -> companion?.react("בצחצוח שיניים: צחצחו לדובי את כל השיניים, הוא שטף את הפה ועכשיו הוא מחייך חיוך מבריק!", "Brushing teeth: the child brushed all of Teddy's teeth, he rinsed, and now he has a sparkly smile!") { }
+                                                Patient.LION -> companion?.react("בצחצוח שיניים: צחצחו לאריה את כל השיניים, הוא שטף את הפה ועכשיו הוא מחייך חיוך מבריק!", "Brushing teeth: the child brushed all of the lion's teeth, he rinsed, and now he has a sparkly smile!") { }
+                                                Patient.CROCODILE -> companion?.react("בצחצוח שיניים: צחצחו לתנין את כל השיניים, הוא שטף את הפה ועכשיו הוא מחייך חיוך מבריק!", "Brushing teeth: the child brushed all of the crocodile's teeth, he rinsed, and now he has a sparkly smile!") { }
+                                            }
                                         }
                                         game.done(null)
                                         delay(2200)
@@ -310,42 +332,14 @@ private fun DrawScope.drawTeddy(happy: Boolean, eyesShut: Boolean, puff: Float, 
     if (puff > 0f) for (cx in listOf(0.2f, 0.8f)) drawCircle(fur, w * (0.1f + 0.07f * puff), Offset(w * cx, w * 0.66f))
     drawOval(Color(0xFFD7CCC8), Offset(w * 0.17f, w * 0.42f), Size(w * 0.66f, w * 0.5f))
     for (cx in listOf(0.24f, 0.76f)) drawCircle(Color(0x55F48FB1), w * (0.04f + 0.02f * puff), Offset(w * cx, w * 0.48f))
-    // Eyes: round, shut for a blink, or happy arcs
-    for (ex in listOf(0.37f, 0.63f)) {
-        val c = Offset(w * ex, w * 0.36f)
-        if (happy || eyesShut) {
-            drawArc(Color(0xFF3E2723), if (happy) 200f else 20f, 140f, false, c - Offset(w * 0.04f, w * 0.03f), Size(w * 0.08f, w * 0.06f),
-                style = Stroke(w * 0.014f, cap = StrokeCap.Round))
-        } else {
-            drawCircle(Color(0xFF3E2723), w * 0.04f, c)
-            drawCircle(Color.White, w * 0.013f, c + Offset(-w * 0.012f, -w * 0.014f))
-        }
-    }
+    drawFaceEyes(happy, eyesShut, 0.36f, listOf(0.37f, 0.63f))
     // Nose
     drawOval(Color(0xFF4E342E), Offset(w * 0.445f, w * 0.43f), Size(w * 0.11f, w * 0.075f))
     drawCircle(Color.White.copy(alpha = 0.5f), w * 0.012f, Offset(w * 0.475f, w * 0.45f))
-    // Mouth
-    when {
-        puff > 0f -> drawLine(Color(0xFF6D4C41), Offset(w * 0.42f, w * 0.68f), Offset(w * 0.58f, w * 0.68f), w * 0.018f, StrokeCap.Round)
-        smile >= 0.5f -> {
-            val grin = Path().apply {
-                moveTo(w * 0.28f, w * 0.6f)
-                quadraticBezierTo(w * 0.5f, w * 0.86f, w * 0.72f, w * 0.6f)
-                quadraticBezierTo(w * 0.5f, w * 0.68f, w * 0.28f, w * 0.6f)
-                close()
-            }
-            drawPath(grin, Color(0xFF6D2B2B))
-            drawRoundRect(Color.White, Offset(w * 0.34f, w * 0.635f), Size(w * 0.32f, w * 0.045f), CornerRadius(w * 0.022f))
-        }
-        else -> {
-            val h = w * 0.34f * (1f - smile * 2f)
-            drawRoundRect(Color(0xFF6D2B2B), Offset(w * 0.24f, w * 0.7f - h / 2), Size(w * 0.52f, h), CornerRadius(w * 0.14f))
-            drawOval(Color(0xFFF06292), Offset(w * 0.36f, w * 0.7f + h * 0.02f), Size(w * 0.28f, h * 0.3f))
-        }
-    }
+    drawFaceMouth(puff, smile, Color(0xFF6D4C41))
 }
 
-/** One of Teddy's teeth, with [dirt] (0..1) of fuzz and a crumb on it; a glint once clean. */
+/** One tooth, with [dirt] (0..1) of fuzz and a crumb on it; a glint once clean. */
 private fun DrawScope.drawTooth(at: Offset, dirt: Float, seed: Int) {
     val w = size.width
     val c = Offset(at.x * w, at.y * w)
@@ -425,7 +419,7 @@ private fun DrawScope.drawCup() {
     drawLine(Color.White.copy(alpha = 0.7f), Offset(w * 0.3f, h * 0.4f), Offset(w * 0.36f, h * 0.75f), w * 0.06f, StrokeCap.Round)
 }
 
-/** Sparkles around Teddy's clean grin. */
+/** Sparkles around a clean grin. */
 private fun DrawScope.drawSparkles(phase: Float) {
     listOf(0.27f to 0.58f, 0.73f to 0.58f, 0.5f to 0.84f, 0.12f to 0.4f, 0.88f to 0.42f).forEachIndexed { i, (fx, fy) ->
         val t = ((phase + i * 0.2f) % 1f)

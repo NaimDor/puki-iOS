@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Bowl -->
+    <path android:fillColor="#EC407A"
+        android:pathData="M38,84 L62,84 L65,92 Q50,96 35,92 Z"/>
+    <path android:fillColor="#F06292"
+        android:pathData="M8,42 Q10,88 50,88 Q90,88 92,42 Z"/>
+    <!-- Inside, and the rim -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M8,42 A42,17 0 1,1 92,42 A42,17 0 1,1 8,42 Z"/>
+    <path android:fillColor="#FCE4EC"
+        android:pathData="M16,44 A34,12 0 1,1 84,44 A34,12 0 1,1 16,44 Z"/>
+    <path android:strokeColor="#EC407A" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M8,42 A42,17 0 1,1 92,42 A42,17 0 1,1 8,42 Z"/>
+    <!-- Dots -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M26.5,70 A3.5,3.5 0 1,1 33.5,70 A3.5,3.5 0 1,1 26.5,70 Z"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M46.5,76 A3.5,3.5 0 1,1 53.5,76 A3.5,3.5 0 1,1 46.5,76 Z"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M66.5,70 A3.5,3.5 0 1,1 73.5,70 A3.5,3.5 0 1,1 66.5,70 Z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M17,62 Q20,68 25,73"/>
+</vector>
