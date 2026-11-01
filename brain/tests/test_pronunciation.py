@@ -53,3 +53,9 @@ def test_phonemes_must_be_the_line_itself():
     assert not pronunciation.say_matches("פוקי שמח היום", "pˈuki sakˈin hajˈom")  # one word swapped
     assert not pronunciation.say_matches("הוא שמח", "sakˈin samˈeaχ")  # a short word accepts nothing else
     assert not pronunciation.say_matches("פוקי שמח", "pˈuki")  # a word left out
+
+
+def test_a_letter_can_be_said_by_its_name_and_nothing_else():
+    assert pronunciation.say_matches("סוס מתחיל בס!", "sˈus matχˈil besˈameχ!")
+    assert pronunciation.say_matches("האות ק", "haʔˈot kˈuf")
+    assert not pronunciation.say_matches("האות ק", "haʔˈot sakˈin")

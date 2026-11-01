@@ -98,6 +98,12 @@ LETTER_SOUNDS = {
     "צ": ("ts", "tʃ"), "ץ": ("ts", "tʃ"), "ק": ("k",), "ר": ("ʁ",), "ש": ("ʃ", "s"), "ת": ("t",),
 }
 
+LETTER_NAMES = {
+    "א": ("ʔˈalef",), "ב": ("bˈet",), "ג": ("ɡˈimel",), "ד": ("dˈalet",), "ה": ("hˈe",), "ו": ("vˈav",), "ז": ("zˈajin",),
+    "ח": ("χˈet",), "ט": ("tˈet",), "י": ("jˈud",), "כ": ("kˈaf",), "ל": ("lˈamed",), "מ": ("mˈem",), "נ": ("nˈun",),
+    "ס": ("sˈameχ",), "ע": ("ʔˈajin",), "פ": ("pˈe",), "צ": ("tsˈadi",), "ק": ("kˈuf",), "ר": ("ʁˈeʃ",), "ש": ("ʃˈin",),
+    "ת": ("tˈav", "tˈaf"),
+}
 CONSONANTS = "bvɡdzʒχtklmnspfʃʁ"
 FREE_SOUNDS = "v"  # (ו says v without being in the table above)
 PUNCTUATION = ".,!?\"'"
@@ -123,6 +129,13 @@ def word_matches(word, ipa):
     return all(c in allowed for c in ipa if c in CONSONANTS)
 
 
+def says_letter(word, ipa):
+    """True if [word] is a lone letter, or one with ב in front (בס), and [ipa] is exactly its name."""
+    letter = word[-1] if len(word) == 1 or (len(word) == 2 and word[0] == "ב") else ""
+    names = LETTER_NAMES.get(letter, ())
+    return ipa in names or (len(word) == 2 and any(ipa == "be" + n for n in names))
+
+
 def say_matches(line, say):
     """True if the phonemes [say] are really [line], so what the filters read is what she hears:
     the same number of words, each with the right consonants. Every word, since one swapped word
@@ -132,7 +145,8 @@ def say_matches(line, say):
         return False
     def fine(word, ipa):
         # (a word in Puki's own table can say what its letters don't: א is ʔˈalef)
-        return ipa.strip(PUNCTUATION) in (lookup(word, True), lookup(word, False)) or word_matches(word, ipa)
+        core = ipa.strip(PUNCTUATION)
+        return core in (lookup(word, True), lookup(word, False)) or says_letter(word, core) or word_matches(word, ipa)
 
     return all(fine(HEBREW_WORD.search(w).group(0), p)
                for w, p in zip(words, parts) if "@" not in w and HEBREW_WORD.search(w))
