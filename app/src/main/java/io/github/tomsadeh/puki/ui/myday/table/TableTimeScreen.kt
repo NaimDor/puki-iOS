@@ -119,8 +119,7 @@ fun TableTimeScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         GameBackground(
-            scene = Scene.HOME,
-            colors = listOf(Color(0xFFC8E6C9), Color(0xFFA5D6A7), Color(0xFF81C784))
+            scene = Scene.HOME
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),

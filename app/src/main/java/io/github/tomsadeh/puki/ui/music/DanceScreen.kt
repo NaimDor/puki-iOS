@@ -155,7 +155,7 @@ fun DanceScreen(
         sessionComplete = true
     }
 
-    GameBackground(scene = Scene.STAGE, colors = listOf(Color(0xFF4A148C), Color(0xFF7B1FA2)), withBubbles = false) {
+    GameBackground(scene = Scene.STAGE) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             GameTopBar(onBack = onBack, roundIndex = stops.coerceAtMost(STOPS - 1), totalRounds = STOPS, starsEarned = if (sessionComplete) 1 else 0)
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {

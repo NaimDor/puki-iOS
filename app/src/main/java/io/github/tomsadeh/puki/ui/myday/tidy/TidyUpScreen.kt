@@ -115,8 +115,7 @@ fun TidyUpScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         GameBackground(
-            scene = Scene.HOME,
-            colors = listOf(Color(0xFFFFE0B2), Color(0xFFFFCC80), Color(0xFFFFB74D))
+            scene = Scene.HOME
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),

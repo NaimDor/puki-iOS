@@ -179,8 +179,8 @@ fun CarWashScreen(
     }
 
     CompositionLocalProvider(LocalDragDropState provides remember { DragDropState() }) {
-        GameBackground(colors = listOf(Color(0xFFB3E5FC), Color(0xFFE1F5FE)), withBubbles = false) {
-            Canvas(modifier = Modifier.fillMaxSize()) { drawGarage() }
+        GameBackground {
+            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawGarage() }
             Column(
                 modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally

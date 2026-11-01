@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
+import io.github.tomsadeh.puki.ui.components.stillLayer
 import io.github.tomsadeh.puki.ui.hub.IslandDef
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -128,8 +129,10 @@ fun IslandButton(
                 translationY = -hop.value * 16.dp.toPx()
             }
     ) {
+        // Each part that moves has a layer of its own, so its frames redraw only itself: read in
+        // the island's layer, they'd redraw all ten islands, shadows and all, every frame.
         // Water ripple stays put while the island bobs above it
-        Spacer(modifier = Modifier.fillMaxSize().drawWithCache {
+        Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
             val stroke = Stroke(width = 3.dp.toPx())
             onDrawBehind {
                 val c = Offset(size.width / 2, size.height * 0.66f)
@@ -150,13 +153,18 @@ fun IslandButton(
                 .fillMaxSize()
                 .graphicsLayer { translationY = bob * 4.dp.toPx() }
         ) {
-            // The sand, grass and palm are built once per size; each frame only redraws them,
-            // turning the palm's crown by the sway
-            Spacer(modifier = Modifier.fillMaxSize().drawWithCache {
-                val base = IslandShapes(size.width, size.height, palmOnLeft)
-                onDrawBehind { drawIsland(base, palmOnLeft, sway) }
+            // The island itself never changes; only the palm's crown turns, by the sway
+            val shapes = remember(palmOnLeft) { arrayOfNulls<IslandShapes>(1) }
+            Spacer(modifier = Modifier.fillMaxSize().stillLayer().drawWithCache {
+                val base = IslandShapes(size.width, size.height, palmOnLeft).also { shapes[0] = it }
+                onDrawBehind { drawIsland(base, palmOnLeft) }
+            })
+            Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
+                val base = shapes[0] ?: IslandShapes(size.width, size.height, palmOnLeft)
+                onDrawBehind { drawPalmCrown(base, sway) }
             })
 
+            Box(modifier = Modifier.fillMaxSize().stillLayer()) {
             // The island's sign: its picture on a colored disc
             Box(
                 modifier = Modifier
@@ -191,6 +199,7 @@ fun IslandButton(
                     .border(BorderStroke(2.dp, PlankBorder), RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp, vertical = 4.dp)
             )
+            }
         }
 
         // Last, so it's on top: the only part that takes a tap. A little hop and the island says
@@ -258,7 +267,7 @@ private class IslandShapes(w: Float, h: Float, palmOnLeft: Boolean) {
 private val LEAF_ANGLES = floatArrayOf(-160f, -120f, -60f, -20f, 20f)
 
 /** Sand, grass and a palm tree, drawn in the lower part of the island box. */
-private fun DrawScope.drawIsland(s: IslandShapes, palmOnLeft: Boolean, sway: Float) {
+private fun DrawScope.drawIsland(s: IslandShapes, palmOnLeft: Boolean) {
     val w = size.width
     val h = size.height
     val cx = s.cx
@@ -272,8 +281,13 @@ private fun DrawScope.drawIsland(s: IslandShapes, palmOnLeft: Boolean, sway: Flo
     // Little bushes
     drawCircle(Color(0xFF43A047), w * 0.045f, Offset(cx + (if (palmOnLeft) 0.24f else -0.24f) * w, baseY - h * 0.05f))
     drawCircle(Color(0xFF4CAF50), w * 0.035f, Offset(cx + (if (palmOnLeft) 0.29f else -0.29f) * w, baseY - h * 0.03f))
-    // Palm tree: the trunk, then the crown turned by the sway
     drawPath(s.trunk, Color(0xFF8D6E63), style = s.trunkStroke)
+}
+
+/** The palm's crown, turned by the sway. */
+private fun DrawScope.drawPalmCrown(s: IslandShapes, sway: Float) {
+    val w = size.width
+    val h = size.height
     val top = s.top
     rotate(sway, top) {
         for (angle in LEAF_ANGLES) rotate(angle, top) { drawPath(s.leaf, Color(0xFF2E7D32)) }

@@ -154,8 +154,7 @@ fun CountingGardenScreen(
     ) { i -> state.choices.getOrNull(i)?.let { answer(it) } }
 
     GameBackground(
-        scene = Scene.GARDEN,
-        colors = listOf(Color(0xFFC8E6C9), Color(0xFFA5D6A7), Color(0xFF81C784))
+        scene = Scene.GARDEN
     ) {
         Column(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),

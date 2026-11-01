@@ -41,6 +41,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -50,6 +51,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
+
+// ---------- Layers ----------
+
+/**
+ * Keeps what's under it as a finished picture, which is then just copied: for something small
+ * that's costly to draw and moves as a whole, like an island with its shadows. Measured on the
+ * tablet: it's a loss on a plain full-screen backdrop (10 MB more, and more GPU time to copy than
+ * to redraw), where a plain graphicsLayer() is enough. Never above anything animated.
+ */
+fun Modifier.stillLayer(): Modifier = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
 
 // ---------- Touch feedback ----------
 

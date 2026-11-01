@@ -96,8 +96,7 @@ fun ShapePlaygroundScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         GameBackground(
-            scene = Scene.PLAYGROUND,
-            colors = listOf(Color(0xFFBBDEFB), Color(0xFF90CAF9), Color(0xFF64B5F6))
+            scene = Scene.PLAYGROUND
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),

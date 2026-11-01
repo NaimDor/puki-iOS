@@ -182,8 +182,7 @@ fun WordGardenScreen(
     }
 
     GameBackground(
-            scene = Scene.GARDEN,
-        colors = listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9), Color(0xFFA5D6A7))
+            scene = Scene.GARDEN
     ) {
         Column(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),

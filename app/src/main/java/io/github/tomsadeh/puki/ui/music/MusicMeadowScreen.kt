@@ -220,8 +220,7 @@ fun MusicMeadowScreen(
     }
 
     GameBackground(
-            scene = Scene.STAGE,
-        colors = listOf(Color(0xFFFFF3E0), Color(0xFFFFE0B2), Color(0xFFFFCC80))
+            scene = Scene.STAGE
     ) {
         // Dance and Freeze, waiting at the side of the stage
         Box(modifier = Modifier.fillMaxSize()) {

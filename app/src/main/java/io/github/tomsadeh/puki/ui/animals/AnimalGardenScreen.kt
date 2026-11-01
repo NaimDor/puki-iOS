@@ -134,8 +134,7 @@ fun AnimalGardenScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         GameBackground(
-            scene = Scene.FARM,
-            colors = listOf(Color(0xFF81C784), Color(0xFF66BB6A), Color(0xFF4CAF50), Color(0xFF388E3C))
+            scene = Scene.FARM
         ) {
             Column(
                 modifier = Modifier

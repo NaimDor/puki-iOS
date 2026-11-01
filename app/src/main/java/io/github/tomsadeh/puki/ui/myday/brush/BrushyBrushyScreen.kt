@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -166,8 +167,8 @@ fun BrushyBrushyScreen(
         BrushStep.RINSE -> RoundPrompt(2, "בצחצוח שיניים: נותנים לדובי מים לשטוף את הפה.", "Brushing teeth: giving Teddy water to rinse his mouth.", "voice_teeth_rinse")
     }
 
-    GameBackground(colors = listOf(Color(0xFFB2EBF2), Color(0xFFE0F7FA)), withBubbles = false) {
-        Canvas(modifier = Modifier.fillMaxSize()) { drawBathroom() }
+    GameBackground {
+        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawBathroom() }
         Column(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -178,6 +179,7 @@ fun BrushyBrushyScreen(
                 val faceW = minOf(maxHeight * 0.95f, maxWidth * 0.62f)
                 val idle = rememberInfiniteTransition(label = "teddy")
                 val blink by idle.animateFloat(0f, 1f, infiniteRepeatable(tween(3600, easing = LinearEasing)), label = "blink")
+                val eyesShut by remember { derivedStateOf { blink > 0.96f } }
                 val shimmer by idle.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing)), label = "shine")
                 val giggle by idle.animateFloat(-1f, 1f, infiniteRepeatable(tween(160), RepeatMode.Reverse), label = "giggle")
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(faceW * 0.08f, Alignment.CenterHorizontally), modifier = Modifier.fillMaxSize()) {
@@ -209,7 +211,7 @@ fun BrushyBrushyScreen(
                         val swishing = swish.value > 0f && swish.value < 1f
                         drawTeddy(
                             happy = brush != null || smile.value > 0f,
-                            eyesShut = blink > 0.96f,
+                            eyesShut = eyesShut,
                             puff = if (swishing) sin(swish.value * Math.PI).toFloat() else 0f,
                             smile = smile.value
                         )

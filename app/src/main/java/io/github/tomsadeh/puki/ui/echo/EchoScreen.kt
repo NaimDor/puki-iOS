@@ -126,7 +126,7 @@ fun EchoScreen(onBack: () -> Unit) {
     val bob by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(if (mode == EchoMode.ECHOING) 220 else 1400), RepeatMode.Reverse), label = "bob")
     val pulse by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(900)), label = "pulse")
 
-    GameBackground(scene = Scene.STAGE, withCompanion = false, colors = listOf(Color(0xFF7B1FA2), Color(0xFF9C27B0))) {
+    GameBackground(scene = Scene.STAGE, withCompanion = false) {
         Box(modifier = Modifier.fillMaxSize()) {
             BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
 

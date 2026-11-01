@@ -220,7 +220,6 @@ fun SayItScreen(
 
     GameBackground(
             scene = Scene.SUNSET,
-        colors = listOf(Color(0xFFFFF59D), Color(0xFFFFE082), Color(0xFFFFCC80), Color(0xFFFFB74D)),
         withCompanion = false
     ) {
         Column(

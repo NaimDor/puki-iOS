@@ -117,8 +117,7 @@ fun ColorSplashScreen(
     }
 
     GameBackground(
-            scene = Scene.PLAYGROUND,
-        colors = listOf(Color(0xFFE1BEE7), Color(0xFFCE93D8), Color(0xFFBA68C8))
+            scene = Scene.PLAYGROUND
     ) {
         Column(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),

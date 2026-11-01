@@ -162,7 +162,7 @@ fun PeekabooScreen(
     }
 
     // Puki flies in the sky here: in his usual corner he'd stand in front of the barn
-    GameBackground(scene = Scene.FARM, withCompanion = false, colors = listOf(Color(0xFF81C784), Color(0xFF66BB6A), Color(0xFF4CAF50))) {
+    GameBackground(scene = Scene.FARM, withCompanion = false) {
       Box(modifier = Modifier.fillMaxSize()) {
         CompanionParrot(modifier = Modifier.align(Alignment.TopStart).padding(top = 96.dp, start = 12.dp))
         Column(modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp)) {

@@ -121,7 +121,7 @@ fun StickerAlbumScreen(onBack: () -> Unit, viewModel: StickerAlbumViewModel = vi
 
     val sparkles = rememberTouchSparkles()
     Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
-        Canvas(modifier = Modifier.fillMaxSize()) { drawTable() }
+        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawTable() }
 
         // The album lies open on the table: two pages of three by three
         BoxWithConstraints(

@@ -153,8 +153,8 @@ fun CakeScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         // At the end Puki leaves his corner and comes to taste the cake
-        GameBackground(colors = listOf(Color(0xFFFFF8E1), Color(0xFFFFECB3)), withBubbles = false, withCompanion = !finished) {
-            Canvas(modifier = Modifier.fillMaxSize()) { drawKitchen() }
+        GameBackground(withCompanion = !finished) {
+            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawKitchen() }
             Column(
                 modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally

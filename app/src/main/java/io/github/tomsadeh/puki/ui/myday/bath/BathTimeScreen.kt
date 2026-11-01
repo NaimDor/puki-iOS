@@ -141,8 +141,7 @@ fun BathTimeScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         GameBackground(
-            scene = Scene.BATH,
-            colors = listOf(Color(0xFFB3E5FC), Color(0xFF81D4FA), Color(0xFF4FC3F7))
+            scene = Scene.BATH
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),

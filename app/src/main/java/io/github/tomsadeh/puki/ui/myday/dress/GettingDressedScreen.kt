@@ -142,8 +142,7 @@ fun GettingDressedScreen(
     }
 
     GameBackground(
-            scene = Scene.HOME,
-        colors = listOf(Color(0xFFF8BBD0), Color(0xFFF48FB1), Color(0xFFEC407A))
+            scene = Scene.HOME
     ) {
         Column(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),

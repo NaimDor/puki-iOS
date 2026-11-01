@@ -263,7 +263,7 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         // Pots and tool plates sized so each side column fits: a round button and seven of them
         val unit = ((maxHeight - 32.dp - 64.dp) / 7.6f).coerceIn(48.dp, 92.dp)
-        Canvas(modifier = Modifier.fillMaxSize()) { drawStudioWall() }
+        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawStudioWall() }
 
         Row(modifier = Modifier.fillMaxSize()) {
             // Left: back, the paint pots, and the camera that saves the drawing
