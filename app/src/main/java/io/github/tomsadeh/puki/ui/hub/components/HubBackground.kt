@@ -209,6 +209,8 @@ private class WaveStamp(val image: ImageBitmap, val originX: Float, val originY:
 
 /** One stamp per row of waves: bigger and brighter towards the viewer, as the rows are drawn. */
 private fun waveStamps(scope: CacheDrawScope, rows: Int): List<WaveStamp> {
+    // Kept between visits: the hub is rebuilt each time she comes back from a game
+    waveCache?.let { (width, stamps) -> if (width == scope.size.width) return stamps }
     val wave = unitWave()
     val stroke = Stroke(width = 0.12f, cap = StrokeCap.Round)
     return List(rows) { row ->
@@ -226,8 +228,10 @@ private fun waveStamps(scope: CacheDrawScope, rows: Int): List<WaveStamp> {
             }) { drawPath(wave, Color.White.copy(alpha = 0.18f + 0.22f * t), style = stroke) }
         }
         WaveStamp(image, ox, oy, waveW)
-    }
+    }.also { waveCache = scope.size.width to it }
 }
+
+private var waveCache: Pair<Float, List<WaveStamp>>? = null
 
 /** One little wave arc, 1 wide, starting at (0, 0). */
 private fun unitWave() = Path().apply {

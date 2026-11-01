@@ -165,12 +165,14 @@ fun IslandButton(
                     rotationZ = 3f * sin(TWO_PI * (clock.value * SWAY_CYCLES + phase))
                 }
                 .drawWithCache {
-                    // Stamped once into a little image, and the layer just turns it
+                    // One little image for all the islands, and each layer just turns it
                     val base = IslandShapes(size.width, size.height, palmOnLeft)
                     val side = (size.width * 0.56f).toInt()
-                    val crown = ImageBitmap(side, side)
-                    CanvasDrawScope().draw(this, layoutDirection, androidx.compose.ui.graphics.Canvas(crown), Size(side.toFloat(), side.toFloat())) {
-                        translate(side / 2f - base.top.x, side / 2f - base.top.y) { drawPalmCrown(base) }
+                    val crown = crownCache?.takeIf { it.width == side } ?: ImageBitmap(side, side).also {
+                        CanvasDrawScope().draw(this, layoutDirection, androidx.compose.ui.graphics.Canvas(it), Size(side.toFloat(), side.toFloat())) {
+                            translate(side / 2f - base.top.x, side / 2f - base.top.y) { drawPalmCrown(base) }
+                        }
+                        crownCache = it
                     }
                     onDrawBehind { drawImage(crown, Offset(base.top.x - side / 2f, base.top.y - side / 2f)) }
                 })
@@ -235,6 +237,9 @@ fun IslandButton(
 }
 
 private const val TAP_TO_GO_MS = 150L
+
+/** The palm's crown, kept between visits: the hub is rebuilt each time she comes back from a game. */
+private var crownCache: ImageBitmap? = null
 
 /** One turn of the hub's shared clock. */
 const val HUB_CLOCK_MS = 60_000

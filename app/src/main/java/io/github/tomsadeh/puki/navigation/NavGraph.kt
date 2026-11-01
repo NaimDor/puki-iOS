@@ -3,8 +3,7 @@ package io.github.tomsadeh.puki.navigation
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
+import androidx.compose.animation.EnterTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
@@ -131,10 +130,11 @@ fun PukiNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = Routes.HUB,
-        // Quick, and with one live screen at a time (the default is a 700 ms crossfade of both)
-        enterTransition = { fadeIn(tween(150)) },
+        // A plain cut, with one live screen at a time: a fade would hold a whole scene in an offscreen
+        // layer on the tablet just as the next one is being built
+        enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
-        popEnterTransition = { fadeIn(tween(150)) },
+        popEnterTransition = { EnterTransition.None },
         popExitTransition = { ExitTransition.None }
     ) {
         composable(Routes.HUB) {
