@@ -6,7 +6,10 @@ import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
 import io.github.tomsadeh.puki.ui.common.LocalCompanion
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
+import io.github.tomsadeh.puki.ui.common.LocalPukiMood
 import io.github.tomsadeh.puki.data.models.BilingualText
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -55,6 +58,7 @@ fun GameBackground(
     scene: Scene? = null,
     content: @Composable () -> Unit
 ) {
+    CompositionLocalProvider(LocalPukiMood provides remember { ReactionState() }) {
     Box(modifier = modifier.fillMaxSize()) {
         if (scene != null) SceneBackdrop(scene)
         // Gradient background
@@ -116,6 +120,7 @@ fun GameBackground(
 
         // פוקי the parrot, when the companion server is reachable
         if (withCompanion) CompanionParrot(modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+    }
     }
 }
 

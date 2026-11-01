@@ -6,6 +6,7 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -38,15 +39,20 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.CompanionStatus
 import io.github.tomsadeh.puki.audio.MicRecorder
 import io.github.tomsadeh.puki.ui.common.LocalCompanion
+import io.github.tomsadeh.puki.ui.common.LocalPukiMood
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
 
 /**
  * פוקי sitting in the corner of a game. With his brain ready, he flaps his beak while he talks:
@@ -55,16 +61,21 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun CompanionParrot(modifier: Modifier = Modifier) {
+    val mood = LocalPukiMood.current
+    val moved = if (mood != null) modifier.reaction(mood, jumpHeight = 24.dp) else modifier
     val companion = LocalCompanion.current
     if (companion == null) {
-        OfflineParrot(modifier)
+        OfflineParrot(moved)
         return
     }
     val voicePlayer = LocalVoicePlayer.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val status by companion.status.collectAsStateWithLifecycle()
-    val speaking by companion.speaking.collectAsStateWithLifecycle()
+    val brainSpeaking by companion.speaking.collectAsStateWithLifecycle()
+    val recordedLine by voicePlayer.speaking.collectAsStateWithLifecycle()
+    val speaking = brainSpeaking || recordedLine  // (his beak moves for his recorded lines too)
+    val thinking by companion.thinking.collectAsStateWithLifecycle()
     val autoListening by companion.listening.collectAsStateWithLifecycle()
 
     val recorder = remember { MicRecorder() }
@@ -78,7 +89,7 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) { companion.wake() }
     // Until his brain is ready (or if it never is), the recorded Puki keeps the corner warm
     if (status != CompanionStatus.READY) {
-        OfflineParrot(modifier)
+        OfflineParrot(moved)
         return
     }
 
@@ -87,7 +98,7 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
 
     AnimatedVisibility(
         visible = status == CompanionStatus.READY,
-        modifier = modifier,
+        modifier = moved,
         enter = slideInVertically(spring(dampingRatio = 0.5f)) { it },
         exit = slideOutVertically { it } + fadeOut()
     ) {
@@ -116,6 +127,19 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
                             center = Offset(size.width / 2, size.height / 2),
                             style = Stroke(width = 6.dp.toPx())
                         )
+                    }
+                }
+            }
+            // Dots while a line is on its way from the brain
+            if (thinking && !speaking) {
+                val phase by rememberInfiniteTransition(label = "think").animateFloat(
+                    0f, 1f, infiniteRepeatable(tween(900, easing = LinearEasing)), label = "think_phase"
+                )
+                Canvas(modifier = Modifier.matchParentSize()) {
+                    val r = size.width * 0.035f
+                    for (k in 0..2) {
+                        val bounce = abs(sin((phase + k / 3f) * PI)).toFloat()
+                        drawCircle(Color.White, r, Offset(size.width / 2 + (k - 1) * r * 3f, r * 2f - bounce * r * 1.5f))
                     }
                 }
             }
@@ -149,6 +173,7 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
                                 val wav = recorder.stop()
                                 if (released) companion.listen(wav)
                             } else if (released && !hold.isCompleted) {
+                                scope.launch { mood?.hop() }  // he noticed, right away
                                 companion.chat()
                             }
                         })
@@ -163,11 +188,13 @@ private val offlineLines = listOf("voice_puki_hi", "voice_puki_tickle", "voice_p
 
 /** Puki with recorded lines only: he bobs in the corner, and a tap makes him talk and dance. */
 @Composable
-private fun OfflineParrot(modifier: Modifier = Modifier) {
+fun OfflineParrot(modifier: Modifier = Modifier, size: Dp = 140.dp) {
     val voicePlayer = LocalVoicePlayer.current
     val language = LocalLanguage.current
     val scope = rememberCoroutineScope()
-    var talking by remember { mutableStateOf(false) }
+    var tapped by remember { mutableStateOf(false) }
+    val recordedLine by voicePlayer.speaking.collectAsStateWithLifecycle()
+    val talking = tapped || recordedLine
     var last by remember { mutableStateOf(-1) }
     val bob by rememberInfiniteTransition(label = "offline_parrot").animateFloat(
         initialValue = 0f,
@@ -179,7 +206,7 @@ private fun OfflineParrot(modifier: Modifier = Modifier) {
         TalkingParrotImage(
             talking = talking,
             modifier = Modifier
-                .size(140.dp)
+                .size(size)
                 .graphicsLayer {
                     transformOrigin = TransformOrigin(0.5f, 1f)
                     translationY = -bob * (if (talking) 14.dp.toPx() else 4.dp.toPx())
@@ -187,12 +214,12 @@ private fun OfflineParrot(modifier: Modifier = Modifier) {
                 }
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
-                        if (talking) return@detectTapGestures
+                        if (tapped) return@detectTapGestures
                         val next = (offlineLines.indices - last).random()
                         last = next
-                        talking = true
-                        scope.launch { delay(4000); talking = false }  // in case the line never ends
-                        voicePlayer.play(offlineLines[next], language) { talking = false }
+                        tapped = true
+                        scope.launch { delay(4000); tapped = false }  // in case the line never ends
+                        voicePlayer.play(offlineLines[next], language) { tapped = false }
                     })
                 }
         )

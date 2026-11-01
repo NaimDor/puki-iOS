@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.common.LocalPukiMood
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -66,8 +68,10 @@ fun ConfettiOverlay(
 
     val pieces = remember { makePieces() }
     val time = remember { Animatable(0f) }
+    val mood = LocalPukiMood.current
 
     LaunchedEffect(show) {
+        launch { mood?.celebrate() }  // Puki's happy too
         time.snapTo(0f)
         time.animateTo(DURATION, tween((DURATION * 1000).toInt(), easing = LinearEasing))
         onFinished()

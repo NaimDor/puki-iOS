@@ -15,6 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.rememberCoroutineScope
+import io.github.tomsadeh.puki.ui.common.LocalPukiMood
+import kotlinx.coroutines.launch
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
@@ -40,6 +43,7 @@ class Help internal constructor() {
         internal set
     internal var lastTouch = SystemClock.uptimeMillis()
     private var misses = 0
+    internal var onMiss: () -> Unit = {}
 
     fun touched() {
         lastTouch = SystemClock.uptimeMillis()
@@ -48,6 +52,7 @@ class Help internal constructor() {
     /** A wrong try: after two, show the answer. */
     fun missed() {
         touched()
+        onMiss()
         if (++misses >= 2) showHint = true
     }
 }
@@ -61,6 +66,9 @@ class Help internal constructor() {
 fun rememberHelp(key: Any?, active: Boolean = true, onNudge: () -> Unit): Help {
     val help = remember(key) { Help() }
     val nudge by rememberUpdatedState(onNudge)
+    val mood = LocalPukiMood.current
+    val scope = rememberCoroutineScope()
+    help.onMiss = { scope.launch { mood?.oops() } }
     val paused = LocalGamePaused.current  // (the time limit's goodbye is up: no "where's the red one?" over it)
     LaunchedEffect(key, active, paused) {
         if (!active || paused) return@LaunchedEffect

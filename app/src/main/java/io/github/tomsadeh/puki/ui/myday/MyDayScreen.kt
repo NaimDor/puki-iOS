@@ -56,6 +56,7 @@ import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.components.BackArrowIcon
 import io.github.tomsadeh.puki.ui.components.Scene
 import io.github.tomsadeh.puki.ui.components.SceneBackdrop
+import io.github.tomsadeh.puki.ui.components.OfflineParrot
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.popIn
 
@@ -110,14 +111,12 @@ fun MyDayScreen(
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             // Puki peeks out of the round attic window
             val atticSize = maxHeight * ATTIC_R * 2
-            Image(
-                painter = painterResource(R.drawable.ic_companion_parrot),
-                contentDescription = null,
+            OfflineParrot(
                 modifier = Modifier
                     .offset(maxWidth / 2 - atticSize / 2, maxHeight * ATTIC_Y - atticSize / 2)
                     .size(atticSize)
-                    .padding(atticSize * 0.1f)
-                    .idleBob(amount = 1.2f)
+                    .padding(atticSize * 0.1f),
+                size = atticSize * 0.8f
             )
 
             // Rooms, laid out inside the house walls as a cutaway, two floors

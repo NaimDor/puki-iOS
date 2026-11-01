@@ -45,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.Sfx
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
+import io.github.tomsadeh.puki.ui.components.OfflineParrot
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.hub.components.HubBackground
 import io.github.tomsadeh.puki.ui.hub.components.IslandButton
@@ -145,6 +146,13 @@ fun HubScreen(
                         }
                 )
             }
+
+            // Puki on the far hill: he says hello with her, and a tap makes him talk
+            val pukiSize = 110.dp * screenScale
+            OfflineParrot(
+                modifier = Modifier.absoluteOffset(x = width * 0.06f, y = height * 0.305f - pukiSize),
+                size = pukiSize
+            )
         }
 
         StarCounter(

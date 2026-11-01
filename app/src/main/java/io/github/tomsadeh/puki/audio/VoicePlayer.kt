@@ -4,6 +4,8 @@ import android.content.Context
 import android.media.MediaPlayer
 import io.github.tomsadeh.puki.data.models.Gender
 import io.github.tomsadeh.puki.data.models.Language
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.random.Random
 
 class VoicePlayer(private val context: Context) {
@@ -15,6 +17,10 @@ class VoicePlayer(private val context: Context) {
     /** A line is loading (prepareAsync) and will start by itself: busy, as if playing. */
     private var preparing = false
     var enabled = true
+
+    private val _speaking = MutableStateFlow(false)
+    /** A line is playing (or the next in a row is on its way): Puki's beak moves with this. */
+    val speaking: StateFlow<Boolean> = _speaking
 
     var gender: Gender = Gender.GIRL
 
@@ -43,6 +49,7 @@ class VoicePlayer(private val context: Context) {
         preparing = false
         onComplete?.invoke()
         if (mediaPlayer == null) waiting.removeFirstOrNull()?.first?.invoke()
+        _speaking.value = mediaPlayer != null
     }
 
     fun play(voiceKey: String, language: Language, onComplete: (() -> Unit)? = null) {
@@ -91,6 +98,7 @@ class VoicePlayer(private val context: Context) {
                 if (mediaPlayer !== it) return@setOnPreparedListener  // stopped while loading
                 preparing = false
                 it.start()
+                _speaking.value = true
             }
             mediaPlayer = player
             preparing = true
@@ -196,6 +204,7 @@ class VoicePlayer(private val context: Context) {
         mediaPlayer?.let { runCatching { it.release() } }
         mediaPlayer = null
         preparing = false
+        _speaking.value = false
     }
 
     /** Silence now: the line playing and everything waiting (e.g. before the microphone listens). */

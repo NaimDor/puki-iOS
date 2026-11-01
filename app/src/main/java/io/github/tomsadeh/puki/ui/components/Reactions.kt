@@ -65,6 +65,18 @@ class ReactionState {
         squash.animateTo(1f, spring(dampingRatio = 0.3f, stiffness = 400f))
     }
 
+    /** One small jump: he noticed. */
+    suspend fun hop() {
+        lift.animateTo(1f, tween(130, easing = FastOutSlowInEasing))
+        lift.animateTo(0f, spring(dampingRatio = 0.4f, stiffness = 400f))
+    }
+
+    /** A puzzled head tilt. */
+    suspend fun oops() {
+        tilt.animateTo(-14f, tween(180))
+        tilt.animateTo(0f, spring(dampingRatio = 0.35f, stiffness = 200f))
+    }
+
     suspend fun munch() {
         repeat(3) {
             squash.animateTo(0.9f, tween(110))

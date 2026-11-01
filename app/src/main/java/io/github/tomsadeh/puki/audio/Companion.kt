@@ -51,6 +51,10 @@ class Companion(
     private val _speaking = MutableStateFlow(false)
     val speaking: StateFlow<Boolean> = _speaking
 
+    private val _thinking = MutableStateFlow(false)
+    /** A line is on its way from the brain: thinking dots, so a slow answer isn't a silent one. */
+    val thinking: StateFlow<Boolean> = _thinking
+
     /** Lines for the game's moments that a parent approved on the PC, kept here with their audio. */
     private val pack = LinePack(context.filesDir) { path -> pcBrain.request("GET", path, null, 8000, "") }
     private var packSynced = 0L
@@ -247,7 +251,9 @@ class Companion(
             return
         }
         scope.launch {
-            if (!say(situation)) {
+            _thinking.value = true
+            val said = try { say(situation) } finally { _thinking.value = false }
+            if (!said) {
                 if (approved != null) playApproved(situation, approved) else fallback()
             }
         }
@@ -275,7 +281,10 @@ class Companion(
     /** The child held the parrot and talked; [wav] is the recording. Whisper on the PC listens. */
     fun listen(wav: ByteArray, context: String = "") {
         if (!isReady || wav.size < 16000) return  // under half a second: nothing to send
-        scope.launch { play(postListen(wav, context)) }
+        scope.launch {
+            _thinking.value = true
+            try { play(postListen(wav, context)) } finally { _thinking.value = false }
+        }
     }
 
     /** The parrot looks at the child's drawing ([png]) and reacts. Returns false if it couldn't. */
