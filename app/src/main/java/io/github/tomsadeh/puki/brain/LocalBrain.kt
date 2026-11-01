@@ -39,6 +39,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             gen = generation
         }
         thread(name = "puki-brain") {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)  // (the game comes first)
             var v: BlueVoice? = null
             var m: Mind? = null
             try {

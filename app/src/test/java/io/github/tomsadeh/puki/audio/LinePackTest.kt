@@ -21,7 +21,7 @@ class LinePackTest {
         """{"version": "$version", "lines": [${lines.joinToString(",") { (id, text) ->
             """{"id": "$id", "situation": "$cow", "lang": "he", "gender": "girl", "text": "$text"}""" }}]}""".toByteArray()
 
-    private fun pack(dir: File) = LinePack(dir) { path -> served[path] }
+    private fun pack(dir: File) = LinePack(dir) { path -> served[path] }.also { it.load() }
 
     @Test
     fun syncsLinesAndAudioThenPicksForTheMoment() {

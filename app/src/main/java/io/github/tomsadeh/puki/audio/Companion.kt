@@ -58,6 +58,7 @@ class Companion(
     /** Lines for the game's moments that a parent approved on the PC, kept here with their audio. */
     private val pack = LinePack(context.filesDir) { path -> pcBrain.request("GET", path, null, 8000, "") }
     private var packSynced = 0L
+    private val packRead = scope.launch(Dispatchers.IO) { pack.load() }
 
     /** Brings the approved lines up to date, at most once an hour (the PC answers even asleep). */
     @Volatile private var packSyncing = false
@@ -500,18 +501,18 @@ class Companion(
      */
     private fun refreshNameLines() {
         val wanted = if (childName.isBlank()) "" else "$childName|$childGirl|$NAME_LINES_VERSION"
-        val marker = File(voiceDir, "name_lines.txt")
-        val have = runCatching { marker.readText() }.getOrDefault("")
-        if (wanted == have) return
-        if (wanted.isEmpty()) {
-            voiceDir.listFiles()?.forEach { it.delete() }
-            return
-        }
-        if (!isReady) {
-            wake()  // records them as soon as the brain is up
-            return
-        }
         scope.launch(Dispatchers.IO) {
+            val marker = File(voiceDir, "name_lines.txt")
+            val have = runCatching { marker.readText() }.getOrDefault("")
+            if (wanted == have) return@launch
+            if (wanted.isEmpty()) {
+                voiceDir.listFiles()?.forEach { it.delete() }
+                return@launch
+            }
+            if (!isReady) {
+                wake()  // records them as soon as the brain is up
+                return@launch
+            }
             voiceDir.mkdirs()
             voiceDir.listFiles()?.forEach { it.delete() }
             var all = true

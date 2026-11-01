@@ -1,5 +1,8 @@
 package io.github.tomsadeh.puki
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.Lifecycle
@@ -67,7 +70,8 @@ fun PukiApp(
     }
 
     LaunchedEffect(Unit) {
-        Sfx.preloadAll(sfxPlayer)
+        withFrameNanos { }  // the first frame comes first
+        withContext(Dispatchers.IO) { Sfx.preloadAll(sfxPlayer) }
         // Optional tracks: app/src/main/res/raw/music_hub.mp3 (and music_night.mp3 for bedtime)
         musicPlayer.playTrack("music_hub")
     }
@@ -177,13 +181,15 @@ fun PukiApp(
             saveClock()  // when it went away: the hour's rest counts from here
             return@LaunchedEffect
         }
+        var ticks = 0
         while (true) {
             delay(5_000)
             if (!showTimeLimit) {
                 playedMs += 5_000
                 if (playedMs >= settings.timeLimitMinutes * 60_000L) showTimeLimit = true
             }
-            saveClock()  // (also while the goodbye is up: it's still on screen, not resting)
+            // Every 30 s, and when the app goes away (also while the goodbye is up: it's still on screen, not resting)
+            if (++ticks % 6 == 0) saveClock()
         }
     }
     LaunchedEffect(showTimeLimit) { companion.paused = showTimeLimit }

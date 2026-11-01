@@ -18,7 +18,7 @@ class SfxPlayer(private val context: Context) {
         )
         .build()
 
-    private val loadedSounds = mutableMapOf<String, Int>()
+    private val loadedSounds = java.util.concurrent.ConcurrentHashMap<String, Int>()  // (filled off the main thread)
 
     fun preload(name: String, resId: Int) {
         loadedSounds[name] = soundPool.load(context, resId, 1)

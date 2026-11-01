@@ -20,7 +20,9 @@ class LinePack(filesDir: File, private val fetch: (String) -> ByteArray?) {
     @Volatile private var lines: List<Line> = emptyList()
     private var lastPlayed = ""
 
-    init {
+    /** Reads the lines already on the tablet (call off the main thread). */
+    @Synchronized
+    fun load() {
         runCatching { read(JSONObject(indexFile.readText())) }
     }
 
