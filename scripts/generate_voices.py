@@ -356,7 +356,7 @@ voice_lines = [
     ("voice_sticker_giraffe", "Giraffe", "זאת ג׳ירפה."),
     ("voice_sticker_penguin", "Penguin", "זה פינגווין."),
     ("voice_sticker_new", "A new sticker!", "מדבקה חדשה!"),
-    ("voice_album_hello", "Here are your stickers!", "הנה המדבקות שלך!"),
+    ("voice_album_hello", "Here are your stickers!", ("הנה המדבקות שלך!", "הנה המדבקות שלך!")),
     ("voice_more_stars", "A few more stars!", "עוד כמה כוכבים!"),
 
     # --- Counting: the hungry rabbit ---
@@ -450,7 +450,6 @@ name_lines = [
 PHONEMES = {
     "voice_sound_cow_he": "mˈuuu!",
     "voice_sound_chicken_he": "ko ko kˈo!",
-    "voice_eats_pig_he": "haχazˈiʁ ʔoχˈel tiʁˈas!",  # plain spelling came out "טרס"
     "voice_eats_sheep_he": "hakivsˈa ʔoχˈelet tiltˈan!",  # and "טלטן"
     "voice_sound_horse_he": "ʔihihihˈi!",
     "voice_sound_pig_he": "ʔˈojnk ʔˈojnk!",
@@ -483,6 +482,40 @@ PHONEMES = {
     "voice_music_listen_he_m": "takʃˈiv vetizkˈoʁ!",
     "voice_music_your_turn_he_f": "ʔaχʃˈav toʁˈeχ!",
     "voice_music_your_turn_he_m": "ʔaχʃˈav toʁχˈa!",
+    # Reviewed by ear (train/data/word_fixes.tsv)
+    "voice_album_hello_he_f": "hˈine hamadbekˈot ʃelˈaχ!",
+    "voice_album_hello_he_m": "hˈine hamadbekˈot ʃelχˈa!",
+    "voice_bedtime_stars_he": "koχavˈim baʃamˈajim! lˈajla tˈov!",
+    "voice_car_clean_he": "tˈut tˈut! hameχonˈit nekijˈa!",
+    "voice_car_intro_he_m": "hameχonˈit meleʔˈa bˈots! teʃafʃˈef ʔotˈa ʔˈim hasfˈoɡ.",
+    "voice_color_brown_he": "zˈe χˈum.",
+    "voice_cook_lets_bake_he_m": "bˈo neʔefˈe ʔuɡˈa! tasˈim hakˈol bakaʔaʁˈa.",
+    "voice_dance_freeze_he": "kofʔˈim!",
+    "voice_dance_intro_he_m": "bˈo niʁkˈod! kʃehamˈuzika neʔetsˈeʁet, ʔosˈim mˈa ʃepˈuki ʔomˈeʁ.",
+    "voice_eats_pig_he": "haχazˈiʁ ʔoχˈel tˈiʁas!",
+    "voice_food_clover_he": "zˈe tiltˈan.",
+    "voice_food_corn_he": "zˈe tˈiʁas.",
+    "voice_instrument_tambourine_he": "zˈe tˈof miʁjˈam.",
+    "voice_instrument_xylophone_he": "zˈe ksilofˈon.",
+    "voice_island_say_he": "medabʁˈim ʔˈim pˈuki.",
+    "voice_music_listen_he_f": "takʃˈivi vetizkeʁˈi!",
+    "voice_peekaboo_he": "kukˈu!",
+    "voice_praise_4_he": "wˈaw, metsujˈan!",
+    "voice_prompt_echo_he_f": "taɡˈidi mˈaʃu lepˈuki!",
+    "voice_prompt_echo_he_m": "taɡˈid mˈaʃu lepˈuki!",
+    "voice_prompt_try_again_he": "ʔˈups! nenasˈe ʃˈuv!",
+    "voice_puki_here_he": "kvˈak kvˈak! pˈuki kˈan!",
+    "voice_puki_hi_he": "kvˈak! ʃalˈom ʃalˈom!",
+    "voice_puki_tickle_he": "χˈi χˈi! zˈe medaɡdˈeɡ!",
+    "voice_say_duck_he": "baʁvˈaz!",
+    "voice_say_intro_he_f": "bˈoʔi naɡˈid milˈim ʔˈim pˈuki!",
+    "voice_say_intro_he_m": "bˈo naɡˈid milˈim ʔˈim pˈuki!",
+    "voice_say_shoes_he": "naʔalˈajim!",
+    "voice_say_teddy_he": "dˈubi!",
+    "voice_teeth_intro_lion_he_f": "bˈoʔi netsaχtsˈeaχ laʔaʁjˈe ʔˈet haʃinˈajim! tasˈimi miʃχˈa ʔˈal hamivʁˈeʃet.",
+    "voice_teeth_rinse_lion_he_f": "ʔaχʃˈav tnˈi laʔaʁjˈe mˈajim!",
+    "voice_teeth_rinse_lion_he_m": "ʔaχʃˈav tˈen laʔaʁjˈe mˈajim!",
+    "voice_truck_clean_he": "tˈut tˈut! hamasaʔˈit nekijˈa!",
 }
 
 NIKUD = re.compile(r"[\u0591-\u05C7]")
