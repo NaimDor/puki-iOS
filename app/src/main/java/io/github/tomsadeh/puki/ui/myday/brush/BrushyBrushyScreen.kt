@@ -65,11 +65,13 @@ import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.GameTopBar
 import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
 import io.github.tomsadeh.puki.ui.components.RoundPrompt
+import io.github.tomsadeh.puki.ui.components.ToolButton
 import io.github.tomsadeh.puki.ui.components.hintGlow
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberStepGame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.sin
@@ -101,10 +103,9 @@ fun BrushyBrushyScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
 
-    var step by remember { mutableStateOf(BrushStep.PASTE) }
-    var stars by remember { mutableStateOf(0) }
-    var celebrate by remember { mutableStateOf(false) }
-    var sessionComplete by remember { mutableStateOf(false) }
+    val game = rememberStepGame(BrushStep.PASTE, BrushStep.entries.size, viewModel.session)
+    val step = game.step
+    val celebrate = game.celebrate
     val dirt = remember { mutableStateListOf(*Array(teeth.size) { 1f }) }  // 1: dirty, 0: clean
     val foam = remember { mutableStateListOf<Offset>() }
     var foamLeft by remember { mutableStateOf(1f) }
@@ -113,18 +114,6 @@ fun BrushyBrushyScreen(
     val paste = remember { Animatable(0f) }  // the toothpaste coming out onto the brush
     val swish = remember { Animatable(0f) }  // the rinse: cheeks full of water, swishing
     val smile = remember { Animatable(0f) }  // the open mouth closing into a big grin
-
-    fun stepDone(next: BrushStep?) {
-        stars++
-        viewModel.session.star()
-        sfxPlayer.play(Sfx.SUCCESS)
-        celebrate = true
-        scope.launch {
-            delay(1800)
-            celebrate = false
-            if (next != null) step = next
-        }
-    }
 
     // Brushing at [p] (fractions of the face): scrubs the teeth near it by [amount]
     fun scrub(p: Offset, amount: Float) {
@@ -148,10 +137,12 @@ fun BrushyBrushyScreen(
         if (foam.size < 70 && Random.nextFloat() < 0.6f) {
             foam.add(p + Offset(Random.nextFloat() * 0.05f - 0.025f, Random.nextFloat() * 0.04f - 0.02f))
         }
-        if (dirt.all { it <= 0f }) stepDone(BrushStep.RINSE)
+        if (dirt.all { it <= 0f }) game.done(BrushStep.RINSE)
     }
 
-    val help = rememberHelp(step, active = !celebrate && !sessionComplete && !paste.isRunning && !swish.isRunning) {
+    LaunchedEffect(step) { brush = null }  // (a new step cancels the drag, so its end never comes)
+
+    val help = rememberHelp(step, active = !celebrate && !game.sessionComplete && !paste.isRunning && !swish.isRunning) {
         voicePlayer.play(
             when (step) {
                 BrushStep.PASTE -> "voice_teeth_paste"
@@ -173,7 +164,7 @@ fun BrushyBrushyScreen(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = BrushStep.entries.size, starsEarned = stars)
+            GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = BrushStep.entries.size, starsEarned = game.stars)
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 // Teddy as big as the screen allows (the teeth are the targets), the tool beside him
                 val faceW = minOf(maxHeight * 0.95f, maxWidth * 0.62f)
@@ -224,39 +215,27 @@ fun BrushyBrushyScreen(
                     }
                     // The tools: the toothpaste tube, then the cup of water
                     Box(modifier = Modifier.size(faceW * 0.36f), contentAlignment = Alignment.Center) {
-                        if (step == BrushStep.PASTE) Box(
-                            modifier = Modifier
-                                .popIn()
-                                .idleBob(1)
-                                .hintGlow(help.showHint && !paste.isRunning)
-                                .size(faceW * 0.34f)
-                                .shadow(8.dp, CircleShape)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE1F5FE))
-                                .clickable(enabled = !paste.isRunning && paste.value < 1f) {
-                                    sfxPlayer.play(Sfx.WHOOSH, 0.6f)
-                                    scope.launch {
-                                        paste.animateTo(1f, tween(1300, easing = FastOutSlowInEasing))
-                                        stepDone(BrushStep.SCRUB)
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
+                        if (step == BrushStep.PASTE) ToolButton(
+                            size = faceW * 0.34f,
+                            hint = help.showHint && !paste.isRunning,
+                            enabled = !paste.isRunning && paste.value < 1f,
+                            onClick = {
+                                sfxPlayer.play(Sfx.WHOOSH, 0.6f)
+                                scope.launch {
+                                    paste.animateTo(1f, tween(1300, easing = FastOutSlowInEasing))
+                                    game.done(BrushStep.SCRUB)
+                                }
+                            }
                         ) {
                             Canvas(modifier = Modifier.size(faceW * 0.3f)) {
                                 drawBrush(Offset(0.55f, 0.4f), pasteOn = paste.value, scale = 1.25f)
                                 drawTube(squeeze = paste.value)
                             }
                         }
-                        if (step == BrushStep.RINSE && swish.value == 0f && !celebrate) Box(
-                            modifier = Modifier
-                                .popIn()
-                                .idleBob(1)
-                                .hintGlow(help.showHint)
-                                .size(faceW * 0.34f)
-                                .shadow(8.dp, CircleShape)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE1F5FE))
-                                .clickable {
+                        if (step == BrushStep.RINSE && swish.value == 0f && !celebrate) ToolButton(
+                            size = faceW * 0.34f,
+                            hint = help.showHint,
+                            onClick = {
                                     sfxPlayer.play(Sfx.DROP)
                                     scope.launch {
                                         // Swish, swish... and the foam is gone
@@ -268,13 +247,11 @@ fun BrushyBrushyScreen(
                                         voicePlayer.play("voice_teeth_clean", language) {
                                             companion?.react("בצחצוח שיניים: צחצחו לדובי את כל השיניים, הוא שטף את הפה ועכשיו הוא מחייך חיוך מבריק!", "Brushing teeth: the child brushed all of Teddy's teeth, he rinsed, and now he has a sparkly smile!") { }
                                         }
-                                        stepDone(null)
+                                        game.done(null)
                                         delay(2200)
-                                        viewModel.session.finish(BrushStep.entries.size)
-                                        sessionComplete = true
+                                        game.finish()
                                     }
-                                },
-                            contentAlignment = Alignment.Center
+                            }
                         ) { Canvas(modifier = Modifier.size(faceW * 0.2f)) { drawCup() } }
                     }
                 }
@@ -282,7 +259,7 @@ fun BrushyBrushyScreen(
         }
 
         ConfettiOverlay(show = celebrate)
-        if (sessionComplete) RoundCompleteSheet(starsEarned = stars, onContinue = onPlayAgain, onHome = onBack)
+        if (game.sessionComplete) RoundCompleteSheet(starsEarned = game.stars, onContinue = onPlayAgain, onHome = onBack)
     }
 }
 

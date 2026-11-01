@@ -1,7 +1,10 @@
 package io.github.tomsadeh.puki.ui.myday.bedtime
 
 import io.github.tomsadeh.puki.ui.common.LocalMusicPlayer
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,20 +56,25 @@ private val STORY_ICONS = linkedMapOf(
  * one sentence at a time with a matching picture. Shows nothing if the brain isn't there.
  */
 @Composable
-fun BedtimeStory(modifier: Modifier = Modifier) {
-    val companion = LocalCompanion.current ?: return
+fun BedtimeStory(modifier: Modifier = Modifier, onFinished: () -> Unit = {}) {
+    val companion = LocalCompanion.current
     val language = LocalLanguage.current
     val musicPlayer = LocalMusicPlayer.current
     val context = LocalContext.current
     var sentences by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
     var current by remember { mutableIntStateOf(-1) }
+    val done by rememberUpdatedState(onFinished)
 
     LaunchedEffect(Unit) {
         delay(2500)  // let "good night" land first
         fun res(name: String) = context.resources.getIdentifier(name, "drawable", context.packageName)
-        val story = companion.story(STORY_ICONS.filterKeys { res(it) != 0 }.mapValues { it.value.resolve(language) }) ?: return@LaunchedEffect
-        val items = story.map { (text, icon) -> text to res(icon) }.filter { it.second != 0 }
-        if (items.isEmpty()) return@LaunchedEffect
+        val story = companion?.story(STORY_ICONS.filterKeys { res(it) != 0 }.mapValues { it.value.resolve(language) })
+        val items = story.orEmpty().map { (text, icon) -> text to res(icon) }.filter { it.second != 0 }
+        if (companion == null || items.isEmpty()) {
+            delay(3500)  // no story tonight: a quiet moment with her tucked in
+            done()
+            return@LaunchedEffect
+        }
         sentences = items
         musicPlayer.duck(true)  // quieter music under the story
         coroutineScope {
@@ -82,9 +91,13 @@ fun BedtimeStory(modifier: Modifier = Modifier) {
         delay(1500)
         musicPlayer.duck(false)
         current = -1
+        delay(900)  // (the fade out)
+        done()
     }
 
-    if (current in sentences.indices) {
+    AnimatedVisibility(visible = current in sentences.indices, enter = fadeIn(tween(900)), exit = fadeOut(tween(900))) {
+        // (fading out, it keeps the last sentence)
+        val last = current.takeIf { it >= 0 } ?: sentences.lastIndex
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -92,7 +105,7 @@ fun BedtimeStory(modifier: Modifier = Modifier) {
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Crossfade(targetState = current, animationSpec = tween(900), label = "story_picture") { i ->
+                Crossfade(targetState = last, animationSpec = tween(900), label = "story_picture") { i ->
                     Image(
                         painter = painterResource(sentences[i].second),
                         contentDescription = null,
@@ -100,7 +113,7 @@ fun BedtimeStory(modifier: Modifier = Modifier) {
                     )
                 }
                 Text(
-                    text = sentences[current].first,
+                    text = sentences[last].first,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White.copy(alpha = 0.85f),
                     textAlign = TextAlign.Center,

@@ -83,6 +83,7 @@ Build and reuse these across all islands:
 |-----------|---------|
 | `GameBackground`, `SceneBackdrop` | A game's backdrop: an illustrated scene (farm, stage, bathroom...) or bubbles |
 | `GameTopBar` / `BackButton` | Back, round dots and stars (optional) / the one way out of every screen |
+| `rememberStepGame` / `ToolButton` | A game of a few steps (car wash, teeth, cake, bedtime): step, stars, party, end / a tool on a round plate |
 | `rememberCompact()` | True on a short screen (a phone on its side): drop what's optional |
 | `RoundPrompt` | Starts a round: tells Puki the scene, then plays the spoken prompt |
 | `DragTarget` / `DropZone` | Drag and drop, also tap-to-place (`tapToZone`); see Drag and Drop |

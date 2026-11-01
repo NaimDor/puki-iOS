@@ -182,7 +182,7 @@ fun PukiNavGraph(navController: NavHostController) {
             CarWashScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_GARAGE))
         }
         composable(Routes.MY_DAY_BEDTIME) {
-            BedtimeRoutineScreen(onBack = safeBack)
+            BedtimeRoutineScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_BEDTIME))
         }
         composable(Routes.CANVAS) {
             FreeCanvasScreen(onBack = safeBack)

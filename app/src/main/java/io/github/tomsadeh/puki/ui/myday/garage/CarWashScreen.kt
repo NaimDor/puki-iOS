@@ -64,11 +64,13 @@ import io.github.tomsadeh.puki.ui.components.GameTopBar
 import io.github.tomsadeh.puki.ui.components.LocalDragDropState
 import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
 import io.github.tomsadeh.puki.ui.components.RoundPrompt
+import io.github.tomsadeh.puki.ui.components.ToolButton
 import io.github.tomsadeh.puki.ui.components.hintGlow
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberStepGame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.sin
@@ -101,10 +103,9 @@ fun CarWashScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
 
-    var step by remember { mutableStateOf(WashStep.SCRUB) }
-    var stars by remember { mutableStateOf(0) }
-    var celebrate by remember { mutableStateOf(false) }
-    var sessionComplete by remember { mutableStateOf(false) }
+    val game = rememberStepGame(WashStep.SCRUB, WashStep.entries.size, viewModel.session)
+    val step = game.step
+    val celebrate = game.celebrate
     val carColor = remember { carColors.random() }
     val mud = remember { mutableStateListOf(*Array(spots.size) { 1f }) }    // 1: muddy, 0: clean
     val drops = remember { mutableStateListOf(*Array(spots.size) { 1f }) }  // water left after the rinse
@@ -114,18 +115,6 @@ fun CarWashScreen(
     var spraying by remember { mutableStateOf(false) }
     val spray = remember { Animatable(0f) }
     val driveOff = remember { Animatable(0f) }
-
-    fun stepDone(next: WashStep?) {
-        stars++
-        viewModel.session.star()
-        sfxPlayer.play(Sfx.SUCCESS)
-        celebrate = true
-        scope.launch {
-            delay(1800)
-            celebrate = false
-            if (next != null) step = next
-        }
-    }
 
     // Rubbing at [p] (fractions of the car): wipes the mud or the drops near it by [amount]
     fun rub(p: Offset, amount: Float) {
@@ -145,24 +134,25 @@ fun CarWashScreen(
             bubbles.add(p + Offset(Random.nextFloat() * 0.06f - 0.03f, Random.nextFloat() * 0.1f - 0.05f))
         }
         if (list.all { it <= 0f }) {
-            if (step == WashStep.SCRUB) stepDone(WashStep.RINSE)
+            if (step == WashStep.SCRUB) game.done(WashStep.RINSE)
             else {
                 // All dry: it shines, beeps and drives off
                 voicePlayer.play("voice_car_clean", language) {
                     companion?.react("בשטיפת המכונית: סיבנו, שטפו וניגבו, והמכונית נקייה!", "At the car wash the child scrubbed, rinsed and dried the car, and it's clean!") { }
                 }
-                stepDone(null)
+                game.done(null)
                 scope.launch {
                     delay(1200)
                     driveOff.animateTo(1f, tween(1600, easing = FastOutSlowInEasing))
-                    viewModel.session.finish(WashStep.entries.size)
-                    sessionComplete = true
+                    game.finish()
                 }
             }
         }
     }
 
-    val help = rememberHelp(step, active = !celebrate && !spraying && !sessionComplete) {
+    LaunchedEffect(step) { tool = null }  // (a new step cancels the drag, so its end never comes)
+
+    val help = rememberHelp(step, active = !celebrate && !spraying && !game.sessionComplete) {
         voicePlayer.play(
             when (step) {
                 WashStep.SCRUB -> "voice_car_scrub"
@@ -185,7 +175,7 @@ fun CarWashScreen(
                 modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = WashStep.entries.size, starsEarned = stars)
+                GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = WashStep.entries.size, starsEarned = game.stars)
                 BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     val carW = minOf(maxWidth * 0.72f, maxHeight * 1.5f)
                     val shimmer by rememberInfiniteTransition(label = "shine").animateFloat(
@@ -222,21 +212,16 @@ fun CarWashScreen(
                                 drawCircle(Color.White.copy(alpha = 0.85f * bubblesLeft), size.width * (0.018f + (i % 3) * 0.008f), Offset(b.x * size.width, b.y * size.height))
                             }
                             if (spraying || spray.value in 0.01f..0.99f) drawSpray(spray.value)
-                            if (sessionComplete || driveOff.value > 0f || (step == WashStep.DRY && drops.all { it <= 0f })) drawShine(shimmer)
+                            if (game.sessionComplete || driveOff.value > 0f || (step == WashStep.DRY && drops.all { it <= 0f })) drawShine(shimmer)
                             tool?.let { drawTool(it, sponge = step == WashStep.SCRUB) }
                         }
                         // The hose, for the rinse
                         Box(modifier = Modifier.size(carW * 0.2f), contentAlignment = Alignment.Center) {
-                            if (step == WashStep.RINSE && !spraying) Box(
-                                modifier = Modifier
-                                    .popIn()
-                                    .idleBob(1)
-                                    .hintGlow(help.showHint)
-                                    .size(carW * 0.18f)
-                                    .shadow(8.dp, CircleShape)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF29B6F6))
-                                    .clickable {
+                            if (step == WashStep.RINSE && !spraying) ToolButton(
+                                size = carW * 0.18f,
+                                hint = help.showHint,
+                                color = Color(0xFF29B6F6),
+                                onClick = {
                                         spraying = true
                                         sfxPlayer.play(Sfx.WHOOSH)
                                         scope.launch {
@@ -244,10 +229,9 @@ fun CarWashScreen(
                                             Animatable(1f).animateTo(0f, tween(2200)) { bubblesLeft = value }
                                             bubbles.clear()
                                             spraying = false
-                                            stepDone(WashStep.DRY)
+                                            game.done(WashStep.DRY)
                                         }
-                                    },
-                                contentAlignment = Alignment.Center
+                                }
                             ) { Canvas(modifier = Modifier.size(carW * 0.12f)) { drawHose() } }
                         }
                     }
@@ -255,7 +239,7 @@ fun CarWashScreen(
             }
 
             ConfettiOverlay(show = celebrate)
-            if (sessionComplete) RoundCompleteSheet(starsEarned = stars, onContinue = onPlayAgain, onHome = onBack)
+            if (game.sessionComplete) RoundCompleteSheet(starsEarned = game.stars, onContinue = onPlayAgain, onHome = onBack)
         }
     }
 }

@@ -72,7 +72,8 @@ fun RoundCompleteSheet(
     starsEarned: Int,
     onContinue: () -> Unit,
     onHome: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    calm: Boolean = false  // bedtime: no party, a darker room
 ) {
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
@@ -82,17 +83,17 @@ fun RoundCompleteSheet(
     LaunchedEffect(Unit) {
         delay(200)
         showContent = true
-        showConfetti = true
+        showConfetti = !calm
         voicePlayer.play(voicePlayer.personalKey("voice_round_done", language), language)
     }
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.45f)),
+            .background(Color.Black.copy(alpha = if (calm) 0.6f else 0.45f)),
         contentAlignment = Alignment.Center
     ) {
-        if (showContent) SunRays(modifier = Modifier.popIn())
+        if (showContent && !calm) SunRays(modifier = Modifier.popIn())
 
         // The card keeps its shape on a short screen: scaled as a whole, so buttons stay round
         val fit = (maxHeight * 0.96f / CARD_HEIGHT).coerceAtMost(1f)

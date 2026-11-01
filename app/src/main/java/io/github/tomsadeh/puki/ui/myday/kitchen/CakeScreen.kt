@@ -65,6 +65,7 @@ import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.noticeTouches
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberStepGame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -107,30 +108,16 @@ fun CakeScreen(
     val scope = rememberCoroutineScope()
     val dragDropState = remember { DragDropState() }
 
-    var step by remember { mutableStateOf(CakeStep.ADD) }
-    var stars by remember { mutableStateOf(0) }
-    var celebrate by remember { mutableStateOf(false) }
+    val game = rememberStepGame(CakeStep.ADD, CakeStep.entries.size, viewModel.session)
+    val step = game.step
+    val celebrate = game.celebrate
     var finished by remember { mutableStateOf(false) }
-    var sessionComplete by remember { mutableStateOf(false) }
     val added = remember { mutableStateListOf<String>() }
     var stirred by remember { mutableFloatStateOf(0f) }  // radians stirred so far
     var spoonAngle by remember { mutableStateOf<Float?>(null) }
     var baking by remember { mutableStateOf(false) }
     val bake = remember { Animatable(0f) }
     val toppings = remember { mutableStateListOf<Topping>() }
-
-    // A step done: a star, a little party, and on to the next one
-    fun stepDone(next: CakeStep?) {
-        stars++
-        viewModel.session.star()
-        sfxPlayer.play(Sfx.SUCCESS)
-        celebrate = true
-        scope.launch {
-            delay(1800)
-            celebrate = false
-            if (next != null) step = next
-        }
-    }
 
     val help = rememberHelp(step, active = !celebrate && !baking && !finished) {
         voicePlayer.play(
@@ -159,7 +146,7 @@ fun CakeScreen(
                 modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = CakeStep.entries.size, starsEarned = stars)
+                GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = CakeStep.entries.size, starsEarned = game.stars)
                 BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     val unit = minOf(maxWidth, maxHeight * 1.4f)  // things scale with the room there is
                     when (step) {
@@ -182,7 +169,7 @@ fun CakeScreen(
                                                     added.add(id)
                                                     sfxPlayer.play(Sfx.DROP)
                                                     help.touched()
-                                                    if (added.size == ingredients.size) stepDone(CakeStep.STIR)
+                                                    if (added.size == ingredients.size) game.done(CakeStep.STIR)
                                                 }
                                             }
                                         ) {
@@ -234,7 +221,7 @@ fun CakeScreen(
                                                         val full = STIR_TURNS * 2 * PI.toFloat()
                                                         // A soft sound each half turn, and done after three turns
                                                         if ((stirred / PI.toFloat()).toInt() > (before / PI.toFloat()).toInt() && stirred < full) sfxPlayer.play(Sfx.WHOOSH, 0.35f)
-                                                        if (before < full && stirred >= full) stepDone(CakeStep.BAKE)
+                                                        if (before < full && stirred >= full) game.done(CakeStep.BAKE)
                                                     }
                                                     last = a
                                                     spoonAngle = a
@@ -263,7 +250,7 @@ fun CakeScreen(
                                                 sfxPlayer.play(Sfx.STAR_COLLECT)
                                                 voicePlayer.play("voice_cook_ready", language)
                                                 delay(600)
-                                                stepDone(CakeStep.DECORATE)
+                                                game.done(CakeStep.DECORATE)
                                             }
                                         }
                                     }
@@ -335,11 +322,10 @@ fun CakeScreen(
                                                     voicePlayer.play("voice_cook_yum", language) {
                                                         companion?.react("במטבח: אפו עוגה וקישטו אותה, ופוקי טועם!", "In the kitchen: the child baked a cake and decorated it, and Puki tastes it!") { }
                                                     }
-                                                    stepDone(null)
+                                                    game.done(null)
                                                     scope.launch {
                                                         delay(if (companion?.isReady == true) 7000 else 5500)  // time to admire it
-                                                        viewModel.session.finish(CakeStep.entries.size)
-                                                        sessionComplete = true
+                                                        game.finish()
                                                     }
                                                 }
                                             }
@@ -356,8 +342,8 @@ fun CakeScreen(
 
             ConfettiOverlay(show = celebrate)
 
-            if (sessionComplete) {
-                RoundCompleteSheet(starsEarned = stars, onContinue = onPlayAgain, onHome = onBack)
+            if (game.sessionComplete) {
+                RoundCompleteSheet(starsEarned = game.stars, onContinue = onPlayAgain, onHome = onBack)
             }
         }
     }

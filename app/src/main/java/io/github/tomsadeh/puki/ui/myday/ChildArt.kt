@@ -64,6 +64,13 @@ fun DrawScope.drawToddler(girl: Boolean, worn: Map<String, Float> = emptyMap()) 
     piece(on("shirt"), Offset(0.5f, 0.5f)) { drawShirt() }
     piece(on("socks"), Offset(0.5f, 0.87f)) { drawSocks() }
     piece(on("shoes"), Offset(0.5f, 0.88f)) { drawShoes() }
+    piece(on("pajamas"), Offset(0.5f, 0.6f)) { drawPajamas() }
+}
+
+/** Just her head, eyes shut, for a child asleep on a pillow: in the same square as [drawToddler]. */
+fun DrawScope.drawSleepingHead(girl: Boolean) {
+    if (girl) drawPigtails()
+    drawHead(girl, asleep = true)
 }
 
 /** A piece of clothing growing into place around [center] as [t] goes 0 → 1. */
@@ -94,7 +101,7 @@ private fun DrawScope.drawBody() {
     drawCircle(SkinShade, u(0.008f), p(Offset(0.5f, 0.58f)))
 }
 
-private fun DrawScope.drawHead(girl: Boolean) {
+private fun DrawScope.drawHead(girl: Boolean, asleep: Boolean = false) {
     val c = p(HeadC)
     val r = u(HeadR)
     // Ears, then the head
@@ -121,6 +128,11 @@ private fun DrawScope.drawHead(girl: Boolean) {
     // Eyes with a shine, rosy cheeks and a big smile
     for (dx in listOf(-0.36f, 0.36f)) {
         val e = c + Offset(dx * r, r * 0.05f)
+        if (asleep) {
+            drawArc(Ink, 20f, 140f, false, e - Offset(r * 0.14f, r * 0.08f), Size(r * 0.28f, r * 0.16f),
+                style = Stroke(r * 0.07f, cap = StrokeCap.Round))
+            continue
+        }
         drawOval(Ink, e - Offset(r * 0.1f, r * 0.13f), Size(r * 0.2f, r * 0.26f))
         drawCircle(Color.White, r * 0.05f, e + Offset(-r * 0.03f, -r * 0.05f))
     }
@@ -155,6 +167,18 @@ private fun DrawScope.drawUnderwear() {
     drawPath(shape, color)
     drawRoundRect(Color(0xFF29B6F6), Offset(u(0.365f), u(0.578f)), Size(u(0.27f), u(0.025f)), CornerRadius(u(0.012f)))
     for ((x, y) in listOf(0.43f to 0.635f, 0.5f to 0.65f, 0.57f to 0.635f)) drawCircle(Color.White, u(0.01f), p(Offset(x, y)))
+}
+
+/** Soft pajamas, all in one go: long sleeves, long legs and little moons. */
+private fun DrawScope.drawPajamas() {
+    val color = Color(0xFFB39DDB)
+    val dark = lerp(color, Color.Black, 0.18f)
+    for ((s, h) in listOf(ShoulderL to HandL, ShoulderR to HandR)) limb(s, mix(s, h, 0.88f), ArmW + 0.03f, color)
+    for ((hip, ankle) in listOf(HipL to AnkleL, HipR to AnkleR)) limb(hip, mix(hip, ankle, 0.95f), LegW + 0.03f, color)
+    drawRoundRect(color, Offset(u(0.35f), u(0.375f)), Size(u(0.3f), u(0.32f)), CornerRadius(u(0.09f)))
+    drawArc(dark, 0f, 180f, false, Offset(u(0.45f), u(0.36f)), Size(u(0.1f), u(0.05f)), style = Stroke(u(0.012f), cap = StrokeCap.Round))
+    for (y in listOf(0.45f, 0.53f, 0.61f)) drawCircle(Color(0xFFFFF59D), u(0.012f), p(Offset(0.5f, y)))
+    for ((x, y) in listOf(0.41f to 0.5f, 0.59f to 0.57f, 0.42f to 0.76f, 0.58f to 0.8f)) drawStar(p(Offset(x, y)), u(0.016f), Color(0xFFFFF59D))
 }
 
 private fun DrawScope.drawShirt() {

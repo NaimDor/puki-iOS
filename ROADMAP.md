@@ -103,7 +103,6 @@ cooking, the car wash, offline Puki, Dance and Freeze, tracing)
    - Check the phone layouts on the S25: the food now sits beside the animal and the hub's
      islands scale down on short screens (0.5.1), but neither has been seen on a phone yet.
 3. **Games that feel better** (S–M each)
-   - Bedtime as a bedroom scene, like the other routines.
    - More variety in My Day: items drawn from a bigger pool each visit.
 4. **Small new toys** (S–M each, from the research below)
    - **Big and small:** "who gets the big apple?", with two choices.

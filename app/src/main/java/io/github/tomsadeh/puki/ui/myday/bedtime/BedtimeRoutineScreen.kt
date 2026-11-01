@@ -1,113 +1,109 @@
 package io.github.tomsadeh.puki.ui.myday.bedtime
 
-import androidx.compose.runtime.DisposableEffect
-import io.github.tomsadeh.puki.ui.common.LocalMusicPlayer
-import io.github.tomsadeh.puki.ui.common.LocalCompanion
-import io.github.tomsadeh.puki.ui.components.BackButton
 import android.app.Application
-import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.PukiApplication
 import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.Sfx
-import io.github.tomsadeh.puki.data.models.BilingualText
-import io.github.tomsadeh.puki.theme.CloudWhite
-import io.github.tomsadeh.puki.theme.EarthBrown
+import io.github.tomsadeh.puki.data.models.Gender
+import io.github.tomsadeh.puki.ui.common.GameSession
+import io.github.tomsadeh.puki.ui.common.LocalCompanion
+import io.github.tomsadeh.puki.ui.common.LocalGender
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
+import io.github.tomsadeh.puki.ui.common.LocalMusicPlayer
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
+import io.github.tomsadeh.puki.ui.components.DragDropState
+import io.github.tomsadeh.puki.ui.components.DragTarget
+import io.github.tomsadeh.puki.ui.components.DropZone
+import io.github.tomsadeh.puki.ui.components.GameBackground
+import io.github.tomsadeh.puki.ui.components.GameTopBar
+import io.github.tomsadeh.puki.ui.components.LocalDragDropState
+import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
+import io.github.tomsadeh.puki.ui.components.RoundPrompt
+import io.github.tomsadeh.puki.ui.components.ToolButton
+import io.github.tomsadeh.puki.ui.components.hintGlow
+import io.github.tomsadeh.puki.ui.components.idleBob
+import io.github.tomsadeh.puki.ui.components.noticeTouches
+import io.github.tomsadeh.puki.ui.components.popIn
+import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberStepGame
+import io.github.tomsadeh.puki.ui.myday.drawSleepingHead
+import io.github.tomsadeh.puki.ui.myday.drawToddler
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.sin
 
-data class BedtimeStep(
-    val id: String,
-    val instruction: BilingualText,
-    @DrawableRes val icon: Int,
-    val actionLabel: BilingualText
-)
+private enum class BedStep { PAJAMAS, TEETH, TEDDY, LIGHT, STARS }
 
-val bedtimeSteps = listOf(
-    BedtimeStep("pajamas", BilingualText("נלבש פיג'מה!", "Put on pajamas!"), R.drawable.ic_clothing_pajamas, BilingualText("ללבוש", "Wear")),
-    BedtimeStep("brush", BilingualText("נצחצח שיניים!", "Brush your teeth!"), R.drawable.ic_myday_toothbrush, BilingualText("לצחצח", "Brush")),
-    BedtimeStep("teddy", BilingualText("נשים את הדובי במיטה!", "Put teddy in bed!"), R.drawable.ic_tidy_teddy, BilingualText("לשים", "Place")),
-    BedtimeStep("light", BilingualText("נכבה את האור!", "Turn off the light!"), R.drawable.ic_bedtime_bulb, BilingualText("לכבות", "Off")),
-    BedtimeStep("stars", BilingualText("כוכבים בשמיים! לילה טוב!", "Stars in the sky! Good night!"), R.drawable.ic_ui_star, BilingualText("לילה טוב", "Good night"))
-)
+private const val BED = "bed"
+private val NIGHT = Color(0xFF0B1240)
 
-data class BedtimeState(
-    val currentStep: Int = 0,
-    val isComplete: Boolean = false
-)
+/** The stars on the ceiling: fractions of the screen. */
+private val CEILING_STARS = listOf(0.36f to 0.1f, 0.5f to 0.17f, 0.62f to 0.09f, 0.76f to 0.16f, 0.88f to 0.1f)
 
 class BedtimeRoutineViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
-    private val _state = MutableStateFlow(BedtimeState())
-    val state: StateFlow<BedtimeState> = _state.asStateFlow()
-
-    fun advanceStep() {
-        val current = _state.value
-        val nextStep = current.currentStep + 1
-        if (nextStep >= bedtimeSteps.size) {
-            _state.value = current.copy(isComplete = true)
-            viewModelScope.launch { progressRepository.addStars(2) }
-        } else {
-            _state.value = current.copy(currentStep = nextStep)
-        }
-    }
+    val session = GameSession("bedtime", (application as PukiApplication).progressRepository, viewModelScope)
 }
 
+/**
+ * Getting ready for bed in her room: pajamas on, teeth brushed, teddy in bed, the lamp off, and
+ * stars on the ceiling. The room gets slowly darker, she's tucked in, and with the brain on, Puki
+ * tells a story. No confetti here: it's bedtime.
+ */
 @Composable
-fun BedtimeRoutineScreen(onBack: () -> Unit, viewModel: BedtimeRoutineViewModel = viewModel()) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val companion = LocalCompanion.current  // waking now gets the story ready by the end
-    // Puki knows where she is (tapping him talks about this routine), and wakes up on the way in
-    LaunchedEffect(Unit) {
-        companion?.setScene("בשגרת השינה: פיג'מה, צחצוח שיניים, דובי, ולכבות את האור.", "Bedtime: pajamas, brushing teeth, teddy, and lights out.")
-        companion?.wake()
-    }
+fun BedtimeRoutineScreen(
+    onBack: () -> Unit,
+    onPlayAgain: () -> Unit = onBack,
+    viewModel: BedtimeRoutineViewModel = viewModel()
+) {
+    val companion = LocalCompanion.current
+    LaunchedEffect(Unit) { companion?.wake() }  // now, so the story is ready by the end
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
+    val sfxPlayer = LocalSfxPlayer.current
+    val girl = LocalGender.current == Gender.GIRL
+    val scope = rememberCoroutineScope()
     // The calm night track while getting ready for bed, back to the main theme afterwards
     val musicPlayer = LocalMusicPlayer.current
     DisposableEffect(Unit) {
@@ -117,158 +113,225 @@ fun BedtimeRoutineScreen(onBack: () -> Unit, viewModel: BedtimeRoutineViewModel 
             musicPlayer.playTrack("music_hub")
         }
     }
-    val sfxPlayer = LocalSfxPlayer.current
 
-    // Gradually darken the background as steps progress
-    val darkness = state.currentStep.toFloat() / bedtimeSteps.size
-    val bgColors = listOf(
-        Color(0xFF5C6BC0).copy(alpha = 0.3f + darkness * 0.7f),
-        Color(0xFF3949AB).copy(alpha = 0.4f + darkness * 0.6f),
-        Color(0xFF1A237E).copy(alpha = 0.5f + darkness * 0.5f)
+    val game = rememberStepGame(BedStep.PAJAMAS, BedStep.entries.size, viewModel.session)
+    val step = game.step
+    var pajamasOn by remember { mutableStateOf(false) }
+    var brushing by remember { mutableStateOf(false) }
+    var teddyInBed by remember { mutableStateOf(false) }
+    var lampOn by remember { mutableStateOf(true) }
+    var starsOut by remember { mutableStateOf(0) }
+    var starring by remember { mutableStateOf(false) }
+    var tucked by remember { mutableStateOf(false) }
+    val busy = game.betweenSteps || brushing || starring || tucked
+
+    val help = rememberHelp(step, active = !busy) {
+        voicePlayer.play(
+            when (step) {
+                BedStep.PAJAMAS -> "voice_bedtime_pajamas"
+                BedStep.TEETH -> "voice_bedtime_brush"
+                BedStep.TEDDY -> "voice_bedtime_teddy"
+                BedStep.LIGHT -> "voice_bedtime_light"
+                BedStep.STARS -> "voice_bedtime_stars"
+            },
+            language
+        )
+    }
+    when (step) {
+        BedStep.PAJAMAS -> RoundPrompt(0, "בשגרת השינה: לובשים פיג'מה.", "Bedtime: putting on pajamas.", "voice_bedtime_pajamas")
+        BedStep.TEETH -> RoundPrompt(1, "בשגרת השינה: מצחצחים שיניים.", "Bedtime: brushing teeth.", "voice_bedtime_brush")
+        BedStep.TEDDY -> RoundPrompt(2, "בשגרת השינה: שמים את הדובי במיטה.", "Bedtime: putting teddy in bed.", "voice_bedtime_teddy")
+        BedStep.LIGHT -> RoundPrompt(3, "בשגרת השינה: מכבים את האור.", "Bedtime: turning off the light.", "voice_bedtime_light")
+        BedStep.STARS -> RoundPrompt(4, "בשגרת השינה: כוכבים בשמיים, לילה טוב.", "Bedtime: stars in the sky, good night.", "voice_bedtime_stars")
+    }
+
+    // The room gets dark slowly, step by step, and properly once the lamp is off
+    val dark by animateFloatAsState(
+        if (lampOn) step.ordinal * 0.05f else if (tucked) 0.72f else 0.62f, tween(1400), label = "dark"
+    )
+    val lamp by animateFloatAsState(if (lampOn) 1f else 0f, tween(700), label = "lamp")
+    val moon by animateFloatAsState(step.ordinal / 4f, tween(1400), label = "moon")
+    val pajamas by animateFloatAsState(if (pajamasOn) 1f else 0f, spring(dampingRatio = 0.5f, stiffness = 300f), label = "pajamas")
+    val child by animateFloatAsState(if (tucked) 0f else 1f, tween(900), label = "child")
+    val asleep by animateFloatAsState(if (tucked) 1f else 0f, tween(900), label = "asleep")
+    val twinkle by rememberInfiniteTransition(label = "stars").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(5000, easing = LinearEasing), RepeatMode.Restart), label = "twinkle"
     )
 
-    LaunchedEffect(state.currentStep) {
-        if (!state.isComplete && state.currentStep < bedtimeSteps.size) {
-            delay(500)
-            voicePlayer.play("voice_bedtime_${bedtimeSteps[state.currentStep].id}", language)
-        }
-    }
+    CompositionLocalProvider(LocalDragDropState provides remember { DragDropState() }) {
+        GameBackground {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().noticeTouches(help)) {
+                val w = maxWidth
+                val h = maxHeight
+                val childSide = h * 0.62f
+                val childX = w * 0.13f
+                val childY = h * 0.9f - childSide * 0.93f
+                val tool = minOf(h * 0.24f, 150.dp).coerceAtLeast(100.dp)
+                val headSide = minOf(h * 0.44f, w * 0.26f)
+                fun Rect.place() = Modifier.absoluteOffset(w * left, h * top).size(w * width, h * height)
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(
-            Brush.verticalGradient(bgColors)
-        )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                BackButton(onBack)
-                Text(BilingualText("שינה טובה", "Bedtime").resolve(language), style = MaterialTheme.typography.headlineMedium, color = CloudWhite)
-                Spacer(modifier = Modifier.width(64.dp))
-            }
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawBedroom() }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Progress dots
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                bedtimeSteps.forEachIndexed { i, step ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(if (i == state.currentStep) 28.dp else 18.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        i < state.currentStep -> Brush.radialGradient(
-                                            listOf(Color(0xFFFFE082), Color(0xFFFFD700))
-                                        )
-                                        i == state.currentStep -> Brush.radialGradient(
-                                            listOf(CloudWhite, CloudWhite.copy(alpha = 0.8f))
-                                        )
-                                        else -> Brush.radialGradient(
-                                            listOf(CloudWhite.copy(alpha = 0.35f), CloudWhite.copy(alpha = 0.2f))
-                                        )
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (i < state.currentStep) Text("✓", fontSize = 11.sp, color = EarthBrown)
-                        }
-                        if (i == state.currentStep) {
-                            Image(painter = painterResource(step.icon), contentDescription = null, modifier = Modifier.padding(top = 4.dp).size(20.dp))
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            if (!state.isComplete && state.currentStep < bedtimeSteps.size) {
-                val step = bedtimeSteps[state.currentStep]
-
-                AnimatedContent(
-                    targetState = state.currentStep,
-                    transitionSpec = { (scaleIn() + fadeIn()) togetherWith fadeOut() },
-                    label = "bedtime_step"
-                ) { _ ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Image(painter = painterResource(step.icon), contentDescription = null, modifier = Modifier.size(130.dp))
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            step.instruction.resolve(language),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = CloudWhite
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Action button
-                Box(
+                // The child, in the day's clothes until the pajamas go on
+                if (child > 0f) Canvas(
                     modifier = Modifier
-                        .size(width = 200.dp, height = 80.dp)
-                        .shadow(8.dp, RoundedCornerShape(40.dp))
-                        .clip(RoundedCornerShape(40.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color(0xFF9575CD), Color(0xFF7E57C2))
-                            )
-                        )
-                        .clickable {
-                            sfxPlayer.play(Sfx.POP)
-                            viewModel.advanceStep()
-                        },
-                    contentAlignment = Alignment.Center
+                        .align(AbsoluteAlignment.TopLeft)
+                        .absoluteOffset(childX, childY)
+                        .size(childSide)
+                        .graphicsLayer { alpha = child }
                 ) {
-                    Text(
-                        bedtimeSteps[state.currentStep].actionLabel.resolve(language),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = CloudWhite
+                    drawToddler(
+                        girl,
+                        if (pajamas > 0.05f) mapOf("underwear" to 1f, "pajamas" to pajamas)
+                        else mapOf("underwear" to 1f, "shirt" to 1f, "pants" to 1f, "socks" to 1f)
                     )
                 }
-            }
+                if (brushing) BrushAtMouth(
+                    size = childSide * 0.26f,
+                    modifier = Modifier.align(AbsoluteAlignment.TopLeft)
+                        .absoluteOffset(childX + childSide * 0.56f, childY + childSide * 0.2f)
+                )
 
-            // Stars ceiling effect when complete
-            if (state.isComplete) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            repeat(7) { Image(painter = painterResource(R.drawable.ic_ui_star), contentDescription = null, modifier = Modifier.size(36.dp)) }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            repeat(5) { Image(painter = painterResource(R.drawable.ic_myday_sparkle), contentDescription = null, modifier = Modifier.size(26.dp)) }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Image(painter = painterResource(R.drawable.ic_bedtime_moon), contentDescription = null, modifier = Modifier.size(84.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                BilingualText("לילה טוב!", "Good night!").resolve(language),
-                                style = MaterialTheme.typography.headlineLarge,
-                                color = CloudWhite
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Image(painter = painterResource(R.drawable.ic_bedtime_zzz), contentDescription = null, modifier = Modifier.size(40.dp))
+                // Asleep on the pillow, with the blanket pulled up
+                if (asleep > 0f) {
+                    Canvas(
+                        modifier = Modifier
+                            .align(AbsoluteAlignment.TopLeft)
+                            .absoluteOffset(w * PillowCenter.x - headSide / 2, h * PillowCenter.y - headSide * 0.25f)
+                            .size(headSide)
+                            .graphicsLayer { alpha = asleep }
+                    ) { drawSleepingHead(girl) }
+                    Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { alpha = asleep }) { drawTuckedBlanket() }
+                }
+
+                // The bed takes teddy
+                DropZone(zoneId = BED, modifier = Modifier.align(AbsoluteAlignment.TopLeft).then(BedArea.place())) {}
+                if (teddyInBed) Image(
+                    painter = painterResource(R.drawable.ic_tidy_teddy),
+                    contentDescription = null,
+                    modifier = Modifier.align(AbsoluteAlignment.TopLeft)
+                        .absoluteOffset(w * 0.55f, h * 0.42f)
+                        .size(h * 0.22f)
+                        .popIn()
+                ) else DragTarget(
+                    itemId = "teddy",
+                    tapToZone = if (step == BedStep.TEDDY) BED else null,
+                    modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(w * 0.5f, h * 0.76f),
+                    onDragEnd = { zone ->
+                        if (step == BedStep.TEDDY && zone == BED) {
+                            teddyInBed = true
+                            game.done(BedStep.LIGHT, party = false)
                         }
                     }
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_tidy_teddy),
+                        contentDescription = null,
+                        modifier = Modifier.hintGlow(step == BedStep.TEDDY && help.showHint).size(h * 0.2f).idleBob(amount = 0.4f)
+                    )
+                }
+
+                // Everything dims together, except the window, the lamp and the stars
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { alpha = dark }) { drawRect(NIGHT) }
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawLamp(lamp) }
+                Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawNightWindow(moon) }
+                CEILING_STARS.take(starsOut).forEachIndexed { i, (fx, fy) ->
+                    Image(
+                        painter = painterResource(R.drawable.ic_ui_star),
+                        contentDescription = null,
+                        modifier = Modifier.align(AbsoluteAlignment.TopLeft)
+                            .absoluteOffset(w * fx, h * fy)
+                            .size(minOf(h * 0.1f, 56.dp))
+                            .popIn()
+                            .graphicsLayer { alpha = 0.75f + 0.25f * sin((twinkle + i * 0.2f) * 2 * Math.PI).toFloat() }
+                    )
+                }
+
+                // What each step answers to
+                val toolAt = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(w * 0.5f, h * 0.34f)
+                if (step == BedStep.PAJAMAS && !busy) ToolButton(
+                    size = tool,
+                    hint = help.showHint,
+                    color = Color(0xFFF3E5F5),
+                    modifier = toolAt,
+                    onClick = {
+                        sfxPlayer.play(Sfx.WHOOSH, 0.5f)
+                        pajamasOn = true
+                        game.done(BedStep.TEETH, party = false)
+                    }
+                ) { Image(painterResource(R.drawable.ic_clothing_pajamas), null, Modifier.size(tool * 0.8f)) }
+                if (step == BedStep.TEETH && !busy) ToolButton(
+                    size = tool,
+                    hint = help.showHint,
+                    modifier = toolAt,
+                    onClick = {
+                        brushing = true
+                        scope.launch {
+                            repeat(3) {
+                                sfxPlayer.play(Sfx.MARACAS, 0.35f)
+                                delay(450)
+                            }
+                            brushing = false
+                            game.done(BedStep.TEDDY, party = false)
+                        }
+                    }
+                ) { Image(painterResource(R.drawable.ic_myday_toothbrush), null, Modifier.size(tool * 0.8f)) }
+                if (step == BedStep.LIGHT && !busy) TapArea(Modifier.align(AbsoluteAlignment.TopLeft).then(LampArea.place()), help.showHint) {
+                    sfxPlayer.play(Sfx.POP)
+                    lampOn = false
+                    game.done(BedStep.STARS, party = false)
+                }
+                if (step == BedStep.STARS && !busy) TapArea(Modifier.align(AbsoluteAlignment.TopLeft).then(WindowArea.place()), help.showHint) {
+                    starring = true
+                    scope.launch {
+                        repeat(CEILING_STARS.size) {
+                            sfxPlayer.play(Sfx.STAR_COLLECT, 0.5f)
+                            starsOut = it + 1
+                            delay(420)
+                        }
+                        game.done(null, party = false)
+                        delay(600)
+                        tucked = true
+                    }
+                }
+
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = BedStep.entries.size, starsEarned = game.stars)
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        if (state.isComplete) {
-            // פוקי's bedtime story, when the brain on the PC is reachable
-            BedtimeStory()
+            // פוקי's bedtime story, when the brain is reachable; then the quiet end card
+            if (tucked) BedtimeStory(onFinished = { game.finish() })
+            if (game.sessionComplete) {
+                RoundCompleteSheet(starsEarned = game.stars, onContinue = onPlayAgain, onHome = onBack, calm = true)
+            }
         }
     }
+}
+
+/** A part of the room that answers a tap, glowing as a hint. */
+@Composable
+private fun TapArea(modifier: Modifier, hint: Boolean, onTap: () -> Unit) {
+    Box(
+        modifier = modifier
+            .hintGlow(hint)
+            .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onTap)
+    )
+}
+
+/** The toothbrush going back and forth at her mouth. */
+@Composable
+private fun BrushAtMouth(size: Dp, modifier: Modifier) {
+    val move = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            move.animateTo(1f, tween(160))
+            move.animateTo(-1f, tween(160))
+        }
+    }
+    Image(
+        painter = painterResource(R.drawable.ic_myday_toothbrush),
+        contentDescription = null,
+        modifier = modifier.size(size).graphicsLayer { translationX = move.value * 8.dp.toPx() }
+    )
 }
