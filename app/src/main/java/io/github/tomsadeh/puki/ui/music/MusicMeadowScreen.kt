@@ -51,6 +51,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.unit.Dp
+import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberCompact
+import io.github.tomsadeh.puki.ui.components.reaction
+import io.github.tomsadeh.puki.ui.components.noticeTouches
+import io.github.tomsadeh.puki.ui.components.hintGlow
+import io.github.tomsadeh.puki.ui.components.ReactionState
+import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -93,8 +102,14 @@ data class MusicState(
     val totalRounds: Int = 4,
     val totalStarsEarned: Int = 0,
     val patternLength: Int = 1,  // a one-note tune first: 1, 1, 2, 2
-    val isReplay: Boolean = false  // the same tune again, after a wrong note
-)
+    val isReplay: Boolean = false,  // the same tune again, after a wrong note
+    val tuneMisses: Int = 0
+) {
+    /** The instrument the tune wants now, or -1 when it isn't her turn. */
+    val nextNote get() = if (phase == MusicPhase.PLAYER_TURN) pattern.getOrElse(playerInput.size) { -1 } else -1
+}
+
+private const val LONGEST_TUNE = 3
 
 class MusicMeadowViewModel(application: Application) : AndroidViewModel(application) {
     private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
@@ -105,13 +120,13 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
         // Tunes start one note longer at each level
         viewModelScope.launch {
             val level = session.level()
-            _state.value = _state.value.copy(patternLength = level)
+            _state.value = _state.value.copy(patternLength = level.coerceAtMost(2))  // tunes she can win at her age
         }
     }
 
     fun startSimonSays() {
         val pattern = List(_state.value.patternLength) { (0 until instruments.size).random() }
-        _state.value = _state.value.copy(phase = MusicPhase.SHOW_PATTERN, pattern = pattern, playerInput = emptyList(), isReplay = false)
+        _state.value = _state.value.copy(phase = MusicPhase.SHOW_PATTERN, pattern = pattern, playerInput = emptyList(), isReplay = false, tuneMisses = 0)
     }
 
     fun onShowPatternDone() {
@@ -131,7 +146,10 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
 
         if (newInput != expectedSoFar) {
             // Wrong: play her the same tune again (no grown-up needed to start over)
-            _state.value = current.copy(playerInput = emptyList(), phase = MusicPhase.SHOW_PATTERN, isReplay = true)
+            // The second miss makes the tune as short as what she got right, so she can always finish
+            val misses = current.tuneMisses + 1
+            val shorter = if (misses >= 2) current.pattern.take(current.playerInput.size.coerceAtLeast(1)) else current.pattern
+            _state.value = current.copy(pattern = shorter, playerInput = emptyList(), phase = MusicPhase.SHOW_PATTERN, isReplay = true, tuneMisses = misses)
             session.slip()
             return false
         }
@@ -145,7 +163,7 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
                 phase = if (nextRound >= current.totalRounds) MusicPhase.SESSION_COMPLETE else MusicPhase.SUCCESS,
                 totalStarsEarned = newStars,
                 roundIndex = nextRound,
-                patternLength = current.patternLength + if (nextRound % 2 == 0) 1 else 0
+                patternLength = (current.patternLength + if (nextRound % 2 == 0) 1 else 0).coerceAtMost(LONGEST_TUNE)
             )
             session.star()
             if (nextRound >= current.totalRounds) session.finish(current.totalRounds)
@@ -175,6 +193,9 @@ fun MusicMeadowScreen(
     val scope = rememberCoroutineScope()
     // How many times each instrument has been played (each time, notes float up from it)
     val plays = remember { mutableStateListOf(0, 0, 0, 0) }
+    val reactions = remember { instruments.map { ReactionState() } }
+    val compact = rememberCompact()
+    var showCard by remember { mutableStateOf(false) }
     var xyloNote by remember { mutableIntStateOf(0) }
     fun playInstrument(index: Int) {
         plays[index] = plays[index] + 1
@@ -196,11 +217,27 @@ fun MusicMeadowScreen(
         voicePlayer.play("voice_music_free", language)
     }
 
+    // Her turn and quiet: "your turn", and the next note lights up
+    val help = rememberHelp(state.roundIndex to state.playerInput.size, active = state.phase == MusicPhase.PLAYER_TURN) {
+        voicePlayer.play("voice_music_your_turn", language)
+        val note = state.nextNote
+        if (note >= 0) scope.launch {
+            viewModel.setHighlight(note)
+            delay(700)
+            viewModel.setHighlight(-1)
+        }
+    }
+
     // Show pattern animation
     LaunchedEffect(state.phase) {
         if (state.phase == MusicPhase.PLAYER_TURN) voicePlayer.play("voice_music_your_turn", language)
-        if (state.phase == MusicPhase.SUCCESS) {
+        if (state.phase == MusicPhase.SUCCESS || state.phase == MusicPhase.SESSION_COMPLETE) {
             companion.reactOr("ניגנו את המנגינה בדיוק נכון!", "The child played the tune back just right!") { voicePlayer.playPraise(language) }
+            reactions.forEachIndexed { i, r -> launch { delay(i * 80L); r.celebrate() } }
+        }
+        if (state.phase == MusicPhase.SESSION_COMPLETE) {
+            delay(2600)
+            showCard = true
         }
         if (state.phase == MusicPhase.SHOW_PATTERN) {
             // "Listen and remember!" first, then the pattern (after a wrong note, let "try again" finish)
@@ -223,20 +260,19 @@ fun MusicMeadowScreen(
     ) {
         // Dance and Freeze, waiting at the side of the stage
         Box(modifier = Modifier.fillMaxSize()) {
-            DanceButton(onClick = onDance, modifier = Modifier.align(Alignment.TopStart).padding(start = 44.dp, top = 120.dp))
+            DanceButton(onClick = onDance, modifier = Modifier.align(Alignment.TopStart).padding(start = if (compact) 4.dp else 44.dp, top = if (compact) 92.dp else 120.dp))
         }
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
+            modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             GameTopBar(
                 onBack = onBack,
                 roundIndex = state.roundIndex,
-                totalRounds = state.totalRounds,
+                // (the free play before the tunes has no rounds to count)
+                totalRounds = if (state.phase == MusicPhase.FREE_PLAY) 0 else state.totalRounds,
                 starsEarned = state.totalStarsEarned
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             PromptBubble(
                 when (state.phase) {
@@ -248,11 +284,25 @@ fun MusicMeadowScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // The tune's notes, filling up as she plays them
+            if (state.phase == MusicPhase.PLAYER_TURN) Row(
+                modifier = Modifier.padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                repeat(state.pattern.size) { i ->
+                    Box(
+                        modifier = Modifier
+                            .popIn(i)
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(if (i < state.playerInput.size) Color(0xFFFFD54F) else Color.White.copy(alpha = 0.4f))
+                    )
+                }
+            }
 
             // The instruments stand on the stage, each in its own soft pool of light
             Row(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 130.dp),  // inside the curtains
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = if (compact) 90.dp else 130.dp),  // inside the curtains
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -279,6 +329,9 @@ fun MusicMeadowScreen(
                             .offset(y = if (index == 0 || index == instruments.lastIndex) 18.dp else (-18).dp)
                             .popIn(index)
                             .then(if (isHighlighted) Modifier else Modifier.idleBob(index, 0.7f))
+                            .reaction(reactions[index], jumpHeight = 24.dp)
+                            // Stuck, or a wrong note in this tune: the next note shows itself
+                            .hintGlow((help.showHint || state.tuneMisses > 0) && state.nextNote == index)
                     ) {
                         Box(
                             modifier = Modifier
@@ -296,9 +349,12 @@ fun MusicMeadowScreen(
                                     playInstrument(index)
                                     if (state.phase == MusicPhase.PLAYER_TURN) {
                                         val result = viewModel.onInstrumentTapped(index)
+                                        help.touched()
                                         if (result == false) {
                                             sfxPlayer.play(Sfx.WRONG_GENTLE)
                                             voicePlayer.play("voice_prompt_try_again", language)
+                                            help.missed()
+                                            scope.launch { reactions[index].shake() }
                                         } else if (result == true) {
                                             sfxPlayer.play(Sfx.SUCCESS)
                                         }
@@ -315,56 +371,64 @@ fun MusicMeadowScreen(
                             )
                             NoteBurst(key = plays[index], color = lerp(instrument.color, Color.White, 0.35f))
                         }
-                        Text(instrument.name.resolve(language), style = MaterialTheme.typography.titleMedium, color = CloudWhite, maxLines = 1, softWrap = false)
+                        if (!compact) Text(instrument.name.resolve(language), style = MaterialTheme.typography.titleMedium, color = CloudWhite, maxLines = 1, softWrap = false)
                     }
                 }
             }
 
-            // Start the tune game: a big round play button (no reading needed), gently pulsing
-            if (state.phase == MusicPhase.FREE_PLAY) {
-                val pulse by rememberInfiniteTransition(label = "start").animateFloat(
-                    1f, 1.08f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "start_pulse"
-                )
-                Box(
-                    modifier = Modifier
-                        .graphicsLayer { scaleX = pulse; scaleY = pulse }
-                        .size(130.dp)
-                        .shadow(10.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(Brush.radialGradient(listOf(Color(0xFF81C784), Color(0xFF43A047))))
-                        .border(6.dp, Color.White, CircleShape)
-                        .clickable { viewModel.startSimonSays() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(modifier = Modifier.size(56.dp)) {
-                        // A play triangle, nudged right so it looks centered
-                        val tri = Path().apply {
-                            moveTo(size.width * 0.22f, size.height * 0.08f)
-                            lineTo(size.width * 0.98f, size.height * 0.5f)
-                            lineTo(size.width * 0.22f, size.height * 0.92f)
-                            close()
-                        }
-                        drawPath(tri, Color.White)
-                    }
-                }
-            }
+            // Start the tune game (on a short screen it floats over the stage, so the instruments keep the room)
+            if (state.phase == MusicPhase.FREE_PLAY && !compact) PlayButton(130.dp) { viewModel.startSimonSays() }
 
             if (state.phase == MusicPhase.SUCCESS) {
                 LaunchedEffect(state.roundIndex) {
-                    delay(1000)
+                    delay(if (companion?.isReady == true) 3400 else 2400)
                     viewModel.nextRound()
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        if (state.phase == MusicPhase.SESSION_COMPLETE) {
+        if (state.phase == MusicPhase.FREE_PLAY && compact) Box(modifier = Modifier.fillMaxSize().padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
+            PlayButton(88.dp) { viewModel.startSimonSays() }
+        }
+        ConfettiOverlay(show = state.phase == MusicPhase.SUCCESS || state.phase == MusicPhase.SESSION_COMPLETE)
+        if (showCard) {
             RoundCompleteSheet(starsEarned = state.totalStarsEarned, onContinue = onPlayAgain, onHome = onBack)
         }
     }
 }
 
+
+/** A big round play button (no reading needed), gently pulsing. */
+@Composable
+private fun PlayButton(side: Dp, onClick: () -> Unit) {
+    val pulse by rememberInfiniteTransition(label = "start").animateFloat(
+        1f, 1.08f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "start_pulse"
+    )
+    Box(
+        modifier = Modifier
+            .graphicsLayer { scaleX = pulse; scaleY = pulse }
+            .size(side)
+            .shadow(10.dp, CircleShape)
+            .clip(CircleShape)
+            .background(Brush.radialGradient(listOf(Color(0xFF81C784), Color(0xFF43A047))))
+            .border(6.dp, Color.White, CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(side * 0.43f)) {
+            // A play triangle, nudged right so it looks centered
+            val w = size.width
+            val h = size.height
+            val tri = Path().apply {
+                moveTo(w * 0.22f, h * 0.08f)
+                lineTo(w * 0.98f, h * 0.5f)
+                lineTo(w * 0.22f, h * 0.92f)
+                close()
+            }
+            drawPath(tri, Color.White)
+        }
+    }
+}
 
 /** The xylophone's notes, as playback rates of its one bar: a major pentatonic, up and back down. */
 private val XYLO_SCALE = listOf(1f, 1.122f, 1.26f, 1.498f, 1.682f, 2f, 1.682f, 1.498f, 1.26f, 1.122f)
