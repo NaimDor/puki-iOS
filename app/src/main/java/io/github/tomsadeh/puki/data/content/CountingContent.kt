@@ -4,33 +4,37 @@ import androidx.annotation.DrawableRes
 import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.data.models.BilingualText
 
+/** Where a round's things live. */
+enum class Habitat { BED, TREE, POND, NIGHT, SKY }
+
 data class CountingRound(
     val targetNumber: Int,
     val itemName: BilingualText,
-    @DrawableRes val itemIcon: Int
+    @DrawableRes val itemIcon: Int,
+    val habitat: Habitat
 )
 
 val level1CountingRounds = listOf(
-    CountingRound(1, BilingualText("פרח", "flower"), R.drawable.ic_sticker_flower),
-    CountingRound(2, BilingualText("פרפרים", "butterflies"), R.drawable.ic_sticker_butterfly),
-    CountingRound(3, BilingualText("חיפושיות", "ladybugs"), R.drawable.ic_stamp_ladybug),
-    CountingRound(4, BilingualText("פרחים", "flowers"), R.drawable.ic_count_hibiscus)
+    CountingRound(1, BilingualText("פרח", "flower"), R.drawable.ic_sticker_flower, Habitat.BED),
+    CountingRound(2, BilingualText("פרפרים", "butterflies"), R.drawable.ic_sticker_butterfly, Habitat.BED),
+    CountingRound(3, BilingualText("חיפושיות", "ladybugs"), R.drawable.ic_stamp_ladybug, Habitat.BED),
+    CountingRound(4, BilingualText("פרחים", "flowers"), R.drawable.ic_count_hibiscus, Habitat.BED)
 )
 
 val level2CountingRounds = listOf(
-    CountingRound(2, BilingualText("תפוחים", "apples"), R.drawable.ic_count_apple),
-    CountingRound(3, BilingualText("כוכבים", "stars"), R.drawable.ic_sticker_star),
-    CountingRound(4, BilingualText("לבבות", "hearts"), R.drawable.ic_sticker_heart),
-    CountingRound(5, BilingualText("דגים", "fish"), R.drawable.ic_food_fish)
+    CountingRound(2, BilingualText("תפוחים", "apples"), R.drawable.ic_count_apple, Habitat.TREE),
+    CountingRound(3, BilingualText("כוכבים", "stars"), R.drawable.ic_sticker_star, Habitat.NIGHT),
+    CountingRound(4, BilingualText("לבבות", "hearts"), R.drawable.ic_sticker_heart, Habitat.SKY),
+    CountingRound(5, BilingualText("דגים", "fish"), R.drawable.ic_food_fish, Habitat.POND)
 )
 
 val level3CountingRounds = listOf(
-    CountingRound(5, BilingualText("ציפורים", "birds"), R.drawable.ic_count_bird),
-    CountingRound(6, BilingualText("פרפרים", "butterflies"), R.drawable.ic_sticker_butterfly),
-    CountingRound(7, BilingualText("פרחים", "flowers"), R.drawable.ic_sticker_flower),
-    CountingRound(8, BilingualText("כוכבים", "stars"), R.drawable.ic_sticker_star),
-    CountingRound(9, BilingualText("לבבות", "hearts"), R.drawable.ic_count_heart_purple),
-    CountingRound(10, BilingualText("תפוחים", "apples"), R.drawable.ic_count_apple_green)
+    CountingRound(5, BilingualText("ציפורים", "birds"), R.drawable.ic_count_bird, Habitat.SKY),
+    CountingRound(6, BilingualText("פרפרים", "butterflies"), R.drawable.ic_sticker_butterfly, Habitat.BED),
+    CountingRound(7, BilingualText("פרחים", "flowers"), R.drawable.ic_sticker_flower, Habitat.BED),
+    CountingRound(8, BilingualText("כוכבים", "stars"), R.drawable.ic_sticker_star, Habitat.NIGHT),
+    CountingRound(9, BilingualText("לבבות", "hearts"), R.drawable.ic_count_heart_purple, Habitat.SKY),
+    CountingRound(10, BilingualText("תפוחים", "apples"), R.drawable.ic_count_apple_green, Habitat.TREE)
 )
 
 fun countingRoundsForLevel(level: Int): List<CountingRound> = when {

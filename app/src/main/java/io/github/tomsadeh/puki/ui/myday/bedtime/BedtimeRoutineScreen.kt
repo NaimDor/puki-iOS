@@ -164,7 +164,7 @@ fun BedtimeRoutineScreen(
                 val w = maxWidth
                 val h = maxHeight
                 val childSide = h * 0.62f
-                val childX = w * 0.13f
+                val childX = w * 0.31f - childSide / 2
                 val childY = h * 0.9f - childSide * 0.93f
                 val tool = minOf(h * 0.24f, 150.dp).coerceAtLeast(100.dp)
                 val headSide = minOf(h * 0.44f, w * 0.26f)

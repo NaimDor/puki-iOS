@@ -44,7 +44,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.platform.LocalDensity
+import io.github.tomsadeh.puki.ui.components.popAway
+import io.github.tomsadeh.puki.ui.myday.PukiCorner
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -165,6 +172,7 @@ fun WordGardenScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
     val round = rememberRoundFlow()
+    val pictureReaction = rememberReactionState(state.roundIndex)
 
     LaunchedEffect(language) {
         viewModel.initialize(language)
@@ -187,7 +195,7 @@ fun WordGardenScreen(
             scene = Scene.GARDEN
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),
+            modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             GameTopBar(
@@ -197,21 +205,23 @@ fun WordGardenScreen(
                 starsEarned = state.totalStarsEarned
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Example picture
+            // The picture on its sign, and the blocks beside it: side by side, the blocks always
+            // have room (above each other, a phone's short screen left them none at all)
+            BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            val pictureSize = minOf(maxHeight * 0.62f, 170.dp)
+            val blockSize = minOf(maxHeight * 0.62f, 160.dp)
+            Row(
+                modifier = Modifier.fillMaxSize().padding(start = PukiCorner),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             if (state.letterChoices.isNotEmpty()) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.reaction(pictureReaction, jumpHeight = 20.dp)) {
+                    WordSign(size = pictureSize, modifier = Modifier.popIn(key = state.roundIndex)) {
                     Image(
                         painter = painterResource(state.targetLetter.exampleIcon),
                         contentDescription = null,
                         modifier = Modifier
-                            .popIn(key = state.roundIndex)
-                            .size(170.dp)
-                            .shadow(8.dp, RoundedCornerShape(32.dp))
-                            .clip(RoundedCornerShape(32.dp))
-                            .background(Color.White)
-                            .padding(20.dp)
+                            .size(pictureSize * 0.82f)
                             .clickable {
                                 val letter = state.targetLetter
                                 val fallback = { voicePlayer.play("voice_letter_${letter.id}", language) }
@@ -220,10 +230,11 @@ fun WordGardenScreen(
                                 } else fallback()
                             }
                     )
+                    }
                     Text(
                         state.targetLetter.exampleWord.resolve(language),
                         style = MaterialTheme.typography.titleLarge,
-                        color = EarthBrown
+                        color = LetterInk
                     )
                     Spacer(Modifier.height(8.dp))
                     PromptBubble(
@@ -232,10 +243,8 @@ fun WordGardenScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Letter choices
-            Scatter(seed = sessionSeed + state.roundIndex, modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Scatter(seed = sessionSeed + state.roundIndex, modifier = Modifier.weight(1f).fillMaxHeight()) {
                 state.letterChoices.forEachIndexed { index, letter ->
                     val block = LETTER_BLOCKS[index % LETTER_BLOCKS.size]
                     val letterReaction = rememberReactionState(state.roundIndex, letter.id)
@@ -250,21 +259,20 @@ fun WordGardenScreen(
                     Box(
                         modifier = Modifier
                             .popIn(index, state.roundIndex)
+                            .popAway(round.won && letter.id != state.targetLetter.id, index)
                             .idleBob(index)
                             .reaction(letterReaction)
                             .hintGlow(help.showHint && letter.id == state.targetLetter.id)
-                            .size(160.dp)
+                            .size(blockSize)
                             .graphicsLayer { scaleX = scale; scaleY = scale; rotationZ = scatterTilt(sessionSeed + state.roundIndex, index) }
-                            .shadow(10.dp, RoundedCornerShape(32.dp))
-                            .clip(RoundedCornerShape(32.dp))
-                            .background(Brush.verticalGradient(listOf(lerp(block, Color.White, 0.25f), block, lerp(block, Color.Black, 0.2f))))
-                            .border(5.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(32.dp))
+                            .drawBehind { drawWoodBlock(block) }
                             .clickable(interactionSource = interactionSource, indication = null) {
                                 val correct = viewModel.onLetterTapped(letter.id) ?: return@clickable
                                 if (correct) {
                                     sfxPlayer.play(Sfx.SUCCESS)
                                     companion.reactOr("מצאו את האות ${letter.hebrewLetter}, כמו ${state.targetLetter.exampleWord.he}!", "The child found the letter ${letter.englishLetter}, like ${state.targetLetter.exampleWord.en.lowercase()}!") { voicePlayer.playPraise(language) }
                                     scope.launch { letterReaction.celebrate() }
+                                    scope.launch { pictureReaction.celebrate() }
                                     round.win(2000, 3400) {
                                         viewModel.nextRound()
                                     }
@@ -281,12 +289,18 @@ fun WordGardenScreen(
                             Language.HEBREW -> letter.hebrewLetter
                             Language.ENGLISH -> letter.englishLetter
                         }
-                        Text(displayLetter, fontSize = 88.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            displayLetter,
+                            fontSize = with(LocalDensity.current) { (blockSize * 0.52f).toSp() },
+                            color = LetterInk,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = blockSize * 0.06f)
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            }
+            }
         }
 
         ConfettiOverlay(show = round.won)

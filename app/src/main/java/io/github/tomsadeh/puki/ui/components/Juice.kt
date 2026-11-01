@@ -21,6 +21,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.interaction.PressInteraction
@@ -149,6 +150,14 @@ fun PromptBubble(text: String, modifier: Modifier = Modifier) {
     ) {
         Text(text, style = MaterialTheme.typography.headlineSmall, color = Color(0xFF5D4037))
     }
+}
+
+/** Pops away and fades when [gone]: for what's no longer needed, like the wrong answers after a win. */
+fun Modifier.popAway(gone: Boolean, index: Int = 0): Modifier = composed {
+    val t by animateFloatAsState(
+        if (gone) 0f else 1f, tween(260, delayMillis = if (gone) 60 * index else 0), label = "pop_away"
+    )
+    graphicsLayer { scaleX = t; scaleY = t; alpha = t }
 }
 
 // ---------- Scenes ----------

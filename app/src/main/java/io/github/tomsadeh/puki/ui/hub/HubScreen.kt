@@ -154,7 +154,7 @@ fun HubScreen(
             // Puki on the far hill: he says hello with her, and a tap makes him talk
             val pukiSize = 110.dp * screenScale
             OfflineParrot(
-                modifier = Modifier.absoluteOffset(x = width * 0.06f, y = height * 0.305f - pukiSize),
+                modifier = Modifier.absoluteOffset(x = width * 0.095f, y = height * 0.305f - pukiSize),
                 size = pukiSize
             )
         }

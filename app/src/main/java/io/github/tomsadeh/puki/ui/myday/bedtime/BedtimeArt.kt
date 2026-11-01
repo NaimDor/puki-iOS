@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
  * The bedroom, in fractions of the screen so it fits a tablet and a phone on its side: the window
  * on the left, the bed in the middle with its pillow on the right, and the lamp beside the pillow.
  */
-val WindowArea = Rect(0.04f, 0.16f, 0.225f, 0.5f)
+val WindowArea = Rect(0.04f, 0.2f, 0.215f, 0.5f)
 val BedArea = Rect(0.4f, 0.5f, 0.82f, 0.88f)
 val LampArea = Rect(0.83f, 0.3f, 0.97f, 0.76f)
 val PillowCenter = Offset(0.74f, 0.56f)
