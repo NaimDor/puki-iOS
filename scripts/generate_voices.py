@@ -525,6 +525,11 @@ def strip_nikud(text):
     return NIKUD.sub("", text)
 
 
+# Real recordings (docs/sound-credits.md, scripts/trim_sounds.py): not to be spoken over
+RECORDED = {"voice_sound_" + a for a in ("cow", "cat", "horse", "sheep", "goat", "dog", "pig", "duck", "monkey",
+                                         "rabbit", "elephant", "lion", "chicken")}
+
+
 # Words BlueTTS reads wrong (the brain swaps them too, in persona.py's MISREAD): a recorded line
 # with one of them is refused, so it gets reworded instead of recorded wrong
 MISREAD = {"הידד": "it comes out as 'אהדה'"}
@@ -561,7 +566,7 @@ def main():
     parser.add_argument("--child-gender", choices=["girl", "boy"], default="girl")
     args = parser.parse_args()
 
-    lines = list(voice_lines)
+    lines = [line for line in voice_lines if line[0] not in RECORDED]
     if args.child_name and args.lang == "he":
         pick = 0 if args.child_gender == "girl" else 1
         for name, he in name_lines:
