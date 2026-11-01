@@ -20,6 +20,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.LocalAmbientClock
+import io.github.tomsadeh.puki.ui.components.AmbientClock
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -186,8 +188,12 @@ fun PukiApp(
     }
     LaunchedEffect(showTimeLimit) { companion.paused = showTimeLimit }
 
+    val ambientClock = remember { AmbientClock() }
+    LaunchedEffect(ambientClock) { ambientClock.run() }
+
     PukiTheme {
         CompositionLocalProvider(
+            LocalAmbientClock provides ambientClock,
             LocalLanguage provides language,
             LocalGender provides settings.gender,
             LocalAppSettings provides settings,

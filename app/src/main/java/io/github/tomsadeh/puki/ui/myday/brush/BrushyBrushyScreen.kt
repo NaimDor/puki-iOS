@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.LocalAmbientClock
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -195,18 +196,15 @@ fun BrushyBrushyScreen(
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 // The face as big as the screen allows (the teeth are the targets), the tool beside it
                 val faceW = minOf(maxHeight * 0.95f, maxWidth * 0.62f)
-                val idle = rememberInfiniteTransition(label = "teddy")
-                val blink by idle.animateFloat(0f, 1f, infiniteRepeatable(tween(3600, easing = LinearEasing)), label = "blink")
-                val eyesShut by remember { derivedStateOf { blink > 0.96f } }
-                val shimmer by idle.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing)), label = "shine")
-                val giggle by idle.animateFloat(-1f, 1f, infiniteRepeatable(tween(160), RepeatMode.Reverse), label = "giggle")
+                val clock = LocalAmbientClock.current
+                val eyesShut by remember { derivedStateOf { clock.loop(3.6f) > 0.96f } }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(faceW * 0.08f, Alignment.CenterHorizontally), modifier = Modifier.fillMaxSize()) {
                     Canvas(
                         modifier = Modifier
                             .size(faceW)
                             .graphicsLayer {
                                 // Giggles while brushed; sways while swishing the water around
-                                rotationZ = (if (brush != null) giggle * 2.5f else 0f) +
+                                rotationZ = (if (brush != null) clock.wave(0.32f) * 2.5f else 0f) +
                                     sin(swish.value * Math.PI * 6).toFloat() * 6f * (1f - smile.value)
                             }
                             .pointerInput(step) {
@@ -238,7 +236,7 @@ fun BrushyBrushyScreen(
                             teeth.forEachIndexed { i, t -> drawTooth(t, dirt[i], i) }
                             foam.forEachIndexed { i, f -> drawFoam(f, i, foamLeft) }
                         }
-                        if (smile.value > 0.5f) drawSparkles(shimmer)
+                        if (smile.value > 0.5f) drawSparkles(clock.loop(1.4f))
                         brush?.let { drawBrush(it, pasteOn = 1f, scale = 0.7f) }
                     }
                     // The tools: the toothpaste tube, then the cup of water

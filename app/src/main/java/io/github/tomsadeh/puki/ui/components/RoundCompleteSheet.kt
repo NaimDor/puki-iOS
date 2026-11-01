@@ -38,6 +38,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.State
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.foundation.layout.requiredSize
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
 import io.github.tomsadeh.puki.ui.stickers.nextSticker
@@ -95,6 +100,12 @@ fun RoundCompleteSheet(
     val appContext = LocalContext.current.applicationContext
     var showContent by remember { mutableStateOf(false) }
     var showConfetti by remember { mutableStateOf(false) }
+    // The scene waits under the card, so its frames go to the rays and the stars
+    val clock = LocalAmbientClock.current
+    DisposableEffect(clock) {
+        clock.hold()
+        onDispose { clock.release() }
+    }
     var earned by remember { mutableStateOf<StickerDef?>(null) }
     var stickerUp by remember { mutableStateOf(false) }
     val flight = remember { Animatable(0f) }
@@ -144,7 +155,7 @@ fun RoundCompleteSheet(
             .background(Color.Black.copy(alpha = if (calm) 0.6f else 0.45f)),
         contentAlignment = Alignment.Center
     ) {
-        if (showContent && !calm) SunRays(modifier = Modifier.popIn())
+        if (showContent && !calm) SunRays(side = maxOf(maxWidth, maxHeight) * 1.1f, modifier = Modifier.popIn())
 
         // The card keeps its shape on a short screen: scaled as a whole, so buttons stay round
         val fit = (maxHeight * 0.96f / CARD_HEIGHT).coerceAtMost(1f)
@@ -255,7 +266,7 @@ private fun BigSticker(sticker: StickerDef, modifier: Modifier = Modifier) {
 
 /** Soft rays turning slowly behind the card. */
 @Composable
-private fun SunRays(modifier: Modifier = Modifier) {
+private fun SunRays(side: Dp, modifier: Modifier = Modifier) {
     val turn by rememberInfiniteTransition(label = "rays").animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -263,7 +274,10 @@ private fun SunRays(modifier: Modifier = Modifier) {
         label = "rays_turn"
     )
     // Drawn once; the layer does the turning (only its angle changes each frame)
-    Spacer(modifier = modifier.fillMaxSize().graphicsLayer { rotationZ = turn }.drawWithCache {
+    Spacer(modifier = modifier.requiredSize(side).graphicsLayer {
+        rotationZ = turn
+        compositingStrategy = CompositingStrategy.Offscreen
+    }.drawWithCache {
         val c = Offset(size.width / 2, size.height / 2)
         val r = size.maxDimension
         val glow = Brush.radialGradient(listOf(Color(0x66FFF59D), Color.Transparent), center = c, radius = size.minDimension * 0.6f)
@@ -332,17 +346,17 @@ private fun RoundButton(
 ) {
     val language = LocalLanguage.current
     val sfxPlayer = LocalSfxPlayer.current
-    val beat by rememberInfiniteTransition(label = "button_pulse").animateFloat(
+    val beat: State<Float> = if (pulse) rememberInfiniteTransition(label = "button_pulse").animateFloat(
         initialValue = 1f,
-        targetValue = if (pulse) 1.08f else 1f,
+        targetValue = 1.08f,
         animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
         label = "beat"
-    )
+    ) else remember { mutableFloatStateOf(1f) }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .popIn(index + 2)
-                .graphicsLayer { scaleX = beat; scaleY = beat }
+                .graphicsLayer { scaleX = beat.value; scaleY = beat.value }
                 .size(124.dp)
                 .shadow(10.dp, CircleShape)
                 .clip(CircleShape)

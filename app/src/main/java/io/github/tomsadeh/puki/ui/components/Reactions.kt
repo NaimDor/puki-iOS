@@ -189,18 +189,3 @@ internal fun DrawScope.drawTwinkle(c: Offset, r: Float, color: Color, spin: Floa
         drawPath(path, color)
     }
 }
-
-/** A slow, gentle breathing loop so characters look alive while waiting. */
-fun Modifier.idleBreathing(periodMillis: Int = 2400): Modifier = composed {
-    val breath by rememberInfiniteTransition(label = "breathing").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(periodMillis / 2, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "breath"
-    )
-    graphicsLayer {
-        transformOrigin = TransformOrigin(0.5f, 1f)
-        scaleY = 1f + 0.035f * breath
-        scaleX = 1f - 0.015f * breath
-    }
-}

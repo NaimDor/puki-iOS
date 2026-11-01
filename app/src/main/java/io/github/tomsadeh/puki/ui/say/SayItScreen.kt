@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.LocalAmbientClock
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.audio.reactOr
@@ -335,12 +336,7 @@ private fun HostParrot(talking: Boolean, listening: Boolean, hostSize: Dp) {
         animationSpec = infiniteRepeatable(tween(if (talking) 260 else 1400), RepeatMode.Reverse),
         label = "bob"
     )
-    val pulse by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Restart),
-        label = "pulse"
-    )
+    val clock = LocalAmbientClock.current
     // (a tap gets a silent hop: he's the one who's doing the talking here)
     Box(
         modifier = Modifier
@@ -352,7 +348,7 @@ private fun HostParrot(talking: Boolean, listening: Boolean, hostSize: Dp) {
             // Rings, like sound coming in: "I'm listening"
             Canvas(modifier = Modifier.fillMaxSize()) {
                 for (k in 0..1) {
-                    val t = (pulse + k * 0.5f) % 1f
+                    val t = (clock.loop(0.9f) + k * 0.5f) % 1f
                     drawCircle(
                         color = Color(0xFFFFEB3B).copy(alpha = 0.9f * (1f - t)),
                         radius = size.minDimension * (0.32f + 0.18f * t),

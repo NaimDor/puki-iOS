@@ -36,6 +36,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlin.math.roundToInt
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -99,28 +102,6 @@ private class SquishNode(private val interactionSource: InteractionSource) : Mod
 }
 
 // ---------- Life ----------
-
-/**
- * Gentle idle motion (a slow bob and breath), so a waiting screen feels alive. [index]
- * staggers neighbours so they don't move in lockstep.
- */
-fun Modifier.idleBob(index: Int = 0, amount: Float = 1f): Modifier = composed {
-    val t = rememberInfiniteTransition(label = "idle")
-    val phase by t.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2200 + index * 170, easing = LinearEasing)),
-        label = "idle_phase"
-    )
-    graphicsLayer {
-        val a = 2 * PI.toFloat() * (phase + index * 0.23f)
-        translationY = sin(a) * 6f * density * amount
-        val breath = 1f + sin(a * 2) * 0.025f * amount
-        scaleX = breath
-        scaleY = 2f - breath
-        rotationZ = sin(a) * 1.5f * amount
-    }
-}
 
 /** Pops in with a bounce when it first appears; [index] staggers a row of items. */
 fun Modifier.popIn(index: Int = 0, key: Any? = Unit): Modifier = composed {
@@ -194,27 +175,29 @@ fun SceneBackdrop(scene: Scene, modifier: Modifier = Modifier) {
 
 @Composable
 private fun SceneMotion(scene: Scene) {
-    val t = rememberInfiniteTransition(label = "scene")
-    val drift by t.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(60000, easing = LinearEasing)),
-        label = "clouds"
-    )
-    val sway by t.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(3000), RepeatMode.Reverse),
-        label = "sway"
-    )
-    Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
-        val beam = if (scene == Scene.STAGE) spotlightBeam() else null
-        val pal = paletteFor(scene)
-        onDrawBehind {
-            if (beam != null) drawSpotlights(beam, sway) else drawOutdoorsMotion(scene, pal, drift, sway)
-        }
-    })
+    val clock = LocalAmbientClock.current
+    if (scene == Scene.STAGE) {
+        Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
+            val beam = spotlightBeam()
+            onDrawBehind { drawSpotlights(beam, clock.wave(SWAY_SECONDS)) }
+        })
+        return
+    }
+    val pal = remember(scene) { paletteFor(scene) }
+    // Clouds are drawn once, and their layers carry them across
+    CLOUDS.forEachIndexed { i, (fx, fy, s) ->
+        Spacer(modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer { translationX = ((fx + clock.loop(CLOUD_SECONDS) * (0.6f + i * 0.25f)) % 1.2f - 0.1f) * size.width }
+            .drawBehind { drawCloud(Offset(0f, size.height * fy), size.height * 0.06f * s) })
+    }
+    // The grass only redraws when its sway has moved a visible step
+    val sway by remember(clock) { derivedStateOf { (clock.wave(SWAY_SECONDS) * 4f).roundToInt() / 4f } }
+    Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawBehind { drawOutdoorsMotion(scene, pal, sway) })
 }
+
+private const val CLOUD_SECONDS = 60f
+private const val SWAY_SECONDS = 6f
 
 private class Palette(val skyTop: Color, val skyBottom: Color, val hillBack: Color, val hillFront: Color, val accent: Color)
 
@@ -307,14 +290,9 @@ private fun DrawScope.drawIcePeaks() {
     }
 }
 
-private fun DrawScope.drawOutdoorsMotion(scene: Scene, p: Palette, drift: Float, sway: Float) {
+private fun DrawScope.drawOutdoorsMotion(scene: Scene, p: Palette, sway: Float) {
     val w = size.width
     val h = size.height
-    // Clouds drifting by (high in the sky, clear of the hills)
-    CLOUDS.forEachIndexed { i, (fx, fy, s) ->
-        val x = ((fx + drift * (0.6f + i * 0.25f)) % 1.2f - 0.1f) * w
-        drawCloud(Offset(x, h * fy), h * 0.06f * s)
-    }
     if (scene == Scene.ICE) return  // (nothing grows on the ice)
     // Grass tufts and flowers along the front hill
     val tuft = p.hillFront.copy(red = p.hillFront.red * 0.8f, green = p.hillFront.green * 0.85f, blue = p.hillFront.blue * 0.8f)

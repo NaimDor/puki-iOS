@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.LocalAmbientClock
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.absolutePadding
 import io.github.tomsadeh.puki.ui.hub.components.StarCounter
@@ -185,7 +186,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     val lean by animateFloatAsState(if (mode == EchoMode.LISTENING) 1f else 0f, spring(dampingRatio = 0.5f), label = "lean")
     val motion = rememberInfiniteTransition(label = "echo")
     val bob by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(if (mode == EchoMode.ECHOING) 220 else 1400), RepeatMode.Reverse), label = "bob")
-    val pulse by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(900)), label = "pulse")
+    val clock = LocalAmbientClock.current
 
     GameBackground(scene = Scene.TREEHOUSE, withCompanion = false) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -241,7 +242,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
                 if (mode == EchoMode.LISTENING) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         for (k in 0..1) {
-                            val t = (pulse + k * 0.5f) % 1f
+                            val t = (clock.loop(0.9f) + k * 0.5f) % 1f
                             drawCircle(
                                 Color(0xFFFFEB3B).copy(alpha = 0.8f * (1f - t)),
                                 radius = size.minDimension * (0.32f + (0.14f + 0.14f * loudness) * t),

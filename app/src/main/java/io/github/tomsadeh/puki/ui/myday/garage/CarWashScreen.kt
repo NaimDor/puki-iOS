@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.LocalAmbientClock
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -85,6 +86,7 @@ private fun muddySpots(level: Int) = when (level) {
     2 -> setOf(0, 1, 3, 4)
     else -> (0..5).toSet()
 }
+private const val SHINE_SECONDS = 1.4f
 private const val SPOT_R = 0.11f  // as a fraction of the vehicle's width
 private val carColors = listOf(Color(0xFFE53935), Color(0xFF1E88E5), Color(0xFFFDD835), Color(0xFF43A047), Color(0xFF8E24AA))
 
@@ -109,6 +111,7 @@ fun CarWashScreen(
     if (level == 0) return
 
     val game = rememberStepGame(WashStep.SCRUB, WashStep.entries.size, viewModel.session)
+    val clock = LocalAmbientClock.current
     val step = game.step
     val celebrate = game.celebrate
     val carColor = remember { carColors.random() }
@@ -206,9 +209,6 @@ fun CarWashScreen(
                 GameTopBar(onBack = onBack, roundIndex = step.ordinal, totalRounds = WashStep.entries.size, starsEarned = game.stars)
                 BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     val carW = minOf(maxWidth * 0.72f, maxHeight * 1.5f)
-                    val shimmer by rememberInfiniteTransition(label = "shine").animateFloat(
-                        0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing)), label = "shine_phase"
-                    )
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxSize()) {
                         Canvas(
                             modifier = Modifier
@@ -244,7 +244,7 @@ fun CarWashScreen(
                                 drawCircle(Color.White.copy(alpha = 0.85f * bubblesLeft), size.width * (0.018f + (i % 3) * 0.008f), Offset(b.x * size.width, b.y * size.height))
                             }
                             if (spraying || spray.value in 0.01f..0.99f) drawSpray(spray.value)
-                            if (game.sessionComplete || driveOff.value > 0f || (step == WashStep.DRY && drops.all { it <= 0f })) drawShine(shimmer)
+                            if (game.sessionComplete || driveOff.value > 0f || (step == WashStep.DRY && drops.all { it <= 0f })) drawShine(clock.loop(SHINE_SECONDS))
                             tool?.let { drawTool(it, sponge = step == WashStep.SCRUB) }
                         }
                         // The hose, for the rinse

@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.LocalAmbientClock
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -117,6 +118,7 @@ fun CakeScreen(
     if (level == 0) return
 
     val game = rememberStepGame(CakeStep.ADD, CakeStep.entries.size, viewModel.session)
+    val clock = LocalAmbientClock.current
     val step = game.step
     val celebrate = game.celebrate
     var finished by remember { mutableStateOf(false) }
@@ -267,13 +269,10 @@ fun CakeScreen(
                                 }
                             }
                             DropZone(zoneId = "oven", highlightColor = Color(0xFFFF9800)) {
-                                val shake by rememberInfiniteTransition(label = "oven_shake").animateFloat(
-                                    -1f, 1f, infiniteRepeatable(tween(120), RepeatMode.Reverse), label = "oven_wobble"
-                                )
                                 Canvas(
                                     modifier = Modifier
                                         .size(unit * 0.32f, unit * 0.34f)
-                                        .graphicsLayer { rotationZ = if (baking && bake.value < 1f) shake * 0.8f else 0f }
+                                        .graphicsLayer { rotationZ = if (baking && bake.value < 1f) clock.wave(0.24f) * 0.8f else 0f }
                                 ) { drawOven(baking = bake.value, open = !baking) }
                             }
                         }
