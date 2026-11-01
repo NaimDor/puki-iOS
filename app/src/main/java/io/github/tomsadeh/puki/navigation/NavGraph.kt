@@ -62,6 +62,12 @@ object Routes {
     const val SETTINGS = "settings"
 }
 
+/** The My Day rooms in the order a day goes. */
+private val DAY_ORDER = listOf(
+    Routes.MY_DAY_DRESS, Routes.MY_DAY_BRUSH, Routes.MY_DAY_TABLE, Routes.MY_DAY_TIDY,
+    Routes.MY_DAY_KITCHEN, Routes.MY_DAY_GARAGE, Routes.MY_DAY_BATH, Routes.MY_DAY_BEDTIME
+)
+
 private const val NAV_WINDOW_MS = 400L
 
 @Composable
@@ -98,6 +104,17 @@ fun PukiNavGraph(navController: NavHostController) {
         {
             if (navController.currentBackStackEntry?.destination?.route == route) {
                 navController.navigate(route) { popUpTo(route) { inclusive = true } }
+            }
+        }
+    }
+
+    // "Continue" in a My Day room: on through the day, and after bedtime back to the house
+    val nextRoom: (String) -> () -> Unit = { route ->
+        {
+            if (navController.currentBackStackEntry?.destination?.route == route) {
+                val next = DAY_ORDER.getOrNull(DAY_ORDER.indexOf(route) + 1)
+                if (next == null) navController.popBackStack()
+                else navController.navigate(next) { popUpTo(route) { inclusive = true } }
             }
         }
     }
@@ -164,28 +181,28 @@ fun PukiNavGraph(navController: NavHostController) {
             )
         }
         composable(Routes.MY_DAY_BATH) {
-            BathTimeScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_BATH))
+            BathTimeScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_BATH))
         }
         composable(Routes.MY_DAY_BRUSH) {
-            BrushyBrushyScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_BRUSH))
+            BrushyBrushyScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_BRUSH))
         }
         composable(Routes.MY_DAY_TIDY) {
-            TidyUpScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_TIDY))
+            TidyUpScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_TIDY))
         }
         composable(Routes.MY_DAY_DRESS) {
-            GettingDressedScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_DRESS))
+            GettingDressedScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_DRESS))
         }
         composable(Routes.MY_DAY_TABLE) {
-            TableTimeScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_TABLE))
+            TableTimeScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_TABLE))
         }
         composable(Routes.MY_DAY_KITCHEN) {
-            CakeScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_KITCHEN))
+            CakeScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_KITCHEN))
         }
         composable(Routes.MY_DAY_GARAGE) {
-            CarWashScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_GARAGE))
+            CarWashScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_GARAGE))
         }
         composable(Routes.MY_DAY_BEDTIME) {
-            BedtimeRoutineScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MY_DAY_BEDTIME))
+            BedtimeRoutineScreen(onBack = safeBack, onPlayAgain = nextRoom(Routes.MY_DAY_BEDTIME))
         }
         composable(Routes.CANVAS) {
             FreeCanvasScreen(onBack = safeBack)

@@ -62,6 +62,7 @@ import io.github.tomsadeh.puki.ui.components.rememberTouchSparkles
 import io.github.tomsadeh.puki.ui.components.touchSparkles
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.popIn
+import io.github.tomsadeh.puki.ui.components.rememberCompact
 
 data class RoomDef(
     val route: String,
@@ -88,10 +89,13 @@ private val downstairs = listOf(rooms[0], rooms[4], rooms[6], rooms[7])
 // The house occupies this part of the screen (fractions of width / height)
 private const val HOUSE_LEFT = 0.12f
 private const val HOUSE_RIGHT = 0.88f
-private const val WALL_TOP = 0.30f
 private const val WALL_BOTTOM = 0.94f
-private const val ATTIC_Y = 0.18f
-private const val ATTIC_R = 0.06f
+
+/** The house's top half: on a phone the roof flattens, to give the rooms the height. */
+private class HouseTop(val wall: Float, val ridge: Float, val atticY: Float, val atticR: Float)
+
+private val TallHouse = HouseTop(wall = 0.30f, ridge = 0.04f, atticY = 0.18f, atticR = 0.06f)
+private val FlatHouse = HouseTop(wall = 0.14f, ridge = 0.01f, atticY = 0.085f, atticR = 0.05f)
 
 @Composable
 fun MyDayScreen(
@@ -107,17 +111,19 @@ fun MyDayScreen(
     )
 
     val sparkles = rememberTouchSparkles()
+    val compact = rememberCompact()
+    val house = if (compact) FlatHouse else TallHouse
     Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
         SceneBackdrop(Scene.GARDEN)
         Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawSmoke(smoke.value) }
-        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawHouse() }
+        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawHouse(house) }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             // Puki peeks out of the round attic window
-            val atticSize = maxHeight * ATTIC_R * 2
+            val atticSize = maxHeight * house.atticR * 2
             OfflineParrot(
                 modifier = Modifier
-                    .offset(maxWidth / 2 - atticSize / 2, maxHeight * ATTIC_Y - atticSize / 2)
+                    .offset(maxWidth / 2 - atticSize / 2, maxHeight * house.atticY - atticSize / 2)
                     .size(atticSize)
                     .padding(atticSize * 0.1f),
                 size = atticSize * 0.8f
@@ -125,15 +131,15 @@ fun MyDayScreen(
 
             // Rooms, laid out inside the house walls as a cutaway, two floors
             val left = maxWidth * HOUSE_LEFT
-            val top = maxHeight * WALL_TOP
+            val top = maxHeight * house.wall
             val width = maxWidth * (HOUSE_RIGHT - HOUSE_LEFT)
-            val height = maxHeight * (WALL_BOTTOM - WALL_TOP)
+            val height = maxHeight * (WALL_BOTTOM - house.wall)
             Column(
                 modifier = Modifier
                     .offset(left, top)
                     .size(width, height)
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .padding(horizontal = 20.dp, vertical = if (compact) 6.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 24.dp)
             ) {
                 listOf(upstairs, downstairs).forEachIndexed { f, floor ->
                     Row(
@@ -144,6 +150,7 @@ fun MyDayScreen(
                             RoomButton(
                                 room = room,
                                 index = f * 4 + i,
+                                compact = compact,
                                 onClick = { onRoomClick(room.route) },
                                 modifier = Modifier.weight(1f).fillMaxHeight()
                             )
@@ -171,18 +178,19 @@ private fun DrawScope.drawSmoke(smoke: Float) {
 }
 
 /** Bushes, a tiled roof with its chimney, and the walls the rooms sit in. */
-private fun DrawScope.drawHouse() {
+private fun DrawScope.drawHouse(house: HouseTop) {
     val w = size.width
     val h = size.height
     val l = w * HOUSE_LEFT
     val r = w * HOUSE_RIGHT
-    val top = h * WALL_TOP
+    val top = h * house.wall
     val bottom = h * WALL_BOTTOM
 
     // Chimney behind the roof
     val chimneyX = r - w * 0.14f
-    drawRect(Color(0xFF8D6E63), Offset(chimneyX, h * 0.06f), Size(w * 0.05f, h * 0.18f))
-    drawRect(Color(0xFF6D4C41), Offset(chimneyX - w * 0.005f, h * 0.05f), Size(w * 0.06f, h * 0.025f))
+    val chimneyTop = h * (house.ridge + 0.02f)
+    drawRect(Color(0xFF8D6E63), Offset(chimneyX, chimneyTop), Size(w * 0.05f, top - chimneyTop))
+    drawRect(Color(0xFF6D4C41), Offset(chimneyX - w * 0.005f, chimneyTop - h * 0.01f), Size(w * 0.06f, h * 0.025f))
 
     // Roof, with rows of round tiles
     val roofL = l - w * 0.04f
@@ -190,14 +198,14 @@ private fun DrawScope.drawHouse() {
     val roofBase = top + h * 0.01f
     val roof = Path().apply {
         moveTo(roofL, roofBase)
-        lineTo(w / 2, h * 0.04f)
+        lineTo(w / 2, h * house.ridge)
         lineTo(roofR, roofBase)
         close()
     }
     drawPath(roof, Color(0xFFE53935))
     clipPath(roof) {
         val tile = h * 0.045f
-        var y = h * 0.04f + tile
+        var y = h * house.ridge + tile
         var row = 0
         while (y < roofBase + tile) {
             var x = if (row % 2 == 0) 0f else tile
@@ -219,9 +227,9 @@ private fun DrawScope.drawHouse() {
     drawPath(eave, Color(0xFFB71C1C))
 
     // Round attic window (Puki sits in it)
-    val attic = Offset(w / 2, h * ATTIC_Y)
-    drawCircle(Color(0xFFFFF8E1), h * (ATTIC_R + 0.012f), attic)
-    drawCircle(Color(0xFFB3E5FC), h * ATTIC_R, attic)
+    val attic = Offset(w / 2, h * house.atticY)
+    drawCircle(Color(0xFFFFF8E1), h * (house.atticR + 0.012f), attic)
+    drawCircle(Color(0xFFB3E5FC), h * house.atticR, attic)
 
     // Walls with a floor between the two stories
     drawRoundRect(Color(0x33000000), Offset(l + 8f, top + 10f), Size(r - l, bottom - top), CornerRadius(16f))
@@ -293,7 +301,7 @@ private fun DrawScope.drawRoomInterior(color: Color, pattern: Int) {
 }
 
 @Composable
-private fun RoomButton(room: RoomDef, index: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun RoomButton(room: RoomDef, index: Int, compact: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val language = LocalLanguage.current
     val shape = RoundedCornerShape(24.dp)
 
@@ -307,20 +315,20 @@ private fun RoomButton(room: RoomDef, index: Int, onClick: () -> Unit, modifier:
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // On a short screen (a phone on its side) the picture and the label shrink to fit the room
+        // On a phone on its side the picture has the room to itself; the label is for reading along
         val name = room.name.resolve(language)
-        val iconSize = minOf(124.dp, maxHeight - 72.dp).coerceAtLeast(40.dp)
+        val iconSize = minOf(124.dp, maxHeight - (if (compact) 16.dp else 72.dp)).coerceAtLeast(40.dp)
         val baseSize = MaterialTheme.typography.labelLarge.fontSize
         val fitSize = with(LocalDensity.current) { ((maxWidth - 52.dp) / (name.length * 0.5f)).toSp() }
         Image(
             painter = painterResource(room.icon),
             contentDescription = null,
             modifier = Modifier
-                .padding(bottom = 36.dp)
+                .padding(bottom = if (compact) 0.dp else 36.dp)
                 .size(iconSize)
                 .idleBob(index, amount = 1.3f)
         )
-        Text(
+        if (!compact) Text(
             text = name,
             style = MaterialTheme.typography.labelLarge.copy(shadow = null),
             fontSize = if (fitSize < baseSize) fitSize else baseSize,
