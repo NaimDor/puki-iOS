@@ -165,7 +165,6 @@ fun BrushyBrushyScreen(
         BrushStep.SCRUB -> RoundPrompt(1, "בצחצוח שיניים: מצחצחים כל שן של דובי עד שהיא מבריקה.", "Brushing teeth: brushing each of Teddy's teeth until it sparkles.", "voice_teeth_scrub")
         BrushStep.RINSE -> RoundPrompt(2, "בצחצוח שיניים: נותנים לדובי מים לשטוף את הפה.", "Brushing teeth: giving Teddy water to rinse his mouth.", "voice_teeth_rinse")
     }
-    LaunchedEffect(Unit) { companion?.wake() }
 
     GameBackground(colors = listOf(Color(0xFFB2EBF2), Color(0xFFE0F7FA)), withBubbles = false) {
         Canvas(modifier = Modifier.fillMaxSize()) { drawBathroom() }

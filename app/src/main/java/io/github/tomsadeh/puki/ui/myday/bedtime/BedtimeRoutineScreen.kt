@@ -77,8 +77,7 @@ val bedtimeSteps = listOf(
 
 data class BedtimeState(
     val currentStep: Int = 0,
-    val isComplete: Boolean = false,
-    val starsVisible: Boolean = false
+    val isComplete: Boolean = false
 )
 
 class BedtimeRoutineViewModel(application: Application) : AndroidViewModel(application) {
@@ -90,7 +89,7 @@ class BedtimeRoutineViewModel(application: Application) : AndroidViewModel(appli
         val current = _state.value
         val nextStep = current.currentStep + 1
         if (nextStep >= bedtimeSteps.size) {
-            _state.value = current.copy(isComplete = true, starsVisible = true)
+            _state.value = current.copy(isComplete = true)
             viewModelScope.launch { progressRepository.addStars(2) }
         } else {
             _state.value = current.copy(currentStep = nextStep)
@@ -241,7 +240,7 @@ fun BedtimeRoutineScreen(onBack: () -> Unit, viewModel: BedtimeRoutineViewModel 
             }
 
             // Stars ceiling effect when complete
-            if (state.starsVisible) {
+            if (state.isComplete) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

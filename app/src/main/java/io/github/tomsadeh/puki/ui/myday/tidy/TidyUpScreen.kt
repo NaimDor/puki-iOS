@@ -96,10 +96,9 @@ fun TidyUpScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine), and wakes up on the way in
+    // Puki knows where she is (tapping him talks about this routine)
     LaunchedEffect(Unit) {
         companion?.setScene("בסידור החדר: מחזירים כל צעצוע למקום שלו.", "Tidying up: putting every toy back where it belongs.")
-        companion?.wake()
     }
     LaunchedEffect(state.isComplete) {
         if (state.isComplete) companion?.react("סידרו את כל החדר, כל צעצוע במקום!", "The child tidied the whole room, every toy in its place!")

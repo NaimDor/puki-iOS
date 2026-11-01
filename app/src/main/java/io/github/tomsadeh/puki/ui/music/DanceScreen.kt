@@ -101,7 +101,7 @@ fun DanceScreen(
     var stops by remember { mutableStateOf(0) }
     var celebrate by remember { mutableStateOf(false) }
     var sessionComplete by remember { mutableStateOf(false) }
-    val dancers = remember { level1Animals.filter { it.drawableRes != 0 }.shuffled().take(3) }
+    val dancers = remember { level1Animals.shuffled().take(3) }
     val reactions = remember { dancers.map { ReactionState() } }
 
     // The music is the game: make sure it's the lively track, and never leave it paused

@@ -82,18 +82,14 @@ fun AnimalDisplay(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (animal.drawableRes != 0) {
-                    Image(
-                        painter = painterResource(id = animal.drawableRes),
-                        contentDescription = animal.name.en,
-                        modifier = Modifier
-                            .size(280.dp)
-                            .reaction(reaction)
-                            .idleBreathing()
-                    )
-                } else {
-                    Text(text = animal.emoji, fontSize = 88.sp)
-                }
+                Image(
+                    painter = painterResource(id = animal.drawableRes),
+                    contentDescription = animal.name.en,
+                    modifier = Modifier
+                        .size(280.dp)
+                        .reaction(reaction)
+                        .idleBreathing()
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))

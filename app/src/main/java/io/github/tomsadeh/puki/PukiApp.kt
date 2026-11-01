@@ -52,8 +52,7 @@ fun PukiApp(
     musicPlayer: MusicPlayer,
     voicePlayer: VoicePlayer,
     companion: Companion,
-    settingsRepository: SettingsRepository,
-    progressRepository: ProgressRepository
+    settingsRepository: SettingsRepository
 ) {
     val appViewModel: AppViewModel = viewModel(
         factory = AppViewModel.Factory(settingsRepository)

@@ -177,7 +177,6 @@ fun CarWashScreen(
         WashStep.RINSE -> RoundPrompt(1, "בשטיפת המכונית: שוטפים את הקצף עם הצינור.", "At the car wash: rinsing the bubbles off with the hose.", "voice_car_rinse")
         WashStep.DRY -> RoundPrompt(2, "בשטיפת המכונית: מנגבים את המכונית עם מגבת.", "At the car wash: drying the car with a towel.", "voice_car_dry")
     }
-    LaunchedEffect(Unit) { companion?.wake() }
 
     CompositionLocalProvider(LocalDragDropState provides remember { DragDropState() }) {
         GameBackground(colors = listOf(Color(0xFFB3E5FC), Color(0xFFE1F5FE)), withBubbles = false) {

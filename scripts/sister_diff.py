@@ -16,7 +16,8 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 # Only one of the repos has these (the public one's docs, store text and training)
-ONE_SIDED = ("README.md", "ROADMAP.md", "docs/", "fastlane/", "train/")
+ONE_SIDED = ("README.md", "ROADMAP.md", "CONTRIBUTING.md", "LICENSE", "docs/", "fastlane/", "train/", ".github/",
+             "Starry Sleep Steps.mp3", "Sunny Steps.mp3", "sfx_olam_katan.md")
 # Different on purpose
 EXPECTED = {
     "app/src/main/java/io/github/tomsadeh/puki/data/models/AppSettings.kt",  # the family's default address

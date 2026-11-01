@@ -363,5 +363,4 @@ fun CakeScreen(
     }
 
     // Wake Puki's brain, so he can taste the cake at the end
-    LaunchedEffect(Unit) { companion?.wake() }
 }

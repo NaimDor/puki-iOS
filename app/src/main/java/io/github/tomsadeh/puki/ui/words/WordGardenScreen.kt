@@ -97,12 +97,10 @@ class WordGardenViewModel(application: Application) : AndroidViewModel(applicati
     val state: StateFlow<WordState> = _state.asStateFlow()
     private var letters = emptyList<LetterDef>()  // the whole alphabet, for the other blocks
     private var rounds = emptyList<LetterDef>()   // this session's letters
-    private var currentLanguage = Language.HEBREW
     private var choices = 2  // blocks to pick from: 2 at first, 3 from level 2
     private var mistakes = 0
 
     fun initialize(language: Language) {
-        currentLanguage = language
         letters = when (language) {
             Language.HEBREW -> hebrewLetters
             Language.ENGLISH -> englishLetters

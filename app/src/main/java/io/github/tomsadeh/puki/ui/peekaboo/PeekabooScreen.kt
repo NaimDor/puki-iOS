@@ -230,7 +230,7 @@ private fun SpotView(
             contentAlignment = Alignment.BottomCenter
         ) {
             if (spot == HidingSpot.BARN) Barn(w, animal, rise) else Cover(spot, w, animal, rise)
-            if (butterflyKey != 0) Butterfly(butterflyKey, w)
+            if (butterflyKey != 0) Butterfly(butterflyKey)
         }
     }
 }
@@ -305,7 +305,7 @@ private fun Cover(spot: HidingSpot, w: Dp, animal: AnimalDef?, rise: Float) {
 
 /** A butterfly flutters up out of a spot where no one was hiding. */
 @Composable
-private fun Butterfly(key: Int, w: Dp) {
+private fun Butterfly(key: Int) {
     val t = remember(key) { Animatable(0f) }
     LaunchedEffect(key) { t.animateTo(1f, tween(1600, easing = FastOutSlowInEasing)) }
     if (t.value >= 1f) return

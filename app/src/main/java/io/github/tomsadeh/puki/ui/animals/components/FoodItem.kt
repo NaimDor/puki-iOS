@@ -48,27 +48,23 @@ fun FoodItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(8.dp)
         ) {
-            if (food.drawableRes != 0) {
-                // On a plate, so it reads as something to pick up
-                Box(
-                    modifier = Modifier
-                        .hintGlow(hint)
-                        .idleBob(food.id.length)
-                        .size(plateSize)
-                        .shadow(6.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.9f))
-                        .border(6.dp, Color(0xFFFFE0B2), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = food.drawableRes),
-                        contentDescription = food.name.en,
-                        modifier = Modifier.size(plateSize * 0.82f)
-                    )
-                }
-            } else {
-                Text(text = food.emoji, fontSize = 56.sp)
+            // On a plate, so it reads as something to pick up
+            Box(
+                modifier = Modifier
+                    .hintGlow(hint)
+                    .idleBob(food.id.length)
+                    .size(plateSize)
+                    .shadow(6.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.9f))
+                    .border(6.dp, Color(0xFFFFE0B2), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = food.drawableRes),
+                    contentDescription = food.name.en,
+                    modifier = Modifier.size(plateSize * 0.82f)
+                )
             }
             Text(
                 text = food.name.resolve(language),

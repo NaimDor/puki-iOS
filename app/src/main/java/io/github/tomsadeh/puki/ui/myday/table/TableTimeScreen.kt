@@ -100,10 +100,9 @@ fun TableTimeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine), and wakes up on the way in
+    // Puki knows where she is (tapping him talks about this routine)
     LaunchedEffect(Unit) {
         companion?.setScene("בעריכת השולחן: שמים צלחת, כוס, מזלג וכף.", "Setting the table: plate, cup, fork and spoon.")
-        companion?.wake()
     }
     LaunchedEffect(state.isComplete) {
         if (state.isComplete) companion?.react("ערכו את כל השולחן: צלחת, כוס, מזלג וכף!", "The child set the whole table: plate, cup, fork and spoon!")

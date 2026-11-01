@@ -80,14 +80,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class BodyPart(val id: String, val name: BilingualText, @DrawableRes val icon: Int, val cleaned: Boolean = false)
+data class BodyPart(val id: String, val name: BilingualText, val cleaned: Boolean = false)
 
 data class BathState(
     val bodyParts: List<BodyPart> = listOf(
-        BodyPart("arms", BilingualText("ידיים", "Arms"), R.drawable.ic_body_arm),
-        BodyPart("legs", BilingualText("רגליים", "Legs"), R.drawable.ic_body_leg),
-        BodyPart("tummy", BilingualText("בטן", "Tummy"), R.drawable.ic_body_tummy),
-        BodyPart("face", BilingualText("פנים", "Face"), R.drawable.ic_body_face)
+        BodyPart("arms", BilingualText("ידיים", "Arms")),
+        BodyPart("legs", BilingualText("רגליים", "Legs")),
+        BodyPart("tummy", BilingualText("בטן", "Tummy")),
+        BodyPart("face", BilingualText("פנים", "Face"))
     ),
     val showRinse: Boolean = false,
     val isComplete: Boolean = false
@@ -98,14 +98,13 @@ class BathTimeViewModel(application: Application) : AndroidViewModel(application
     private val _state = MutableStateFlow(BathState())
     val state: StateFlow<BathState> = _state.asStateFlow()
 
-    fun onSoapDropped(bodyPartId: String): Boolean {
+    fun onSoapDropped(bodyPartId: String) {
         val current = _state.value
         val updated = current.bodyParts.map {
             if (it.id == bodyPartId) it.copy(cleaned = true) else it
         }
         val allClean = updated.all { it.cleaned }
         _state.value = current.copy(bodyParts = updated, showRinse = allClean)
-        return true
     }
 
     fun onRinse() {
@@ -122,10 +121,9 @@ fun BathTimeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine), and wakes up on the way in
+    // Puki knows where she is (tapping him talks about this routine)
     LaunchedEffect(Unit) {
         companion?.setScene("באמבטיה: מסבנים את הבוץ מהפנים, מהידיים, מהבטן ומהרגליים, ואז שוטפים במקלחת.", "At bath time: soaping the mud off the face, arms, tummy and legs, then a rinse in the shower.")
-        companion?.wake()
     }
     LaunchedEffect(state.isComplete) {
         if (state.isComplete) companion?.react("באמבטיה סיבנו את כל הבוץ ושטפו במקלחת. עכשיו הכול נקי!", "At bath time the child soaped off all the mud and rinsed in the shower. All clean!")

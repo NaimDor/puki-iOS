@@ -48,8 +48,7 @@ class MainActivity : ComponentActivity() {
                 musicPlayer = musicPlayer,
                 voicePlayer = voicePlayer,
                 companion = companion,
-                settingsRepository = app.settingsRepository,
-                progressRepository = app.progressRepository
+                settingsRepository = app.settingsRepository
             )
         }
     }

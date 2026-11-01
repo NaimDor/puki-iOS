@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.tomsadeh.puki.data.models.GameProgress
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +29,6 @@ class ProgressRepository(private val context: Context) {
 
     private object Keys {
         val TOTAL_STARS = intPreferencesKey("total_stars")
-        val STICKERS = stringSetPreferencesKey("stickers_earned")
     }
 
     private fun difficultyKey(island: String) = intPreferencesKey("difficulty_$island")
@@ -38,8 +36,7 @@ class ProgressRepository(private val context: Context) {
 
     val progress: Flow<GameProgress> = context.progressDataStore.data.map { prefs ->
         GameProgress(
-            totalStars = prefs[Keys.TOTAL_STARS] ?: 0,
-            stickersEarned = (prefs[Keys.STICKERS] ?: emptySet()).toList()
+            totalStars = prefs[Keys.TOTAL_STARS] ?: 0
         )
     }
 
@@ -47,13 +44,6 @@ class ProgressRepository(private val context: Context) {
         context.progressDataStore.edit { prefs ->
             val current = prefs[Keys.TOTAL_STARS] ?: 0
             prefs[Keys.TOTAL_STARS] = current + count
-        }
-    }
-
-    suspend fun addSticker(stickerId: String) {
-        context.progressDataStore.edit { prefs ->
-            val current = prefs[Keys.STICKERS] ?: emptySet()
-            prefs[Keys.STICKERS] = current + stickerId
         }
     }
 

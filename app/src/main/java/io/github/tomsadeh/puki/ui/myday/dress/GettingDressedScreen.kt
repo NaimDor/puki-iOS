@@ -81,8 +81,7 @@ data class DressState(
         ClothingItem("shoes", BilingualText("נעליים", "Shoes"), R.drawable.ic_clothing_shoes, 4)
     ),
     val currentStep: Int = 0,
-    val isComplete: Boolean = false,
-    val wrongChoice: Boolean = false
+    val isComplete: Boolean = false
 )
 
 class GettingDressedViewModel(application: Application) : AndroidViewModel(application) {
@@ -96,17 +95,11 @@ class GettingDressedViewModel(application: Application) : AndroidViewModel(appli
         if (item.order == current.currentStep) {
             val nextStep = current.currentStep + 1
             val complete = nextStep >= current.clothes.size
-            _state.value = current.copy(currentStep = nextStep, isComplete = complete, wrongChoice = false)
+            _state.value = current.copy(currentStep = nextStep, isComplete = complete)
             if (complete) viewModelScope.launch { progressRepository.addStars(1) }
             return true
-        } else {
-            _state.value = current.copy(wrongChoice = true)
-            viewModelScope.launch {
-                delay(800)
-                _state.value = _state.value.copy(wrongChoice = false)
-            }
-            return false
         }
+        return false
     }
 }
 
@@ -118,10 +111,9 @@ fun GettingDressedScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine), and wakes up on the way in
+    // Puki knows where she is (tapping him talks about this routine)
     LaunchedEffect(Unit) {
         companion?.setScene("בהתלבשות: בוחרים בגדים מהארון ומתלבשים לפי הסדר.", "Getting dressed: picking clothes from the wardrobe, in order.")
-        companion?.wake()
     }
     LaunchedEffect(state.isComplete) {
         if (state.isComplete) companion?.react("התלבשו מכף רגל ועד ראש, עד הנעליים!", "The child got dressed from head to toe, shoes and all!")

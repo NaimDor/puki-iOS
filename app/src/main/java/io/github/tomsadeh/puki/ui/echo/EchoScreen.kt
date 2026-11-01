@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.EchoVoice
 import io.github.tomsadeh.puki.audio.MicRecorder
 import io.github.tomsadeh.puki.ui.common.LocalLanguage

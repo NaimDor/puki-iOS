@@ -38,9 +38,9 @@ def content():
     """The things the blanks are filled with, from the app's content files."""
     animals_kt = _read("data", "content", "AnimalContent.kt")
     animals = _defs(animals_kt, "AnimalDef")
-    # Named arguments (the first animals) or positional ones, the food right after the color
+    # Named arguments (the first animals) or positional ones, the food right after the name
     food_of = dict(re.findall(r'id = "(\w+)",[^)]*?\)[\s\S]*?foodId = "(\w+)"', animals_kt))
-    food_of.update(re.findall(r'AnimalDef\("(\w+)",.*?Color\([^)]*\),\s*"(\w+)"', animals_kt))
+    food_of.update(re.findall(r'AnimalDef\("(\w+)",\s*BilingualText\([^)]*\),\s*"(\w+)"', animals_kt))
     for a in animals:
         a["food"] = food_of.get(a["id"])
     feminine = set(re.findall(r'"(\w+)"', re.search(r"FEMININE_ANIMALS = setOf\(([^)]*)\)", animals_kt).group(1)))

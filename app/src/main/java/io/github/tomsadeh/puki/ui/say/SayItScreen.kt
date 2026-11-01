@@ -56,7 +56,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.PukiApplication
-import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.Sfx
 import io.github.tomsadeh.puki.audio.VoicePlayer
 import io.github.tomsadeh.puki.audio.WordTry

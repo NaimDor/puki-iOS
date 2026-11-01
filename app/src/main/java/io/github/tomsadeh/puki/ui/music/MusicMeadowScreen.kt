@@ -165,7 +165,7 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
 fun MusicMeadowScreen(
     onBack: () -> Unit,
     onPlayAgain: () -> Unit = onBack,  // "Continue" on the end card: this game again, from the start
-    onDance: () -> Unit = {},  // the dancer on the stage opens Dance and Freeze
+    onDance: () -> Unit,  // the dancer on the stage opens Dance and Freeze
     viewModel: MusicMeadowViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

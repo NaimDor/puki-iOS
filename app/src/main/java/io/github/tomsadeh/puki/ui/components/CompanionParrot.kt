@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.CompanionStatus
 import io.github.tomsadeh.puki.audio.MicRecorder
 import io.github.tomsadeh.puki.ui.common.LocalCompanion

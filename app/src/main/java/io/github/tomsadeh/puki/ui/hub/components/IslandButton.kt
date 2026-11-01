@@ -169,15 +169,11 @@ fun IslandButton(
                     .border(BorderStroke(5.dp, Color.White), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                if (island.drawableRes != 0) {
-                    Image(
-                        painter = painterResource(id = island.drawableRes),
-                        contentDescription = island.name.en,
-                        modifier = Modifier.size(84.dp)
-                    )
-                } else {
-                    Text(text = island.emoji, fontSize = 40.sp)
-                }
+                Image(
+                    painter = painterResource(id = island.drawableRes),
+                    contentDescription = island.name.en,
+                    modifier = Modifier.size(84.dp)
+                )
             }
 
             // Name on a little wooden plank resting on the beach

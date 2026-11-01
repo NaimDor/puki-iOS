@@ -100,13 +100,7 @@ val allStickers = listOf(
 )
 
 class StickerAlbumViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
-    val progress: StateFlow<GameProgress> = MutableStateFlow(GameProgress()).also { flow ->
-        // Collect in init
-    }
-
-    // Use the app-level progress
-    val appProgress = progressRepository.progress
+    val progress = (application as PukiApplication).progressRepository.progress
 }
 
 private val stickerRims = listOf(
@@ -120,7 +114,7 @@ private const val COLUMNS = 3
 fun StickerAlbumScreen(onBack: () -> Unit, viewModel: StickerAlbumViewModel = viewModel()) {
     val companion = LocalCompanion.current
     LaunchedEffect(Unit) { companion?.wake() }
-    val progress by viewModel.appProgress.collectAsStateWithLifecycle(GameProgress())
+    val progress by viewModel.progress.collectAsStateWithLifecycle(GameProgress())
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) { drawTable() }

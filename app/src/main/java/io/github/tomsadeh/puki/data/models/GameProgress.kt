@@ -1,6 +1,5 @@
 package io.github.tomsadeh.puki.data.models
 
 data class GameProgress(
-    val totalStars: Int = 0,
-    val stickersEarned: List<String> = emptyList()
+    val totalStars: Int = 0
 )
