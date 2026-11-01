@@ -53,6 +53,9 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
 
+private val FULL_PARROT = 140.dp
+private val COMPACT_PARROT = 96.dp
+
 /**
  * פוקי sitting in the corner of a game. With his brain ready, he flaps his beak while he talks:
  * a tap makes him say something, and holding him records the child talking (Whisper listens)
@@ -62,6 +65,7 @@ import kotlin.math.sin
 fun CompanionParrot(modifier: Modifier = Modifier) {
     val mood = LocalPukiMood.current
     val moved = if (mood != null) modifier.reaction(mood, jumpHeight = 24.dp) else modifier
+    val parrotSize = if (rememberCompact()) COMPACT_PARROT else FULL_PARROT
     val companion = LocalCompanion.current
     if (companion == null) {
         OfflineParrot(moved)
@@ -145,7 +149,7 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
             TalkingParrotImage(
                 talking = speaking,
                 modifier = Modifier
-                    .size(140.dp)
+                    .size(parrotSize)
                     .graphicsLayer {
                         transformOrigin = TransformOrigin(0.5f, 1f)
                         scaleX = listenScale
@@ -187,7 +191,7 @@ private val offlineLines = listOf("voice_puki_hi", "voice_puki_tickle", "voice_p
 
 /** Puki with recorded lines only: he bobs in the corner, and a tap makes him talk and dance. */
 @Composable
-fun OfflineParrot(modifier: Modifier = Modifier, size: Dp = 140.dp) {
+fun OfflineParrot(modifier: Modifier = Modifier, size: Dp = if (rememberCompact()) COMPACT_PARROT else FULL_PARROT) {
     val voicePlayer = LocalVoicePlayer.current
     val language = LocalLanguage.current
     val scope = rememberCoroutineScope()

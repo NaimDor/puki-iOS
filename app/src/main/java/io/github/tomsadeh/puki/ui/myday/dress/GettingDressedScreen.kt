@@ -26,7 +26,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.Canvas
 import io.github.tomsadeh.puki.ui.components.Scene
-import io.github.tomsadeh.puki.ui.components.MyDayTopBar
+import io.github.tomsadeh.puki.ui.components.GameTopBar
 import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -146,10 +146,10 @@ fun GettingDressedScreen(
         colors = listOf(Color(0xFFF8BBD0), Color(0xFFF48FB1), Color(0xFFEC407A))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),
+            modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MyDayTopBar(BilingualText("להתלבש", "Getting Dressed"), onBack)
+            GameTopBar(onBack = onBack, roundIndex = state.currentStep, totalRounds = state.clothes.size)
 
             Spacer(modifier = Modifier.height(16.dp))
 

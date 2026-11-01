@@ -92,7 +92,7 @@ import io.github.tomsadeh.puki.audio.Sfx
 import io.github.tomsadeh.puki.theme.EarthBrown
 import io.github.tomsadeh.puki.ui.common.LocalCompanion
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
-import io.github.tomsadeh.puki.ui.components.BackArrowIcon
+import io.github.tomsadeh.puki.ui.components.BackButton
 import io.github.tomsadeh.puki.ui.components.idleBob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -272,15 +272,7 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .shadow(6.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(EarthBrown.copy(alpha = 0.85f))
-                        .clickable { onBack() },
-                    contentAlignment = Alignment.Center
-                ) { BackArrowIcon() }
+                BackButton(onBack)
                 leftColors.forEachIndexed { i, color ->
                     PaintPot(color = color, selected = color == selectedColor, index = i, height = unit, onClick = { pickColor(color) })
                 }

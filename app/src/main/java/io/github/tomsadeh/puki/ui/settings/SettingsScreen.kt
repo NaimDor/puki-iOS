@@ -21,7 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import io.github.tomsadeh.puki.ui.components.BackArrowIcon
+import io.github.tomsadeh.puki.ui.components.BackButton
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
@@ -94,19 +94,7 @@ fun SettingsScreen(
             .background(SkyBlue)
     ) {
         // Back to the hub
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(24.dp)
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(EarthBrown.copy(alpha = 0.85f))
-                .clickable { onBack() }
-                .zIndex(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            BackArrowIcon()
-        }
+        BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp).zIndex(1f))
 
         Column(
             modifier = Modifier

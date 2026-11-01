@@ -27,7 +27,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.Canvas
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.Scene
-import io.github.tomsadeh.puki.ui.components.MyDayTopBar
+import io.github.tomsadeh.puki.ui.components.GameTopBar
 import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -145,10 +145,10 @@ fun BathTimeScreen(
             colors = listOf(Color(0xFFB3E5FC), Color(0xFF81D4FA), Color(0xFF4FC3F7))
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MyDayTopBar(BilingualText("אמבטיה", "Bath Time"), onBack)
+                GameTopBar(onBack = onBack, roundIndex = state.bodyParts.count { it.cleaned }, totalRounds = state.bodyParts.size)
 
                 Spacer(modifier = Modifier.height(16.dp))
 

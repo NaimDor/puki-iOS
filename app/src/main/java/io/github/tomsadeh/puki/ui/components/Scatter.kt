@@ -29,12 +29,22 @@ fun Scatter(
         val n = placeables.size
         val rnd = Random(seed * 7919 + n)
         val flip = rnd.nextBoolean()  // whether the first one starts high or low
+        val flat = h < tallest * 1.5f  // a short area: no room for high and low
 
-        val centers = if (!aroundCenter) {
+        val centers = if (flat && aroundCenter) {
+            // In a line on each side of the target, instead of on top of each other
+            val left = (n + 1) / 2
             List(n) { i ->
-                val high = (i % 2 == 0) != flip
+                val onLeft = i < left
+                val k = if (onLeft) i else i - left
+                (if (onLeft) 0.08f + k * 0.14f else 0.92f - k * 0.14f) to 0.5f
+            }
+        } else if (!aroundCenter) {
+            List(n) { i ->
+                // (the first one never starts low: that's Puki's corner)
+                val high = i == 0 || (i % 2 == 0) != flip
                 val x = (i + 0.5f) / n + (rnd.nextFloat() - 0.5f) * 0.25f / n
-                val y = (if (high) 0.3f else 0.7f) + (rnd.nextFloat() - 0.5f) * 0.12f
+                val y = if (flat) 0.5f else (if (high) 0.3f else 0.7f) + (rnd.nextFloat() - 0.5f) * 0.12f
                 x to y
             }
         } else {

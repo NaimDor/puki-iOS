@@ -53,7 +53,7 @@ import io.github.tomsadeh.puki.data.models.BilingualText
 import io.github.tomsadeh.puki.navigation.Routes
 import io.github.tomsadeh.puki.theme.EarthBrown
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
-import io.github.tomsadeh.puki.ui.components.BackArrowIcon
+import io.github.tomsadeh.puki.ui.components.BackButton
 import io.github.tomsadeh.puki.ui.components.Scene
 import io.github.tomsadeh.puki.ui.components.SceneBackdrop
 import io.github.tomsadeh.puki.ui.components.OfflineParrot
@@ -149,19 +149,7 @@ fun MyDayScreen(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(24.dp)
-                .size(64.dp)
-                .shadow(6.dp, CircleShape)
-                .clip(CircleShape)
-                .background(EarthBrown.copy(alpha = 0.85f))
-                .clickable { onBack() },
-            contentAlignment = Alignment.Center
-        ) {
-            BackArrowIcon()
-        }
+        BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
     }
 }
 

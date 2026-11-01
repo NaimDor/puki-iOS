@@ -62,7 +62,7 @@ import io.github.tomsadeh.puki.ui.common.LocalCompanion
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
-import io.github.tomsadeh.puki.ui.components.BackArrowIcon
+import io.github.tomsadeh.puki.ui.components.BackButton
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.reaction
 import io.github.tomsadeh.puki.ui.components.rememberReactionState
@@ -161,17 +161,7 @@ fun StickerAlbumScreen(onBack: () -> Unit, viewModel: StickerAlbumViewModel = vi
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-                .size(64.dp)
-                .shadow(6.dp, CircleShape)
-                .clip(CircleShape)
-                .background(EarthBrown.copy(alpha = 0.85f))
-                .clickable { onBack() },
-            contentAlignment = Alignment.Center
-        ) { BackArrowIcon() }
+        BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
         StarCounter(stars = progress.totalStars, modifier = Modifier.align(Alignment.TopEnd).padding(20.dp))
     }
 }

@@ -17,6 +17,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -63,6 +65,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private val CARD_HEIGHT = 440.dp
+
 @Composable
 fun RoundCompleteSheet(
     starsEarned: Int,
@@ -82,7 +86,7 @@ fun RoundCompleteSheet(
         voicePlayer.play(voicePlayer.personalKey("voice_round_done", language), language)
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.45f)),
@@ -90,8 +94,12 @@ fun RoundCompleteSheet(
     ) {
         if (showContent) SunRays(modifier = Modifier.popIn())
 
+        // The card keeps its shape on a short screen: scaled as a whole, so buttons stay round
+        val fit = (maxHeight * 0.96f / CARD_HEIGHT).coerceAtMost(1f)
         if (showContent) Column(
             modifier = Modifier
+                .wrapContentSize(unbounded = true)
+                .graphicsLayer { scaleX = fit; scaleY = fit }
                 .popIn()
                 .shadow(16.dp, RoundedCornerShape(40.dp))
                 .clip(RoundedCornerShape(40.dp))

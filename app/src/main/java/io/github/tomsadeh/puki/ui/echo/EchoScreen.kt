@@ -45,7 +45,7 @@ import io.github.tomsadeh.puki.audio.EchoVoice
 import io.github.tomsadeh.puki.audio.MicRecorder
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
-import io.github.tomsadeh.puki.ui.components.BackArrowIcon
+import io.github.tomsadeh.puki.ui.components.BackButton
 import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.Scene
 import kotlinx.coroutines.delay
@@ -128,16 +128,7 @@ fun EchoScreen(onBack: () -> Unit) {
 
     GameBackground(scene = Scene.STAGE, withCompanion = false, colors = listOf(Color(0xFF7B1FA2), Color(0xFF9C27B0))) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.22f))
-                    .clickable { onBack() },
-                contentAlignment = Alignment.Center
-            ) { BackArrowIcon() }
+            BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
 
             Box(
                 modifier = Modifier

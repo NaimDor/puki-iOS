@@ -3,7 +3,7 @@ package io.github.tomsadeh.puki.ui.myday.bedtime
 import androidx.compose.runtime.DisposableEffect
 import io.github.tomsadeh.puki.ui.common.LocalMusicPlayer
 import io.github.tomsadeh.puki.ui.common.LocalCompanion
-import io.github.tomsadeh.puki.ui.components.BackArrowIcon
+import io.github.tomsadeh.puki.ui.components.BackButton
 import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
@@ -144,12 +144,9 @@ fun BedtimeRoutineScreen(onBack: () -> Unit, viewModel: BedtimeRoutineViewModel 
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Box(
-                    modifier = Modifier.size(56.dp).clip(CircleShape).background(CloudWhite.copy(alpha = 0.3f)).clickable { onBack() },
-                    contentAlignment = Alignment.Center
-                ) { BackArrowIcon() }
+                BackButton(onBack)
                 Text(BilingualText("שינה טובה", "Bedtime").resolve(language), style = MaterialTheme.typography.headlineMedium, color = CloudWhite)
-                Spacer(modifier = Modifier.width(56.dp))
+                Spacer(modifier = Modifier.width(64.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))

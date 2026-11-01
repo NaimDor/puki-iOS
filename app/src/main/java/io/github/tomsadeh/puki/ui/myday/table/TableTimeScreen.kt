@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.Canvas
 import io.github.tomsadeh.puki.ui.components.Scene
-import io.github.tomsadeh.puki.ui.components.MyDayTopBar
+import io.github.tomsadeh.puki.ui.components.GameTopBar
 import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -123,10 +123,10 @@ fun TableTimeScreen(
             colors = listOf(Color(0xFFC8E6C9), Color(0xFFA5D6A7), Color(0xFF81C784))
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MyDayTopBar(BilingualText("ארוחה", "Table Time"), onBack)
+                GameTopBar(onBack = onBack, roundIndex = state.items.count { it.placed }, totalRounds = state.items.size)
 
                 Spacer(modifier = Modifier.height(16.dp))
 

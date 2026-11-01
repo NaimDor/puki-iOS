@@ -129,7 +129,7 @@ fun GameTopBar(
     onBack: () -> Unit,
     roundIndex: Int,
     totalRounds: Int,
-    starsEarned: Int,
+    starsEarned: Int? = null,  // the routines have dots but no stars to count
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -139,25 +139,7 @@ fun GameTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-
-        // Back button with soft circle
-        Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.22f))
-                .clickable { onBack() },
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_ui_back),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(28.dp)
-                    .graphicsLayer(scaleX = if (isRtl) -1f else 1f)
-            )
-        }
+        BackButton(onBack)
 
         // Round dots
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -178,7 +160,7 @@ fun GameTopBar(
         }
 
         // Stars
-        Box(
+        if (starsEarned == null) Spacer(modifier = Modifier.width(64.dp)) else Box(
             modifier = Modifier
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.22f))
@@ -196,27 +178,6 @@ fun GameTopBar(
                 Text("$starsEarned", fontSize = 20.sp, color = Color.White)
             }
         }
-    }
-}
-
-/** The My Day routines' top bar: back, the routine's name, and space to keep the name centred. */
-@Composable
-fun MyDayTopBar(title: BilingualText, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.22f))
-                .clickable { onBack() },
-            contentAlignment = Alignment.Center
-        ) { BackArrowIcon() }
-        PromptBubble(title.resolve(LocalLanguage.current))
-        Spacer(modifier = Modifier.width(52.dp))
     }
 }
 

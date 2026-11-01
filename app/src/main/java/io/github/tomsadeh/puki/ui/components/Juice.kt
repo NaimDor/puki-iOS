@@ -127,7 +127,7 @@ fun Modifier.popIn(index: Int = 0, key: Any? = Unit): Modifier = composed {
 /** What to do, in a white speech pill (readable on any scene; mostly for the grown-up). */
 @Composable
 fun PromptBubble(text: String, modifier: Modifier = Modifier) {
-    if (text.isBlank()) return
+    if (text.isBlank() || rememberCompact()) return  // (on a short screen the voice carries it)
     Box(
         modifier = modifier
             .popIn(key = text)

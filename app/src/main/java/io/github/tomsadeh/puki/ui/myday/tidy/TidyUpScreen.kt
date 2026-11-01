@@ -8,7 +8,7 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.BoxWithConstraints
 import io.github.tomsadeh.puki.ui.components.Scene
-import io.github.tomsadeh.puki.ui.components.MyDayTopBar
+import io.github.tomsadeh.puki.ui.components.GameTopBar
 import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -119,10 +119,10 @@ fun TidyUpScreen(
             colors = listOf(Color(0xFFFFE0B2), Color(0xFFFFCC80), Color(0xFFFFB74D))
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MyDayTopBar(BilingualText("סידור חדר", "Tidy Up"), onBack)
+                GameTopBar(onBack = onBack, roundIndex = state.items.count { it.tidied }, totalRounds = state.items.size)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
