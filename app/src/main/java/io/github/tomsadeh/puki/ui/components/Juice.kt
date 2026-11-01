@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -164,7 +165,7 @@ fun Modifier.popAway(gone: Boolean, index: Int = 0): Modifier = composed {
 // ---------- Scenes ----------
 
 /** Illustrated backdrops for the games, drawn in code (no image files). */
-enum class Scene { FARM, GARDEN, PLAYGROUND, STAGE, HOME, SUNSET, BATH }
+enum class Scene { FARM, GARDEN, PLAYGROUND, STAGE, HOME, SUNSET, BATH, SAVANNA, JUNGLE, ICE }
 
 @Composable
 fun SceneBackdrop(scene: Scene, modifier: Modifier = Modifier) {
@@ -221,6 +222,9 @@ private fun paletteFor(scene: Scene) = when (scene) {
     Scene.GARDEN -> Palette(Color(0xFF81D4FA), Color(0xFFE1F5FE), Color(0xFFAED581), Color(0xFF7CB342), Color(0xFFF48FB1))
     // Pale, so the only strong colors on the screen are the ones she's looking for
     Scene.PLAYGROUND -> Palette(Color(0xFFD6EAF8), Color(0xFFF4FAFE), Color(0xFFE3EFD3), Color(0xFFD3E5BD), Color(0xFFFFFFFF))
+    Scene.SAVANNA -> Palette(Color(0xFFFFCC80), Color(0xFFFFF3E0), Color(0xFFE9CD8C), Color(0xFFDDB966), Color(0xFFFFFFFF))
+    Scene.JUNGLE -> Palette(Color(0xFF80CBC4), Color(0xFFE0F2F1), Color(0xFF66BB6A), Color(0xFF43A047), Color(0xFFFF8A65))
+    Scene.ICE -> Palette(Color(0xFF90CAF9), Color(0xFFE3F2FD), Color(0xFFE1F5FE), Color(0xFFF5FBFF), Color(0xFFFFFFFF))
     Scene.SUNSET -> Palette(Color(0xFFFFB74D), Color(0xFFFFF59D), Color(0xFFFFCC80), Color(0xFFA5D6A7), Color(0xFFFFFFFF))
     else -> Palette(Color(0xFF81D4FA), Color(0xFFE1F5FE), Color(0xFFAED581), Color(0xFF7CB342), Color(0xFFFFF176))
 }
@@ -236,9 +240,70 @@ private fun DrawScope.drawOutdoorsStill(scene: Scene, p: Palette, hills: Pair<Pa
     drawCircle(Brush.radialGradient(listOf(Color(0x88FFF59D), Color.Transparent), center = sun, radius = h * 0.2f), h * 0.2f, sun)
     drawCircle(Color(0xFFFFE082), h * 0.075f, sun)
     drawCircle(Color(0xFFFFF59D), h * 0.055f, sun)
+    if (scene == Scene.ICE) drawIcePeaks()
     // Two rows of hills
     drawPath(hills.first, p.hillBack)
     drawPath(hills.second, p.hillFront)
+    when (scene) {
+        Scene.SAVANNA -> {
+            drawAcacia(Offset(w * 0.1f, h * 0.74f), h * 0.42f)
+            drawAcacia(Offset(w * 0.9f, h * 0.7f), h * 0.3f)
+        }
+        Scene.JUNGLE -> drawJungleLeaves()
+        else -> Unit
+    }
+}
+
+/** A flat-topped savanna tree, its foot at [foot]. */
+private fun DrawScope.drawAcacia(foot: Offset, height: Float) {
+    val bark = Color(0xFF8D6E63)
+    val top = foot - Offset(0f, height * 0.8f)
+    drawLine(bark, foot, top, height * 0.06f, StrokeCap.Round)
+    for (s in listOf(-1f, 1f)) drawLine(bark, foot - Offset(0f, height * 0.5f), top + Offset(s * height * 0.3f, 0f), height * 0.04f, StrokeCap.Round)
+    val leaves = Color(0xFF9CAF5A)
+    drawOval(leaves, top - Offset(height * 0.56f, height * 0.2f), Size(height * 1.12f, height * 0.26f))
+    drawOval(Color(0xFFB2C276), top - Offset(height * 0.32f, height * 0.25f), Size(height * 0.64f, height * 0.16f))
+}
+
+/** Vines and big leaves hanging into the picture at the sides. */
+private fun DrawScope.drawJungleLeaves() {
+    val w = size.width
+    val h = size.height
+    val vine = Color(0xFF558B2F)
+    for ((fx, len) in listOf(0.05f to 0.5f, 0.14f to 0.32f, 0.86f to 0.34f, 0.95f to 0.54f)) {
+        drawLine(vine, Offset(w * fx, 0f), Offset(w * fx, h * len), h * 0.008f)
+        var y = h * 0.06f
+        var side = 1f
+        while (y < h * len) {
+            val leaf = Path().apply {
+                moveTo(w * fx, y)
+                quadraticBezierTo(w * fx + side * h * 0.05f, y - h * 0.035f, w * fx + side * h * 0.1f, y + h * 0.01f)
+                quadraticBezierTo(w * fx + side * h * 0.05f, y + h * 0.04f, w * fx, y)
+                close()
+            }
+            drawPath(leaf, if (side > 0) Color(0xFF388E3C) else Color(0xFF2E7D32))
+            y += h * 0.07f
+            side = -side
+        }
+    }
+}
+
+/** Snowy peaks far away, behind the ice. */
+private fun DrawScope.drawIcePeaks() {
+    val w = size.width
+    val h = size.height
+    for ((fx, peak) in listOf(0.14f to 0.3f, 0.34f to 0.42f, 0.66f to 0.36f, 0.88f to 0.28f)) {
+        val rock = Path().apply {
+            moveTo(w * (fx - 0.17f), h * 0.72f); lineTo(w * fx, h * peak); lineTo(w * (fx + 0.17f), h * 0.72f); close()
+        }
+        drawPath(rock, Color(0xFFB3D4EA))
+        val cap = Path().apply {
+            moveTo(w * fx, h * peak)
+            lineTo(w * (fx + 0.05f), h * (peak + 0.11f)); lineTo(w * fx, h * (peak + 0.08f)); lineTo(w * (fx - 0.05f), h * (peak + 0.11f))
+            close()
+        }
+        drawPath(cap, Color.White)
+    }
 }
 
 private fun DrawScope.drawOutdoorsMotion(scene: Scene, p: Palette, drift: Float, sway: Float) {
@@ -249,6 +314,7 @@ private fun DrawScope.drawOutdoorsMotion(scene: Scene, p: Palette, drift: Float,
         val x = ((fx + drift * (0.6f + i * 0.25f)) % 1.2f - 0.1f) * w
         drawCloud(Offset(x, h * fy), h * 0.06f * s)
     }
+    if (scene == Scene.ICE) return  // (nothing grows on the ice)
     // Grass tufts and flowers along the front hill
     val tuft = p.hillFront.copy(red = p.hillFront.red * 0.8f, green = p.hillFront.green * 0.85f, blue = p.hillFront.blue * 0.8f)
     for (i in 0 until 14) {
@@ -258,7 +324,7 @@ private fun DrawScope.drawOutdoorsMotion(scene: Scene, p: Palette, drift: Float,
         for (b in -1..1) {
             drawLine(tuft, Offset(x + b * 5f, y), Offset(x + b * 9f + sway * 3f, y - h * 0.022f), strokeWidth = 4f)
         }
-        if (i % 3 == 1 && scene != Scene.FARM) {
+        if (i % 3 == 1 && scene != Scene.FARM && scene != Scene.SAVANNA) {
             val fc = if (i % 2 == 0) p.accent else Color.White
             for (k in 0 until 5) {
                 val a = k * 2 * PI.toFloat() / 5

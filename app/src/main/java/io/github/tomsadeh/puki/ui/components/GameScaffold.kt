@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.Crossfade
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -63,7 +64,7 @@ fun GameBackground(
     val sparkles = rememberTouchSparkles()
     CompositionLocalProvider(LocalPukiMood provides remember { ReactionState() }) {
     Box(modifier = modifier.fillMaxSize().touchSparkles(sparkles)) {
-        if (scene != null) SceneBackdrop(scene)
+        if (scene != null) Crossfade(scene, animationSpec = tween(500), label = "scene") { SceneBackdrop(it) }  // (one game can move between places)
 
         content()
 

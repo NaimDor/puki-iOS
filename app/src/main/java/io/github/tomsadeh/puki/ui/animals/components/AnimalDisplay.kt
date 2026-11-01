@@ -26,6 +26,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -84,6 +88,12 @@ fun AnimalDisplay(
                     },
                 contentAlignment = Alignment.Center
             ) {
+                // A soft shadow, so it stands on the ground
+                Spacer(
+                    modifier = Modifier.fillMaxSize().drawBehind {
+                        drawOval(Color.Black.copy(alpha = 0.14f), Offset(size.width * 0.16f, size.height * 0.88f), Size(size.width * 0.68f, size.height * 0.08f))
+                    }
+                )
                 Image(
                     painter = painterResource(id = animal.drawableRes),
                     contentDescription = animal.name.en,

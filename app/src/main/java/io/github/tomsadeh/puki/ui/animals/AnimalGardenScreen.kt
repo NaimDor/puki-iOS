@@ -133,7 +133,7 @@ fun AnimalGardenScreen(
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
         GameBackground(
-            scene = Scene.FARM
+            scene = habitatOf(state.currentAnimal.id)
         ) {
             Column(
                 modifier = Modifier
@@ -268,6 +268,14 @@ fun AnimalGardenScreen(
             }
         }
     }
+}
+
+/** Where an animal lives; the others are at home on the farm. */
+private fun habitatOf(animalId: String) = when (animalId) {
+    "lion", "elephant", "giraffe" -> Scene.SAVANNA
+    "monkey" -> Scene.JUNGLE
+    "penguin" -> Scene.ICE
+    else -> Scene.FARM
 }
 
 /** Where the animals go in a shadow round. */
