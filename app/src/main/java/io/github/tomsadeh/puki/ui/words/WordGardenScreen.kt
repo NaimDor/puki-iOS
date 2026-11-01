@@ -69,6 +69,7 @@ import io.github.tomsadeh.puki.audio.Sfx
 import io.github.tomsadeh.puki.data.content.LetterDef
 import io.github.tomsadeh.puki.data.content.englishLetters
 import io.github.tomsadeh.puki.data.content.hebrewLetters
+import io.github.tomsadeh.puki.data.content.letterLookalikes
 import io.github.tomsadeh.puki.data.models.BilingualText
 import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.theme.EarthBrown
@@ -102,21 +103,28 @@ data class WordState(
     val totalStarsEarned: Int = 0
 )
 
+/** Level 1 stays with the first letters of the alphabet. */
+private const val FAMILIAR_LETTERS = 6
+
 class WordGardenViewModel(application: Application) : AndroidViewModel(application) {
     val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(WordState())
     val state: StateFlow<WordState> = _state.asStateFlow()
-    private var letters = emptyList<LetterDef>()  // the whole alphabet, for the other blocks
+    private var letters = emptyList<LetterDef>()  // the letters this session draws on
     private var rounds = emptyList<LetterDef>()   // this session's letters
-    private var choices = 2  // blocks to pick from: 2 at first, 3 from level 2
+    private var choices = 2  // blocks to pick from: 2, then 3, then 4
+    private var lookalikes = false  // the top level puts letters that look alike side by side
 
     fun initialize(language: Language) {
-        letters = when (language) {
+        val alphabet = when (language) {
             Language.HEBREW -> hebrewLetters
             Language.ENGLISH -> englishLetters
         }
         viewModelScope.launch {
-            choices = if (session.level() == 1) 2 else 3
+            val level = session.level()
+            choices = level + 1
+            lookalikes = level >= 3
+            letters = if (level == 1) alphabet.take(FAMILIAR_LETTERS) else alphabet
             // A short session of letters from anywhere in the alphabet, not always from א
             rounds = letters.shuffled().take(4)
             startRound(0)
@@ -132,12 +140,18 @@ class WordGardenViewModel(application: Application) : AndroidViewModel(applicati
         val target = rounds[index]
         _state.value = WordState(
             targetLetter = target,
-            letterChoices = pickChoices(target, letters, choices) { it.id },
+            letterChoices = lookalike(target).let { twin ->
+                if (twin == null) pickChoices(target, letters, choices) { it.id }
+                else (pickChoices(target, letters - twin, choices - 1) { it.id } + twin).shuffled()
+            },
             roundIndex = index,
             totalRounds = rounds.size,
             totalStarsEarned = _state.value.totalStarsEarned
         )
     }
+
+    private fun lookalike(target: LetterDef): LetterDef? =
+        if (lookalikes) letters.firstOrNull { it.id == letterLookalikes[target.id] } else null
 
     /** True if right, false if not, null while the round is already won (a toddler's second tap). */
     fun onLetterTapped(letterId: String): Boolean? {
