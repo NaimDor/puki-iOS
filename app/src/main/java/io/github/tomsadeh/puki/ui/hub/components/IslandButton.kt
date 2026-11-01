@@ -3,12 +3,7 @@ package io.github.tomsadeh.puki.ui.hub.components
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -34,6 +29,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlin.math.sin
+import kotlin.math.PI
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.State
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -81,8 +84,10 @@ fun IslandButton(
     island: IslandDef,
     onTap: () -> Unit,
     onClick: () -> Unit,
+    clock: State<Float>,  // the whole hub's one clock, 0..1 over HUB_CLOCK_MS
     modifier: Modifier = Modifier,
-    palmOnLeft: Boolean = true
+    palmOnLeft: Boolean = true,
+    called: Boolean = false  // Puki's calling this island: it hops
 ) {
     val language = LocalLanguage.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -90,35 +95,23 @@ fun IslandButton(
     val scope = rememberCoroutineScope()
     val hop = remember { Animatable(0f) }
 
-    // Islands bob on the water, each at its own pace so they don't move in lockstep
-    val transition = rememberInfiniteTransition(label = "island_${island.id}")
-    val bob by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(2200 + (island.id.hashCode() and 0x3FF)),
-            RepeatMode.Reverse
-        ),
-        label = "bob"
-    )
-    val ripple by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing), RepeatMode.Restart),
-        label = "ripple"
-    )
-    val sway by transition.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
-        animationSpec = infiniteRepeatable(tween(1800), RepeatMode.Reverse),
-        label = "sway"
-    )
+    // Islands bob on the water, each at its own pace so they don't move in lockstep. Every wave
+    // here is a whole number of cycles of the clock, so nothing jumps when it comes round
+    val phase = remember(island.id) { (island.id.hashCode() and 0xFF) / 255f }
+    val bobCycles = remember(island.id) { 12 + (island.id.hashCode() and 3) }
 
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1f,
         animationSpec = spring(dampingRatio = 0.4f, stiffness = 300f),
         label = "press_scale"
     )
+
+    LaunchedEffect(called) {
+        if (called) repeat(3) {
+            hop.animateTo(1f, tween(140))
+            hop.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 500f))
+        }
+    }
 
     Box(
         modifier = modifier
@@ -129,40 +122,58 @@ fun IslandButton(
                 translationY = -hop.value * 16.dp.toPx()
             }
     ) {
-        // Each part that moves has a layer of its own, so its frames redraw only itself: read in
-        // the island's layer, they'd redraw all ten islands, shadows and all, every frame.
-        // Water ripple stays put while the island bobs above it
-        Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
-            val stroke = Stroke(width = 3.dp.toPx())
-            onDrawBehind {
-                val c = Offset(size.width / 2, size.height * 0.66f)
-                for (k in 0..1) {
-                    val t = (ripple + k * 0.5f) % 1f
-                    drawOval(
-                        color = Color.White.copy(alpha = 0.45f * (1f - t)),
-                        topLeft = Offset(c.x - size.width * (0.44f + 0.08f * t), c.y - size.height * (0.15f + 0.03f * t)),
-                        size = Size(size.width * (0.88f + 0.16f * t), size.height * (0.30f + 0.06f * t)),
-                        style = stroke
-                    )
+        // Each part that moves is drawn once and only moved after that, by its layer: nothing on an
+        // island redraws from one frame to the next.
+        // Water ripples stay put while the island bobs above them
+        for (k in 0..1) {
+            Spacer(modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val t = (clock.value * RIPPLE_CYCLES + k * 0.5f + phase) % 1f
+                    transformOrigin = RippleCentre
+                    scaleX = 1f + 0.18f * t
+                    scaleY = 1f + 0.2f * t
+                    alpha = 0.45f * (1f - t)
                 }
-            }
-        })
+                .drawWithCache {
+                    val stroke = Stroke(width = 3.dp.toPx())
+                    onDrawBehind {
+                        drawOval(
+                            color = Color.White,
+                            topLeft = Offset(size.width * 0.06f, size.height * 0.51f),
+                            size = Size(size.width * 0.88f, size.height * 0.30f),
+                            style = stroke
+                        )
+                    }
+                })
+        }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { translationY = bob * 4.dp.toPx() }
+                .graphicsLayer { translationY = sin(TWO_PI * (clock.value * bobCycles + phase)) * 4.dp.toPx() }
         ) {
-            // The island itself never changes; only the palm's crown turns, by the sway
-            val shapes = remember(palmOnLeft) { arrayOfNulls<IslandShapes>(1) }
+            // The island itself never changes; only the palm's crown turns
             Spacer(modifier = Modifier.fillMaxSize().stillLayer().drawWithCache {
-                val base = IslandShapes(size.width, size.height, palmOnLeft).also { shapes[0] = it }
+                val base = IslandShapes(size.width, size.height, palmOnLeft)
                 onDrawBehind { drawIsland(base, palmOnLeft) }
             })
-            Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
-                val base = shapes[0] ?: IslandShapes(size.width, size.height, palmOnLeft)
-                onDrawBehind { drawPalmCrown(base, sway) }
-            })
+            Spacer(modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(if (palmOnLeft) 0.1f else 0.9f, 0.22f)  // (the top of the trunk)
+                    rotationZ = 3f * sin(TWO_PI * (clock.value * SWAY_CYCLES + phase))
+                }
+                .drawWithCache {
+                    // Stamped once into a little image, and the layer just turns it
+                    val base = IslandShapes(size.width, size.height, palmOnLeft)
+                    val side = (size.width * 0.56f).toInt()
+                    val crown = ImageBitmap(side, side)
+                    CanvasDrawScope().draw(this, layoutDirection, androidx.compose.ui.graphics.Canvas(crown), Size(side.toFloat(), side.toFloat())) {
+                        translate(side / 2f - base.top.x, side / 2f - base.top.y) { drawPalmCrown(base) }
+                    }
+                    onDrawBehind { drawImage(crown, Offset(base.top.x - side / 2f, base.top.y - side / 2f)) }
+                })
 
             Box(modifier = Modifier.fillMaxSize().stillLayer()) {
             // The island's sign: its picture on a colored disc
@@ -225,8 +236,16 @@ fun IslandButton(
 
 private const val TAP_TO_GO_MS = 150L
 
+/** One turn of the hub's shared clock. */
+const val HUB_CLOCK_MS = 60_000
+
+private const val RIPPLE_CYCLES = 20  // a ripple every 3 s
+private const val SWAY_CYCLES = 17
+private const val TWO_PI = (2 * PI).toFloat()
+private val RippleCentre = TransformOrigin(0.5f, 0.66f)
+
 /** The island's shapes for a [w] x [h] box: sand, grass, the palm's trunk and one leaf. */
-private class IslandShapes(w: Float, h: Float, palmOnLeft: Boolean) {
+private class IslandShapes(val w: Float, val h: Float, palmOnLeft: Boolean) {
     val cx = w / 2
     val baseY = h * 0.64f
     private val side = if (palmOnLeft) -1f else 1f
@@ -284,14 +303,10 @@ private fun DrawScope.drawIsland(s: IslandShapes, palmOnLeft: Boolean) {
     drawPath(s.trunk, Color(0xFF8D6E63), style = s.trunkStroke)
 }
 
-/** The palm's crown, turned by the sway. */
-private fun DrawScope.drawPalmCrown(s: IslandShapes, sway: Float) {
-    val w = size.width
-    val h = size.height
+/** The palm's crown. */
+private fun DrawScope.drawPalmCrown(s: IslandShapes) {
     val top = s.top
-    rotate(sway, top) {
-        for (angle in LEAF_ANGLES) rotate(angle, top) { drawPath(s.leaf, Color(0xFF2E7D32)) }
-        drawCircle(Color(0xFF6D4C41), w * 0.018f, Offset(top.x - w * 0.012f, top.y + h * 0.012f))
-        drawCircle(Color(0xFF6D4C41), w * 0.018f, Offset(top.x + w * 0.014f, top.y + h * 0.014f))
-    }
+    for (angle in LEAF_ANGLES) rotate(angle, top) { drawPath(s.leaf, Color(0xFF2E7D32)) }
+    drawCircle(Color(0xFF6D4C41), s.w * 0.018f, Offset(top.x - s.w * 0.012f, top.y + s.h * 0.012f))
+    drawCircle(Color(0xFF6D4C41), s.w * 0.018f, Offset(top.x + s.w * 0.014f, top.y + s.h * 0.014f))
 }

@@ -3,35 +3,23 @@
     android:height="100dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    <!-- Peekaboo barn: a red barn, with eyes peeking out of the half-open door -->
-    <!-- Roof -->
-    <path android:fillColor="#A62F2F"
-        android:pathData="M8,46 L50,12 L92,46Z"/>
-    <path android:strokeColor="#FFF8E1" android:strokeWidth="3" android:fillColor="#00000000"
-        android:pathData="M8,46 L50,12 L92,46"/>
-    <!-- Walls -->
-    <path android:fillColor="#D84343"
-        android:pathData="M15,44 L85,44 L85,92 L15,92Z"/>
-    <!-- Dark doorway -->
+    <!-- Peekaboo: a round bush, with two eyes looking out of the leaves -->
+    <path android:fillColor="#2E7D32"
+        android:pathData="M14,84 C4,84 4,62 16,60 C10,44 28,34 38,42 C42,24 66,24 68,42 C80,36 94,46 86,60 C98,62 96,84 86,84 Z"/>
+    <path android:fillColor="#43A047"
+        android:pathData="M20,80 C12,80 12,64 22,63 C18,50 32,44 41,50 C44,34 62,34 65,50 C74,44 86,52 80,63 C90,64 88,80 80,80 Z"/>
+    <path android:fillColor="#66BB6A"
+        android:pathData="M30,50 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 Z M68,72 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z M20,74 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z"/>
+    <!-- The dark gap in the leaves, and the eyes in it -->
+    <path android:fillColor="#1B5E20"
+        android:pathData="M30,66 C36,54 64,54 70,66 C64,78 36,78 30,66 Z"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M35,66 a7.5,7.5 0 1,0 15,0 a7.5,7.5 0 1,0 -15,0 Z M50,66 a7.5,7.5 0 1,0 15,0 a7.5,7.5 0 1,0 -15,0 Z"/>
     <path android:fillColor="#3E2723"
-        android:pathData="M34,58 L66,58 L66,92 L34,92Z"/>
-    <!-- Eyes peeking from the dark -->
+        android:pathData="M38.5,66 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 Z M53.5,66 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 Z"/>
     <path android:fillColor="#FFFFFF"
-        android:pathData="M39,70 A4.5,4.5 0 1,1 48,70 A4.5,4.5 0 1,1 39,70Z"/>
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M50,70 A4.5,4.5 0 1,1 59,70 A4.5,4.5 0 1,1 50,70Z"/>
-    <path android:fillColor="#212121"
-        android:pathData="M42,70.5 A2.2,2.2 0 1,1 46.4,70.5 A2.2,2.2 0 1,1 42,70.5Z"/>
-    <path android:fillColor="#212121"
-        android:pathData="M53,70.5 A2.2,2.2 0 1,1 57.4,70.5 A2.2,2.2 0 1,1 53,70.5Z"/>
-    <!-- The right door, half open -->
-    <path android:fillColor="#D84343"
-        android:pathData="M50,58 L66,58 L66,92 L50,92Z"/>
-    <path android:strokeColor="#FFF8E1" android:strokeWidth="2.5" android:fillColor="#00000000"
-        android:pathData="M50,58 L66,58 L66,92 L50,92Z M50,58 L66,92 M66,58 L50,92"/>
-    <!-- Hayloft window -->
-    <path android:fillColor="#FFF8E1"
-        android:pathData="M44,28 L56,28 L56,38 L44,38Z"/>
-    <path android:fillColor="#5D4037"
-        android:pathData="M46,30 L54,30 L54,36 L46,36Z"/>
+        android:pathData="M39.5,64.5 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0 Z M54.5,64.5 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0 Z"/>
+    <!-- Berries -->
+    <path android:fillColor="#EF5350"
+        android:pathData="M62,42 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0 Z M42,40 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z M76,56 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z"/>
 </vector>

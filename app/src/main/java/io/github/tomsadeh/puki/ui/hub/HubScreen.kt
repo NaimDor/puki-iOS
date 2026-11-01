@@ -27,6 +27,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.hub.components.HUB_CLOCK_MS
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -58,6 +67,9 @@ import io.github.tomsadeh.puki.ui.hub.components.StarCounter
 
 private var greetedThisLaunch = false
 
+/** How long the hub waits before Puki calls out an island. */
+private const val IDLE_CALL_MS = 30_000L
+
 @Composable
 fun HubScreen(
     onIslandClick: (String) -> Unit,
@@ -84,6 +96,15 @@ fun HubScreen(
         }
     }
 
+    // One clock for all the islands, read only by their layers
+    val clock = rememberInfiniteTransition(label = "hub_clock").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(HUB_CLOCK_MS, easing = LinearEasing)),
+        label = "hub_tick"
+    )
+    var called by remember { mutableStateOf<String?>(null) }
+
     val sparkles = rememberTouchSparkles()
     Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
         HubBackground()
@@ -95,8 +116,22 @@ fun HubScreen(
             val hidden = LocalAppSettings.current.hiddenIslands
             val islands = allIslands.filter { it.id !in hidden }.ifEmpty { allIslands }
 
+            // Left a while with nothing touched, Puki calls out an island, which hops (a few times, no more)
+            LaunchedEffect(islands) {
+                repeat(3) {
+                    delay(IDLE_CALL_MS)
+                    if (!voicePlayer.isPlaying()) {
+                        val island = islands.random()
+                        called = island.id
+                        voicePlayer.play("voice_island_${island.id}", language)
+                        delay(1500)
+                        called = null
+                    }
+                }
+            }
+
             // Dotted sea route linking the islands in order, like a treasure map
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) {
                 val points = islands.map { Offset(size.width * it.fractionalX, size.height * it.fractionalY + 40.dp.toPx()) }
                 if (points.size < 2) return@Canvas
                 val route = Path().apply {
@@ -138,7 +173,9 @@ fun HubScreen(
                         voicePlayer.play("voice_island_${island.id}", language)
                     },
                     onClick = { onIslandClick(island.route) },
+                    clock = clock,
                     palmOnLeft = index % 2 == 0,
+                    called = called == island.id,
                     modifier = Modifier
                         .absoluteOffset(
                             x = width * island.fractionalX - IslandWidth / 2,
