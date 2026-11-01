@@ -38,6 +38,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.first
+import io.github.tomsadeh.puki.ui.stickers.nextSticker
+import io.github.tomsadeh.puki.ui.stickers.StickerDef
+import io.github.tomsadeh.puki.ui.common.LocalOpenAlbum
+import io.github.tomsadeh.puki.ui.common.LocalCompanion
+import io.github.tomsadeh.puki.audio.reactOr
+import io.github.tomsadeh.puki.PukiApplication
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -77,19 +89,58 @@ fun RoundCompleteSheet(
 ) {
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
+    val sfxPlayer = LocalSfxPlayer.current
+    val companion = LocalCompanion.current
+    val openAlbum = LocalOpenAlbum.current
+    val appContext = LocalContext.current.applicationContext
     var showContent by remember { mutableStateOf(false) }
     var showConfetti by remember { mutableStateOf(false) }
+    var earned by remember { mutableStateOf<StickerDef?>(null) }
+    var stickerUp by remember { mutableStateOf(false) }
+    val flight = remember { Animatable(0f) }
+    val door = rememberReactionState()
+    var screenCentre by remember { mutableStateOf(Offset.Zero) }
+    var doorCentre by remember { mutableStateOf(Offset.Zero) }
 
     LaunchedEffect(Unit) {
         delay(200)
+        val repository = (appContext as PukiApplication).progressRepository
+        val progress = repository.progress.first()
+        // One sticker to a card: if she's crossed two lines, the next one waits for the next card
+        val sticker = nextSticker(progress.rewardedStars, progress.totalStars)
+        repository.markRewarded(sticker?.starsRequired ?: progress.totalStars)
+        earned = sticker
         showContent = true
         showConfetti = !calm
         voicePlayer.play(voicePlayer.personalKey("voice_round_done", language), language)
+        if (sticker == null) return@LaunchedEffect
+
+        // Once her stars have landed: the sticker, big, then away into the album
+        delay(1300L + starsEarned.coerceAtLeast(1) * 380L)
+        withTimeoutOrNull(3000) { voicePlayer.speaking.first { !it } }
+        stickerUp = true
+        if (calm) {
+            voicePlayer.play("voice_sticker_${sticker.id}", language)
+        } else {
+            sfxPlayer.play(Sfx.SUCCESS)
+            showConfetti = true
+            companion.reactOr("קיבלו עכשיו מדבקה חדשה של ${sticker.name.he}!", "The child just got a new ${sticker.name.en.lowercase()} sticker!") {
+                voicePlayer.playSequence(listOf("voice_sticker_new", "voice_sticker_${sticker.id}"), language)
+            }
+        }
+        delay(1400)
+        withTimeoutOrNull(4000) { voicePlayer.speaking.first { !it } }
+        delay(if (calm) 900 else 300)
+        flight.animateTo(1f, tween(if (calm) 1100 else 700, easing = FastOutSlowInEasing))
+        stickerUp = false
+        if (!calm) sfxPlayer.play(Sfx.STAR_COLLECT, 0.8f)
+        door.celebrate()
     }
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
+            .onGloballyPositioned { screenCentre = it.boundsInRoot().center }
             .background(Color.Black.copy(alpha = if (calm) 0.6f else 0.45f)),
         contentAlignment = Alignment.Center
     ) {
@@ -144,10 +195,61 @@ fun RoundCompleteSheet(
                 ) {
                     Image(painter = painterResource(R.drawable.ic_word_house), contentDescription = null, modifier = Modifier.size(72.dp))
                 }
+                // Where the new sticker goes, and the way to go and see it
+                if (earned != null && openAlbum != null) RoundButton(
+                    color = Color(0xFFB39DDB),
+                    label = BilingualText("אלבום", "Album"),
+                    index = 2,
+                    pulse = false,
+                    onClick = openAlbum,
+                    modifier = Modifier
+                        .onGloballyPositioned { doorCentre = it.boundsInRoot().center }
+                        .reaction(door, jumpHeight = 18.dp)
+                ) {
+                    Image(painter = painterResource(R.drawable.ic_ui_stickers), contentDescription = null, modifier = Modifier.size(76.dp))
+                }
             }
         }
 
+        val sticker = earned
+        if (stickerUp && sticker != null) {
+            val big = minOf(maxHeight * 0.62f, 320.dp)
+            BigSticker(
+                sticker,
+                modifier = Modifier
+                    .size(big)
+                    .graphicsLayer {
+                        val t = flight.value
+                        translationX = (doorCentre.x - screenCentre.x) * t
+                        translationY = (doorCentre.y - screenCentre.y) * t
+                        val shrink = 1f - t * 0.82f
+                        scaleX = shrink
+                        scaleY = shrink
+                    }
+            )
+        }
+
         ConfettiOverlay(show = showConfetti, onFinished = { showConfetti = false })
+    }
+}
+
+/** A new sticker, shown big: it pops up over the card with a little jump. */
+@Composable
+private fun BigSticker(sticker: StickerDef, modifier: Modifier = Modifier) {
+    val jump = rememberReactionState()
+    LaunchedEffect(Unit) { jump.celebrate() }
+    Box(
+        modifier = modifier
+            .popIn()
+            .reaction(jump, jumpHeight = 24.dp)
+            .graphicsLayer { rotationZ = -5f }
+            .shadow(16.dp, CircleShape)
+            .clip(CircleShape)
+            .background(Color.White)
+            .border(10.dp, Color(0xFFFFE082), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(painter = painterResource(sticker.icon), contentDescription = null, modifier = Modifier.fillMaxSize(0.76f))
     }
 }
 
@@ -225,6 +327,7 @@ private fun RoundButton(
     index: Int,
     pulse: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     icon: @Composable () -> Unit
 ) {
     val language = LocalLanguage.current
@@ -235,7 +338,7 @@ private fun RoundButton(
         animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
         label = "beat"
     )
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .popIn(index + 2)
@@ -262,7 +365,7 @@ private fun RoundButton(
 
 /** A chunky white arrow pointing onwards (it flips for right-to-left). */
 @Composable
-private fun NextArrow() {
+internal fun NextArrow() {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Canvas(modifier = Modifier.size(64.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }) {
         val w = size.width

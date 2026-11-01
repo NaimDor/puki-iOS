@@ -29,14 +29,20 @@ class ProgressRepository(private val context: Context) {
 
     private object Keys {
         val TOTAL_STARS = intPreferencesKey("total_stars")
+        val REWARDED_STARS = intPreferencesKey("rewarded_stars")
+        val ALBUM_SEEN_STARS = intPreferencesKey("album_seen_stars")
     }
 
     private fun difficultyKey(island: String) = intPreferencesKey("difficulty_$island")
     private fun streakKey(island: String) = intPreferencesKey("clean_streak_$island")
 
     val progress: Flow<GameProgress> = context.progressDataStore.data.map { prefs ->
+        val stars = prefs[Keys.TOTAL_STARS] ?: 0
         GameProgress(
-            totalStars = prefs[Keys.TOTAL_STARS] ?: 0
+            totalStars = stars,
+            // (nothing stored yet: everything she has so far counts as seen)
+            rewardedStars = prefs[Keys.REWARDED_STARS] ?: stars,
+            albumSeenStars = prefs[Keys.ALBUM_SEEN_STARS] ?: stars
         )
     }
 
@@ -47,6 +53,13 @@ class ProgressRepository(private val context: Context) {
         }
     }
 
+    suspend fun markRewarded(stars: Int) {
+        context.progressDataStore.edit { it[Keys.REWARDED_STARS] = stars }
+    }
+
+    suspend fun markAlbumSeen(stars: Int) {
+        context.progressDataStore.edit { it[Keys.ALBUM_SEEN_STARS] = stars }
+    }
 
     /** A game's level, 1 (easiest) to [MAX_LEVEL]. */
     suspend fun getDifficulty(island: String): Int {

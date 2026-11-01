@@ -18,6 +18,9 @@ val LocalAppSettings = compositionLocalOf { AppSettings() }
 val LocalSfxPlayer = compositionLocalOf<SfxPlayer> { error("No SfxPlayer provided") }
 val LocalMusicPlayer = compositionLocalOf<MusicPlayer> { error("No MusicPlayer provided") }
 val LocalCompanion = compositionLocalOf<Companion?> { null }
+
+/** Opens the sticker album, from an end card that's just given her a sticker. */
+val LocalOpenAlbum = compositionLocalOf<(() -> Unit)?> { null }
 val LocalVoicePlayer = compositionLocalOf<VoicePlayer> { error("No VoicePlayer provided") }
 /** True while the game is paused under the time limit's goodbye: no nudges, no listening. */
 val LocalGamePaused = compositionLocalOf { false }

@@ -34,6 +34,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -95,22 +103,26 @@ fun GameTopBar(
         // Round dots
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             repeat(totalRounds) { i ->
-                Box(
-                    modifier = Modifier
-                        .size(if (i == roundIndex) 18.dp else 14.dp)
-                        .clip(CircleShape)
-                        .background(
-                            when {
-                                i < roundIndex -> Color(0xFFFFD700)
-                                i == roundIndex -> Color.White
-                                else -> Color.Black.copy(alpha = 0.18f)
-                            }
-                        )
+                val dotSize by animateDpAsState(if (i == roundIndex) 18.dp else 14.dp, label = "dot_size")
+                val dotColor by animateColorAsState(
+                    when {
+                        i < roundIndex -> Color(0xFFFFD700)
+                        i == roundIndex -> Color.White
+                        else -> Color.Black.copy(alpha = 0.18f)
+                    },
+                    label = "dot_color"
                 )
+                Box(modifier = Modifier.size(dotSize).clip(CircleShape).background(dotColor))
             }
         }
 
-        // Stars
+        // Stars; the star hops each time the count goes up
+        val starHop = rememberReactionState()
+        val settled = remember { booleanArrayOf(false) }
+        LaunchedEffect(starsEarned) {
+            if (settled[0]) starHop.hop()
+            settled[0] = true
+        }
         if (starsEarned == null) Spacer(modifier = Modifier.width(64.dp)) else Box(
             modifier = Modifier
                 .clip(CircleShape)
@@ -124,9 +136,13 @@ fun GameTopBar(
                 Image(
                     painter = painterResource(R.drawable.ic_ui_star),
                     contentDescription = null,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(26.dp).reaction(starHop, jumpHeight = 10.dp)
                 )
-                Text("$starsEarned", fontSize = 20.sp, color = Color.White)
+                AnimatedContent(
+                    targetState = starsEarned,
+                    transitionSpec = { (scaleIn() + fadeIn()) togetherWith (scaleOut() + fadeOut()) },
+                    label = "stars_earned"
+                ) { count -> Text("$count", fontSize = 20.sp, color = Color.White) }
             }
         }
     }

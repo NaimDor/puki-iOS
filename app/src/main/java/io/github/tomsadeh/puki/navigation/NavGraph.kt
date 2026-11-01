@@ -108,6 +108,9 @@ fun PukiNavGraph(navController: NavHostController) {
         navController.currentBackStackEntryFlow.collect { companion?.game = it.destination.route ?: "" }
     }
 
+    androidx.compose.runtime.CompositionLocalProvider(
+        io.github.tomsadeh.puki.ui.common.LocalOpenAlbum provides { safeNavigate(Routes.STICKERS) }
+    ) {
     NavHost(
         navController = navController,
         startDestination = Routes.HUB,
@@ -197,4 +200,5 @@ fun PukiNavGraph(navController: NavHostController) {
 
     // The system back gesture goes the same way; on the hub it does nothing (only the Quit hold leaves)
     BackHandler { safeBack() }
+    }
 }
