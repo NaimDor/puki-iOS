@@ -63,6 +63,9 @@ import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
 import io.github.tomsadeh.puki.ui.components.BackButton
+import io.github.tomsadeh.puki.ui.components.SparkleLayer
+import io.github.tomsadeh.puki.ui.components.rememberTouchSparkles
+import io.github.tomsadeh.puki.ui.components.touchSparkles
 import io.github.tomsadeh.puki.ui.components.popIn
 import io.github.tomsadeh.puki.ui.components.reaction
 import io.github.tomsadeh.puki.ui.components.rememberReactionState
@@ -116,7 +119,8 @@ fun StickerAlbumScreen(onBack: () -> Unit, viewModel: StickerAlbumViewModel = vi
     LaunchedEffect(Unit) { companion?.wake() }
     val progress by viewModel.progress.collectAsStateWithLifecycle(GameProgress())
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val sparkles = rememberTouchSparkles()
+    Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
         Canvas(modifier = Modifier.fillMaxSize()) { drawTable() }
 
         // The album lies open on the table: two pages of three by three
@@ -163,6 +167,7 @@ fun StickerAlbumScreen(onBack: () -> Unit, viewModel: StickerAlbumViewModel = vi
 
         BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
         StarCounter(stars = progress.totalStars, modifier = Modifier.align(Alignment.TopEnd).padding(20.dp))
+        SparkleLayer(sparkles)
     }
 }
 

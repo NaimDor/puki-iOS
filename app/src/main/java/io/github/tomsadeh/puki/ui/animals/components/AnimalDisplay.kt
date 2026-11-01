@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import io.github.tomsadeh.puki.ui.components.popIn
 import androidx.compose.ui.unit.sp
 import io.github.tomsadeh.puki.data.content.AnimalDef
 import androidx.compose.foundation.Image
@@ -60,6 +61,7 @@ fun AnimalDisplay(
     WigglingItem(enabled = !isBouncing) {
         Column(
             modifier = modifier
+                .popIn(key = animal.id)  // each round's animal arrives
                 .graphicsLayer {
                     scaleX = bounceScale
                     scaleY = bounceScale

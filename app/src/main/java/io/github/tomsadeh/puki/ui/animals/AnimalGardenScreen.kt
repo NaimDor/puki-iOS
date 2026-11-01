@@ -200,6 +200,7 @@ fun AnimalGardenScreen(
                                 plateSize = if (compact) 130.dp else 165.dp,
                                 hint = help.showHint && food.id == state.currentAnimal.foodId,
                                 tapToZone = state.currentAnimal.id,
+                                landed = { it == state.currentAnimal.id && food.id == state.currentAnimal.foodId },
                                 onDropped = { dropTargetId ->
                                     if (dropTargetId == state.currentAnimal.id) {
                                         val correct = animalViewModel.onFoodDropped(food.id)
@@ -208,7 +209,8 @@ fun AnimalGardenScreen(
                                             if (companion != null) companion.react("נתנו ל${state.currentAnimal.name.he} ${food.name.he}. זה האוכל הנכון!", "The child fed the ${state.currentAnimal.name.en.lowercase()} ${food.name.en.lowercase()}. That's the right food!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
                                             showRoundSuccess = true
                                             scope.launch {
-                                                // Munch the food, then a happy hop
+                                                // Swallowed first, then a munch and a happy hop
+                                                delay(220)
                                                 animalReaction.munch()
                                                 animalReaction.celebrate()
                                             }

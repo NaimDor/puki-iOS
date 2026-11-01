@@ -189,6 +189,7 @@ and redraw only what moves; the tablet (Galaxy Tab A7 Lite) is slow.
 
 - **No XML layouts.** Everything is Compose.
 - **No failing states.** Never show error messages, red indicators, sad sounds, or negative feedback to the child. Wrong actions get gentle, playful redirects.
+- **Art drawn in code:** a darker tone for outlines, one highlight, a soft contact shadow, so it matches the rest.
 - **No small tap targets.** If it's tappable, it's at least 100dp. 120dp preferred. (`BackButton` looks 64dp, so it doesn't compete with the game, but takes a 100dp touch.)
 - **No text-only navigation.** The child cannot read. All navigation is visual (icons, pictures, animations).
 - **No internet.** The only network use is the optional companion on a PC at home, over the home network (see `brain/`), and checking GitHub for app updates. Everything else works fully offline.

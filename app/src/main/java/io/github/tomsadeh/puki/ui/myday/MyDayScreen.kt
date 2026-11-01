@@ -57,6 +57,9 @@ import io.github.tomsadeh.puki.ui.components.BackButton
 import io.github.tomsadeh.puki.ui.components.Scene
 import io.github.tomsadeh.puki.ui.components.SceneBackdrop
 import io.github.tomsadeh.puki.ui.components.OfflineParrot
+import io.github.tomsadeh.puki.ui.components.SparkleLayer
+import io.github.tomsadeh.puki.ui.components.rememberTouchSparkles
+import io.github.tomsadeh.puki.ui.components.touchSparkles
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.popIn
 
@@ -103,7 +106,8 @@ fun MyDayScreen(
         label = "smoke_rise"
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val sparkles = rememberTouchSparkles()
+    Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
         SceneBackdrop(Scene.GARDEN)
         Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawSmoke(smoke.value) }
         Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawHouse() }
@@ -150,6 +154,7 @@ fun MyDayScreen(
         }
 
         BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
+        SparkleLayer(sparkles)
     }
 }
 

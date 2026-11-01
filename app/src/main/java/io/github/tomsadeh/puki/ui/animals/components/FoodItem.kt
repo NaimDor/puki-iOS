@@ -33,6 +33,7 @@ fun FoodItem(
     modifier: Modifier = Modifier,
     hint: Boolean = false,  // wiggle and glow: this is the one
     tapToZone: String? = null,  // a tap sends it there (the hungry animal)
+    landed: (dropTargetId: String) -> Boolean = { false },  // the animal took it: it goes in, not home
     plateSize: Dp = 165.dp  // smaller on a phone's short screen
 ) {
     val language = LocalLanguage.current
@@ -42,6 +43,7 @@ fun FoodItem(
         onDragEnd = onDropped,
         onDragStart = { voicePlayer.play("voice_food_${food.id}", language) },
         tapToZone = tapToZone,
+        landed = landed,
         modifier = modifier
     ) {
         Column(

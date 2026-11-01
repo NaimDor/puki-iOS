@@ -58,8 +58,9 @@ fun GameBackground(
     scene: Scene? = null,
     content: @Composable () -> Unit
 ) {
+    val sparkles = rememberTouchSparkles()
     CompositionLocalProvider(LocalPukiMood provides remember { ReactionState() }) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().touchSparkles(sparkles)) {
         if (scene != null) SceneBackdrop(scene)
         // Gradient background
         if (scene == null) Box(
@@ -120,6 +121,7 @@ fun GameBackground(
 
         // פוקי the parrot, when the companion server is reachable
         if (withCompanion) CompanionParrot(modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+        SparkleLayer(sparkles)
     }
     }
 }

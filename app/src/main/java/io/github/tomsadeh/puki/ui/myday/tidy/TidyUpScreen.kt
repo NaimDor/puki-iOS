@@ -165,6 +165,7 @@ fun TidyUpScreen(
                             DragTarget(
                                 itemId = item.id,
                                 modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(w * spot.first, h * spot.second),
+                                tapToZone = item.homeId,
                                 onDragEnd = { dropId ->
                                     if (dropId != null) {
                                         val correct = viewModel.onItemDropped(item.id, dropId)

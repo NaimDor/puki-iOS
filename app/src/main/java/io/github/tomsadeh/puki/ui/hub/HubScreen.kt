@@ -46,6 +46,9 @@ import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.Sfx
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.components.OfflineParrot
+import io.github.tomsadeh.puki.ui.components.SparkleLayer
+import io.github.tomsadeh.puki.ui.components.rememberTouchSparkles
+import io.github.tomsadeh.puki.ui.components.touchSparkles
 import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.hub.components.HubBackground
 import io.github.tomsadeh.puki.ui.hub.components.IslandButton
@@ -81,7 +84,8 @@ fun HubScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val sparkles = rememberTouchSparkles()
+    Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
         HubBackground()
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = AbsoluteAlignment.TopLeft) {
@@ -185,6 +189,8 @@ fun HubScreen(
             onClick = { onIslandClick("canvas") },
             modifier = Modifier.align(Alignment.BottomEnd)
         )
+
+        SparkleLayer(sparkles)
     }
 }
 

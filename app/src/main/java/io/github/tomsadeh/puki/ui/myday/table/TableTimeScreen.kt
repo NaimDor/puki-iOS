@@ -143,6 +143,7 @@ fun TableTimeScreen(
                                 DragTarget(
                                     itemId = item.id,
                                     modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(dx.dp, dy.dp),
+                                    tapToZone = item.id,
                                     onDragEnd = { dropId ->
                                         if (dropId != null) {
                                             val correct = viewModel.onItemPlaced(item.id, dropId)

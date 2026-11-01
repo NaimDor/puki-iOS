@@ -176,7 +176,7 @@ private fun starPath(c: Offset, r: Float): Path = Path().apply {
 }
 
 /** A four-pointed sparkle. */
-private fun DrawScope.drawTwinkle(c: Offset, r: Float, color: Color, spin: Float) {
+internal fun DrawScope.drawTwinkle(c: Offset, r: Float, color: Color, spin: Float) {
     rotate(spin * 0.3f, pivot = c) {
         val path = Path().apply {
             moveTo(c.x, c.y - r)

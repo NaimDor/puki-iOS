@@ -33,9 +33,10 @@ import io.github.tomsadeh.puki.ui.components.reaction
 @Composable
 fun ShadowStage(animal: AnimalDef, revealed: Boolean, reaction: ReactionState, size: Dp = 280.dp) {
     Box(modifier = Modifier.size(size + 40.dp), contentAlignment = Alignment.Center) {
-        Crossfade(targetState = revealed, animationSpec = tween(500), label = "shadow_reveal") { shown ->
+        // (keyed on the animal too: a new round's shadow fades in, the old animal doesn't jump to it)
+        Crossfade(targetState = animal to revealed, animationSpec = tween(500), label = "shadow_reveal") { (who, shown) ->
             Image(
-                painter = painterResource(animal.drawableRes),
+                painter = painterResource(who.drawableRes),
                 contentDescription = null,
                 modifier = Modifier
                     .size(size)
