@@ -18,8 +18,24 @@ val level1CountingRounds = listOf(
     CountingRound(1, BilingualText("פרח", "flower"), R.drawable.ic_sticker_flower, Habitat.BED),
     CountingRound(2, BilingualText("פרפרים", "butterflies"), R.drawable.ic_sticker_butterfly, Habitat.BED),
     CountingRound(3, BilingualText("חיפושיות", "ladybugs"), R.drawable.ic_stamp_ladybug, Habitat.BED),
-    CountingRound(4, BilingualText("פרחים", "flowers"), R.drawable.ic_count_hibiscus, Habitat.BED)
+    CountingRound(4, BilingualText("פרחים", "flowers"), R.drawable.ic_count_hibiscus, Habitat.BED),
+    // The same numbers with other things, so level 1 isn't the same four rounds
+    CountingRound(1, BilingualText("תפוח", "apple"), R.drawable.ic_count_apple, Habitat.TREE),
+    CountingRound(1, BilingualText("כוכב", "star"), R.drawable.ic_sticker_star, Habitat.NIGHT),
+    CountingRound(1, BilingualText("דג", "fish"), R.drawable.ic_food_fish, Habitat.POND),
+    CountingRound(2, BilingualText("תפוחים", "apples"), R.drawable.ic_count_apple_green, Habitat.TREE),
+    CountingRound(2, BilingualText("ציפורים", "birds"), R.drawable.ic_count_bird, Habitat.SKY),
+    CountingRound(3, BilingualText("דגים", "fish"), R.drawable.ic_food_fish, Habitat.POND),
+    CountingRound(3, BilingualText("לבבות", "hearts"), R.drawable.ic_sticker_heart, Habitat.SKY),
+    CountingRound(4, BilingualText("כוכבים", "stars"), R.drawable.ic_sticker_star, Habitat.NIGHT),
+    CountingRound(4, BilingualText("פרפרים", "butterflies"), R.drawable.ic_sticker_butterfly, Habitat.BED)
 )
+
+/** The most carrots the rabbit asks for. */
+const val MOST_TO_GIVE = 5
+
+/** A hungry rabbit asks for [wanted] carrots. */
+fun giveRound(wanted: Int) = CountingRound(wanted.coerceIn(1, MOST_TO_GIVE), BilingualText("גזרים", "carrots"), R.drawable.ic_food_carrot, Habitat.BED)
 
 val level2CountingRounds = listOf(
     CountingRound(2, BilingualText("תפוחים", "apples"), R.drawable.ic_count_apple, Habitat.TREE),

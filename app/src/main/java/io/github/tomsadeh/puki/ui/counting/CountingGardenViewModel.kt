@@ -7,6 +7,7 @@ import io.github.tomsadeh.puki.PukiApplication
 import io.github.tomsadeh.puki.ui.common.GameSession
 import io.github.tomsadeh.puki.data.content.CountingRound
 import io.github.tomsadeh.puki.data.content.countingRoundsForLevel
+import io.github.tomsadeh.puki.data.content.giveRound
 import io.github.tomsadeh.puki.data.content.level1CountingRounds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +24,8 @@ data class CountingState(
     val phase: CountingPhase = CountingPhase.COUNT,
     /** The numbers to choose from for "how many?", smallest first. */
     val choices: List<Int> = emptyList(),
+    /** A round of giving: the rabbit wants this many, and a couple more lie around than it wants. */
+    val give: Boolean = false,
     val roundIndex: Int = 0,
     val totalRounds: Int = 4,
     val sessionComplete: Boolean = false,
@@ -46,8 +49,10 @@ class CountingGardenViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             level = session.level()
             // Bigger numbers at higher levels, with one easier round from the level below
-            rounds = if (level == 1) level1CountingRounds.shuffled().take(4)
+            val counting = if (level == 1) level1CountingRounds.groupBy { it.targetNumber }.values.map { it.random() }.shuffled()
                 else (countingRoundsForLevel(level).shuffled().take(3) + countingRoundsForLevel(level - 1).shuffled().take(1)).shuffled()
+            // Every other round gives instead of counts
+            rounds = counting.mapIndexed { i, round -> if (i % 2 == 1) giveRound(round.targetNumber) else round }
             startRound(0)
         }
     }
@@ -59,9 +64,11 @@ class CountingGardenViewModel(application: Application) : AndroidViewModel(appli
             return
         }
         val round = rounds[index]
+        val give = index % 2 == 1
         _state.value = CountingState(
             currentRound = round,
-            numbers = List(round.targetNumber) { 0 },
+            numbers = List(round.targetNumber + (if (give) GIVE_SPARE else 0)) { 0 },
+            give = give,
             roundIndex = index,
             totalRounds = rounds.size,
             totalStarsEarned = _state.value.totalStarsEarned,
@@ -81,7 +88,7 @@ class CountingGardenViewModel(application: Application) : AndroidViewModel(appli
         val target = current.currentRound.targetNumber
         _state.value = when {
             number < target -> current.copy(numbers = numbers)
-            level >= 2 -> current.copy(numbers = numbers, phase = CountingPhase.HOW_MANY, choices = choicesFor(target))
+            level >= 2 && !current.give -> current.copy(numbers = numbers, phase = CountingPhase.HOW_MANY, choices = choicesFor(target))
             else -> complete(current.copy(numbers = numbers))
         }
         return number
@@ -116,3 +123,4 @@ class CountingGardenViewModel(application: Application) : AndroidViewModel(appli
 }
 
 private const val ISLAND = "counting"
+private const val GIVE_SPARE = 2

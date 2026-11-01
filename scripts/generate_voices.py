@@ -329,6 +329,13 @@ voice_lines = [
     ("voice_album_hello", "Here are your stickers!", "הנה המדבקות שלך!"),
     ("voice_more_stars", "A few more stars!", "עוד כמה כוכבים!"),
 
+    # --- Counting: the hungry rabbit ---
+    ("voice_give_1", "The rabbit wants one carrot!", "הארנב רוצה גזר אחד!"),
+    ("voice_give_2", "The rabbit wants two carrots!", "הארנב רוצה שני גזרים!"),
+    ("voice_give_3", "The rabbit wants three carrots!", "הארנב רוצה שלושה גזרים!"),
+    ("voice_give_4", "The rabbit wants four carrots!", "הארנב רוצה ארבעה גזרים!"),
+    ("voice_give_5", "The rabbit wants five carrots!", "הארנב רוצה חמישה גזרים!"),
+
     # --- Drawing ---
     ("voice_canvas_hello", "Let's paint!", "בואו נצייר!"),
     ("voice_page_blank", "A clean page!", "דף חלק!"),

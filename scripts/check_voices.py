@@ -129,7 +129,8 @@ def main():
     optional_code = "\n".join(code for path, code in read_sources().items() if path in OPTIONAL_KEY_FILES)
     orphans = sorted({re.sub(r"_(he|en)(_[fm])?$", "", f) for f in raw_files if f.startswith("voice_")}
                      - used)
-    orphans = [o for o in orphans if "_name" not in o and o.rstrip("_0123456789") not in optional_code]
+    # (voice_give_<n> is built from a round's number, like voice_number_<n>)
+    orphans = [o for o in orphans if "_name" not in o and "voice_give_" not in o and o.rstrip("_0123456789") not in optional_code]
     if orphans:
         print(f"Not played anywhere ({len(orphans)}; safe to delete, or wire them in):")
         for o in orphans:

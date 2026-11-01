@@ -32,6 +32,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.R
+import io.github.tomsadeh.puki.ui.components.rememberReactionState
+import io.github.tomsadeh.puki.ui.components.popAway
 import io.github.tomsadeh.puki.ui.myday.PukiCorner
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.drawBehind
@@ -101,9 +104,15 @@ fun CountingGardenScreen(
 
     val round = state.currentRound
     val target = round.targetNumber
-    val itemReactions = remember(state.roundIndex) { List(target) { ReactionState() } }
+    val itemReactions = remember(state.roundIndex) { List(state.numbers.size) { ReactionState() } }
+    val rabbit = rememberReactionState(state.roundIndex)
 
-    RoundPrompt(
+    if (state.give) RoundPrompt(
+        state.roundIndex,
+        scene = "במשחק הספירה: הארנב רעב ורוצה $target גזרים, ונותנים לו אחד אחד.",
+        sceneEn = "In the counting game: the hungry rabbit wants $target carrots, and we give them one at a time.",
+        "voice_give_$target"
+    ) else RoundPrompt(
         state.roundIndex,
         scene = "במשחק הספירה: סופרים ${round.itemName.he}, נוגעים בכל אחד.",
         sceneEn = "In the counting game: we're counting ${round.itemName.en.lowercase()}, touching each one.",
@@ -112,17 +121,20 @@ fun CountingGardenScreen(
 
     // Stuck? Ask again after a quiet moment; then the next thing to count (or the answer) glows
     val help = rememberHelp(state.roundIndex to state.phase, active = !flow.won && !state.roundComplete, onAssisted = viewModel.session::slip) {
-        voicePlayer.play(if (state.phase == CountingPhase.HOW_MANY) "voice_prompt_how_many" else "voice_prompt_count_along", language)
+        voicePlayer.play(
+            if (state.phase == CountingPhase.HOW_MANY) "voice_prompt_how_many" else if (state.give) "voice_give_$target" else "voice_prompt_count_along",
+            language
+        )
     }
 
     // All the things hop one after another, the number is said once more, and on to the next round
     fun celebrate() {
         sfxPlayer.play(Sfx.SUCCESS)
         itemReactions.forEachIndexed { i, r -> scope.launch { delay(i * 90L); r.celebrate() } }
-        val counted = "ספרו $target ${round.itemName.he}!"
-        val countedEn = "The child counted $target ${round.itemName.en.lowercase()}!"
+        if (state.give) scope.launch { rabbit.celebrate() }
         voicePlayer.play("voice_number_$target", language) {
-            companion.reactOr(counted, countedEn) { voicePlayer.playPraise(language) }
+            if (state.give) companion.reactOr("נתנו לארנב $target גזרים והוא אכל הכל!", "The child gave the rabbit $target carrots, and it ate them all!") { voicePlayer.playPraise(language) }
+            else companion.reactOr("ספרו $target ${round.itemName.he}!", "The child counted $target ${round.itemName.en.lowercase()}!") { voicePlayer.playPraise(language) }
         }
         flow.win(3000, 4200) {
             viewModel.nextRound()
@@ -175,7 +187,7 @@ fun CountingGardenScreen(
             // The things in their place, and beside them the count or "how many?". Side by side,
             // sized from the room there is: a phone on its side has very little height
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                val few = target <= 5
+                val few = state.numbers.size <= 5
                 val itemSize = minOf(maxHeight * (if (few) 0.44f else 0.34f), if (few) 120.dp else 88.dp)
                 val sunSize = minOf(maxHeight * 0.34f, 96.dp)
                 val cardSize = minOf((maxHeight - 24.dp) / 3, 104.dp)
@@ -195,7 +207,9 @@ fun CountingGardenScreen(
                             .border(BorderStroke(6.dp, Color.White), RoundedCornerShape(36.dp))
                     ) {
                         Scatter(seed = sessionSeed + state.roundIndex, modifier = Modifier.fillMaxSize().padding(14.dp)) {
-                            repeat(target) { i ->
+                            repeat(state.numbers.size) { i ->
+                                // (a carrot she's given goes off to the rabbit)
+                                Box(modifier = Modifier.popAway(state.give && state.numbers[i] > 0, i)) {
                                 CountedThing(
                                     icon = round.itemIcon,
                                     number = state.numbers[i],
@@ -214,6 +228,7 @@ fun CountingGardenScreen(
                                         help.touched()
                                         sfxPlayer.play(Sfx.POP)
                                         scope.launch { itemReactions[i].celebrate() }
+                                        if (state.give) scope.launch { rabbit.munch() }
                                         if (viewModel.state.value.roundComplete) {
                                             // Level 1: the last one counted is the answer
                                             // (on a timer: a held Puki stops the line, and its callback would never come)
@@ -224,6 +239,7 @@ fun CountingGardenScreen(
                                         }
                                     }
                                 )
+                                }
                             }
                         }
                     }
@@ -244,6 +260,11 @@ fun CountingGardenScreen(
                                 )
                             }
                         } else {
+                            if (state.give) Image(
+                                painter = painterResource(R.drawable.ic_animal_rabbit),
+                                contentDescription = null,
+                                modifier = Modifier.popIn(key = state.roundIndex).reaction(rabbit, jumpHeight = 18.dp).size(sunSize * 1.3f)
+                            )
                             // The count so far, in a sun
                             Box(
                                 modifier = Modifier
