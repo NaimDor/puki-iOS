@@ -35,6 +35,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.tomsadeh.puki.ui.components.popAway
+import io.github.tomsadeh.puki.ui.myday.PukiCorner
+import io.github.tomsadeh.puki.data.content.level3Shapes
+import io.github.tomsadeh.puki.data.content.ShapePicture
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.AbsoluteAlignment
+import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -81,11 +97,21 @@ fun ShapePlaygroundScreen(
     val dragDropState = remember { DragDropState() }
     val round = rememberRoundFlow()
     val targetReaction = rememberReactionState(state.roundIndex)
+    val alive = remember { Animatable(0f) }  // the finished picture comes alive: 0 → 1
+    var showCard by remember { mutableStateOf(false) }
+    LaunchedEffect(state.sessionComplete) {
+        if (!state.sessionComplete) return@LaunchedEffect
+        sfxPlayer.play(Sfx.WHOOSH)
+        launch { targetReaction.celebrate() }  // (the house can't drive off, so it jumps for joy)
+        alive.animateTo(1f, tween(1700, easing = FastOutSlowInEasing))
+        delay(500)
+        showCard = true
+    }
 
     if (state.isLoading) return
 
     // Stuck? Ask again after a quiet moment; after misses, the right piece wiggles
-    val help = rememberHelp(state.roundIndex, active = !round.won) {
+    val help = rememberHelp(state.roundIndex, active = !round.won && !state.sessionComplete) {
         voicePlayer.playSequence(listOf("voice_prompt_drag_it", "voice_shape_${state.targetShape.id}"), language)
     }
 
@@ -101,7 +127,7 @@ fun ShapePlaygroundScreen(
             scene = Scene.PLAYGROUND
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().noticeTouches(help).padding(24.dp),
+                modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 GameTopBar(
@@ -111,8 +137,6 @@ fun ShapePlaygroundScreen(
                     starsEarned = state.totalStarsEarned
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
                 PromptBubble(
                     BilingualText(
                         "תזיז את ה${state.targetShape.name.he}!",
@@ -121,33 +145,62 @@ fun ShapePlaygroundScreen(
                     ).localized()
                 )
 
-                // Target outline (drop zone) in center
-                Box(
+                // The picture in the middle, its next place an empty hole; the pieces lie around it
+                BoxWithConstraints(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    DropZone(zoneId = "target") {
-                        Canvas(modifier = Modifier.size(270.dp).reaction(targetReaction)) {
-                            drawShapeOutline(state.targetShape, size)
+                    val side = minOf(maxHeight, maxWidth * 0.44f)
+                    val pieceSize = minOf(190.dp, maxHeight / 2.2f)
+                    val picture = state.picture
+                    val done = state.roundIndex + (if (state.roundComplete || state.sessionComplete) 1 else 0)
+                    val slot = picture.slots[state.roundIndex.coerceAtMost(picture.slots.lastIndex)]
+                    val wholeScreen = with(LocalDensity.current) { (maxWidth + maxHeight).toPx() }
+                    Box(
+                        modifier = Modifier
+                            .size(side)
+                            .graphicsLayer {
+                                // The finished picture is off: the car drives away, the rocket takes off
+                                when (picture) {
+                                    ShapePicture.CAR -> translationX = -alive.value * alive.value * wholeScreen
+                                    ShapePicture.ROCKET -> translationY = -alive.value * alive.value * wholeScreen
+                                    ShapePicture.HOUSE -> Unit
+                                }
+                            }
+                    ) {
+                        DropZone(zoneId = "target", modifier = Modifier.fillMaxSize().reaction(targetReaction)) {
+                            Canvas(modifier = Modifier.fillMaxSize()) { drawPicture(picture, done, allShapesById, alive.value) }
                         }
+                        // The place itself, for a tap to fly to
+                        DropZone(
+                            zoneId = "slot",
+                            modifier = Modifier
+                                .align(AbsoluteAlignment.TopLeft)
+                                .absoluteOffset(side * (slot.x - slot.size / 2), side * (slot.y - slot.size / 2))
+                                .size(side * slot.size)
+                        ) {}
                     }
 
-                    // The pieces lie around the target, half on each side
-                    if (!state.roundComplete) {
-                        Scatter(seed = sessionSeed + state.roundIndex, aroundCenter = true, modifier = Modifier.fillMaxSize()) {
-                            state.shapeChoices.forEachIndexed { index, shape ->
+                    // (clear of Puki's corner)
+                    Scatter(seed = sessionSeed + state.roundIndex, aroundCenter = true, modifier = Modifier.fillMaxSize().padding(horizontal = PukiCorner * 0.6f)) {
+                        state.shapeChoices.forEachIndexed { index, shape ->
+                            key(state.roundIndex, shape.id) {
                                 val shapeReaction = rememberReactionState(state.roundIndex, shape.id)
+                                val right = shape.id == state.targetShape.id
                                 DragTarget(
                                     itemId = shape.id,
-                                    tapToZone = "target",  // a tap tries it in the outline
+                                    tapToZone = "slot",  // a tap tries it in the picture
+                                    landed = { it in PICTURE_ZONES && right },
+                                    modifier = Modifier.popAway((state.roundComplete || state.sessionComplete) && !right, index),
                                     onDragStart = { voicePlayer.play("voice_shape_${shape.id}", language) },
                                     onDragEnd = { dropTargetId ->
-                                        if (dropTargetId == "target") {
+                                        if (dropTargetId in PICTURE_ZONES) {
                                             val correct = viewModel.onShapeDropped(shape.id)
                                             if (correct == true) {
-                                                sfxPlayer.play(Sfx.SUCCESS)
+                                                sfxPlayer.play(Sfx.DROP)
+                                                sfxPlayer.play(Sfx.SUCCESS, 0.7f)
                                                 companion.reactOr("במשחק הצורות שמו את ה${shape.name.he} במקום הנכון!", "In the shape game the child put the ${shape.name.en.lowercase()} in the right place!") { voicePlayer.playPraise(language) }
-                                                scope.launch { targetReaction.celebrate() }
+                                                scope.launch { targetReaction.hop() }
                                                 round.win(2000, 3400) {
                                                     viewModel.nextRound()
                                                 }
@@ -160,9 +213,10 @@ fun ShapePlaygroundScreen(
                                         }
                                     }
                                 ) {
-                                    Canvas(modifier = Modifier.size(190.dp).popIn(index, state.roundIndex).idleBob(index).reaction(shapeReaction)
-                                        .hintGlow(help.showHint && shape.id == state.targetShape.id)) {
-                                        drawShapeFilled(shape, size)
+                                    Canvas(modifier = Modifier.size(pieceSize).popIn(index, state.roundIndex).idleBob(index).reaction(shapeReaction)
+                                        .hintGlow(help.showHint && right)) {
+                                        val c = Offset(size.width / 2, size.height / 2)
+                                        drawShapeFilled(shape, c, size.minDimension * 0.4f)
                                     }
                                 }
                             }
@@ -171,9 +225,9 @@ fun ShapePlaygroundScreen(
                 }
             }
 
-            ConfettiOverlay(show = round.won)
+            ConfettiOverlay(show = round.won || state.sessionComplete)
 
-            if (state.sessionComplete) {
+            if (showCard) {
                 RoundCompleteSheet(
                     starsEarned = state.totalStarsEarned,
                     onContinue = onPlayAgain,
@@ -184,42 +238,71 @@ fun ShapePlaygroundScreen(
     }
 }
 
-private fun DrawScope.drawShapeOutline(shape: ShapeDef, canvasSize: Size) {
-    val center = Offset(canvasSize.width / 2, canvasSize.height / 2)
-    val radius = canvasSize.minDimension / 2 * 0.8f
-    // A soft "hole" with a dashed rim, where the shape goes
-    val dash = Stroke(width = 10f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(26f, 18f)))
-    val path = shapePath(shape, center, radius)
-    if (path == null) {
-        drawCircle(Color.White.copy(alpha = 0.45f), radius, center)
-        drawCircle(shape.color, radius, center, style = dash)
-    } else {
-        drawPath(path, Color.White.copy(alpha = 0.45f))
-        drawPath(path, shape.color, style = dash)
+private val PICTURE_ZONES = setOf("target", "slot")
+private val allShapesById = level3Shapes.associateBy { it.id }
+
+/** A chunky toy piece: a shadow, a top-lit fill and a white rim. */
+private fun DrawScope.drawShapeFilled(shape: ShapeDef, c: Offset, r: Float) {
+    val fill = Brush.verticalGradient(
+        listOf(lerp(shape.color, Color.White, 0.3f), shape.color, lerp(shape.color, Color.Black, 0.15f)),
+        startY = c.y - r, endY = c.y + r
+    )
+    val path = shapePath(shape, c, r)
+    drawPath(shapePath(shape, c + Offset(0f, r * 0.05f), r), Color.Black.copy(alpha = 0.15f))
+    drawPath(path, fill)
+    drawPath(path, Color.White.copy(alpha = 0.8f), style = Stroke(width = r * 0.05f))
+}
+
+/** The empty place for [shape]: a dark hole with a dashed rim, which reads whatever the piece's color. */
+private fun DrawScope.drawSlotHole(shape: ShapeDef, c: Offset, r: Float) {
+    val path = shapePath(shape, c, r)
+    drawPath(path, Color(0x664E342E))
+    drawPath(path, Color(0xCC4E342E), style = Stroke(width = r * 0.07f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(r * 0.2f, r * 0.14f))))
+}
+
+/** The picture: its base, the [done] places filled, the next one a hole, and later ones not yet shown. */
+private fun DrawScope.drawPicture(picture: ShapePicture, done: Int, shapes: Map<String, ShapeDef>, alive: Float) {
+    val w = size.width
+    when (picture) {
+        ShapePicture.HOUSE -> {
+            drawOval(Color(0xFFA5D6A7), Offset(w * 0.02f, w * 0.86f), Size(w * 0.96f, w * 0.13f))
+        }
+        ShapePicture.CAR -> {
+            val body = Color(0xFF26A69A)
+            drawOval(Color.Black.copy(alpha = 0.12f), Offset(w * 0.08f, w * 0.85f), Size(w * 0.84f, w * 0.08f))
+            drawRoundRect(body, Offset(w * 0.3f, w * 0.18f), Size(w * 0.4f, w * 0.34f), CornerRadius(w * 0.07f))
+            drawRoundRect(body, Offset(w * 0.08f, w * 0.44f), Size(w * 0.84f, w * 0.3f), CornerRadius(w * 0.08f))
+            drawCircle(Color(0xFFFFF59D), w * 0.035f, Offset(w * 0.13f, w * 0.54f))
+        }
+        ShapePicture.ROCKET -> {
+            val fin = Color(0xFFEF5350)
+            for (s in listOf(-1f, 1f)) {
+                drawPath(Path().apply {
+                    moveTo(w * (0.5f + s * 0.15f), w * 0.58f)
+                    lineTo(w * (0.5f + s * 0.33f), w * 0.86f)
+                    lineTo(w * (0.5f + s * 0.15f), w * 0.8f)
+                    close()
+                }, fin)
+            }
+            drawRoundRect(Color(0xFFECEFF1), Offset(w * 0.33f, w * 0.24f), Size(w * 0.34f, w * 0.64f), CornerRadius(w * 0.1f))
+            if (alive > 0f) {
+                drawOval(Color(0xFFFF9800), Offset(w * 0.4f, w * 0.93f), Size(w * 0.2f, w * 0.3f))
+                drawOval(Color(0xFFFFEE58), Offset(w * 0.45f, w * 0.93f), Size(w * 0.1f, w * 0.18f))
+            }
+        }
+    }
+    picture.slots.forEachIndexed { i, slot ->
+        if (i > done) return@forEachIndexed
+        val shape = shapes.getValue(slot.shapeId)
+        val c = Offset(w * slot.x, w * slot.y)
+        val r = w * slot.size / 2
+        if (i < done) drawShapeFilled(shape, c, r) else drawSlotHole(shape, c, r)
     }
 }
 
-private fun DrawScope.drawShapeFilled(shape: ShapeDef, canvasSize: Size) {
-    val center = Offset(canvasSize.width / 2, canvasSize.height / 2)
-    val radius = canvasSize.minDimension / 2 * 0.8f
-    // Chunky toy pieces: a shadow, a top-lit fill and a white rim
-    val fill = Brush.verticalGradient(listOf(lerp(shape.color, Color.White, 0.3f), shape.color, lerp(shape.color, Color.Black, 0.15f)))
-    val shadow = Offset(0f, 8f)
-    val path = shapePath(shape, center, radius)
-    if (path == null) {
-        drawCircle(Color.Black.copy(alpha = 0.15f), radius, center + shadow)
-        drawCircle(fill, radius, center)
-        drawCircle(Color.White.copy(alpha = 0.8f), radius, center, style = Stroke(width = 6f))
-    } else {
-        drawPath(shapePath(shape, center + shadow, radius)!!, Color.Black.copy(alpha = 0.15f))
-        drawPath(path, fill)
-        drawPath(path, Color.White.copy(alpha = 0.8f), style = Stroke(width = 6f))
-    }
-}
-
-/** The outline of [shape] (null for a circle). Square sits flat, diamond stands on a point. */
-private fun shapePath(shape: ShapeDef, c: Offset, r: Float): Path? = when (shape.id) {
-    "circle" -> null
+/** The outline of [shape]. Square sits flat, diamond stands on a point. */
+private fun shapePath(shape: ShapeDef, c: Offset, r: Float): Path = when (shape.id) {
+    "circle" -> Path().apply { addOval(Rect(c, r)) }
     "square" -> Path().apply {
         val h = r * 0.78f
         moveTo(c.x - h, c.y - h); lineTo(c.x + h, c.y - h); lineTo(c.x + h, c.y + h); lineTo(c.x - h, c.y + h); close()

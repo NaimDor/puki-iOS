@@ -7,6 +7,7 @@ import io.github.tomsadeh.puki.PukiApplication
 import io.github.tomsadeh.puki.ui.common.GameSession
 import io.github.tomsadeh.puki.ui.common.pickChoices
 import io.github.tomsadeh.puki.data.content.ShapeDef
+import io.github.tomsadeh.puki.data.content.ShapePicture
 import io.github.tomsadeh.puki.data.content.level1Shapes
 import io.github.tomsadeh.puki.data.content.shapesForLevel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class ShapeRoundState(
+    val picture: ShapePicture = ShapePicture.HOUSE,
     val targetShape: ShapeDef = level1Shapes[0],
     val shapeChoices: List<ShapeDef> = level1Shapes,
     val roundIndex: Int = 0,
@@ -30,6 +32,7 @@ class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(appl
     private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private var allShapes = level1Shapes
     private var rounds = emptyList<ShapeDef>()
+    private val picture = ShapePicture.entries.random()
     private var level = 1
 
     private val _state = MutableStateFlow(ShapeRoundState(isLoading = true))
@@ -39,7 +42,7 @@ class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             level = session.level()
             allShapes = shapesForLevel(level)  // later levels add shapes to the first four
-            rounds = allShapes.shuffled().take(4)
+            rounds = picture.slots.map { slot -> allShapes.first { it.id == slot.shapeId } }  // a piece for each place in the picture
             startRound(0)
         }
     }
@@ -53,6 +56,7 @@ class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(appl
         val target = rounds[index]
         val choiceCount = if (level == 1) 3 else 4
         _state.value = ShapeRoundState(
+            picture = picture,
             targetShape = target,
             shapeChoices = pickChoices(target, allShapes, choiceCount) { it.id },
             roundIndex = index,

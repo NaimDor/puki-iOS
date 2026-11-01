@@ -28,6 +28,16 @@ val level3Shapes = level2Shapes + listOf(
     ShapeDef("octagon", BilingualText("מתומן", "Octagon"), Color(0xFF607D8B), 8)
 )
 
+/** A place for a shape in a picture: its center and size, as fractions of the picture. */
+data class ShapeSlot(val shapeId: String, val x: Float, val y: Float, val size: Float)
+
+/** A picture built from shapes, one a round. */
+enum class ShapePicture(val slots: List<ShapeSlot>) {
+    HOUSE(listOf(ShapeSlot("square", 0.46f, 0.66f, 0.52f), ShapeSlot("triangle", 0.46f, 0.24f, 0.62f), ShapeSlot("circle", 0.46f, 0.64f, 0.2f), ShapeSlot("star", 0.88f, 0.16f, 0.22f))),
+    CAR(listOf(ShapeSlot("square", 0.5f, 0.34f, 0.26f), ShapeSlot("circle", 0.27f, 0.76f, 0.26f), ShapeSlot("star", 0.5f, 0.58f, 0.2f), ShapeSlot("circle", 0.73f, 0.76f, 0.26f))),
+    ROCKET(listOf(ShapeSlot("triangle", 0.5f, 0.14f, 0.38f), ShapeSlot("circle", 0.5f, 0.4f, 0.22f), ShapeSlot("star", 0.5f, 0.62f, 0.2f), ShapeSlot("square", 0.5f, 0.85f, 0.2f)))
+}
+
 fun shapesForLevel(level: Int): List<ShapeDef> = when {
     level >= 3 -> level3Shapes
     level >= 2 -> level2Shapes
