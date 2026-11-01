@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -40,12 +41,13 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.audio.Sfx
 import io.github.tomsadeh.puki.data.content.AnimalDef
 import io.github.tomsadeh.puki.data.content.FEMININE_ANIMALS
@@ -54,20 +56,26 @@ import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
 import io.github.tomsadeh.puki.ui.components.CompanionParrot
+import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
 import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.GameTopBar
 import io.github.tomsadeh.puki.ui.components.RoundCompleteSheet
 import io.github.tomsadeh.puki.ui.components.RoundPrompt
 import io.github.tomsadeh.puki.ui.components.AnswerOutLoud
 import io.github.tomsadeh.puki.data.content.allAnimals
+import io.github.tomsadeh.puki.ui.components.ReactionState
 import io.github.tomsadeh.puki.ui.components.Scene
 import io.github.tomsadeh.puki.ui.components.hintGlow
+import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.noticeTouches
+import io.github.tomsadeh.puki.ui.components.reaction
 import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.rememberReactionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * Peekaboo barn: an animal hides on the farm (in the barn, behind the bush, the haystack or a
@@ -110,6 +118,8 @@ fun PeekabooScreen(
     val help = rememberHelp(state.roundIndex, active = !state.found) { peek() }
     var butterflyFrom by remember { mutableStateOf<HidingSpot?>(null) }
     var butterflyKey by remember { mutableIntStateOf(0) }
+    val foundReaction = rememberReactionState()
+    LaunchedEffect(state.found) { if (state.found) foundReaction.celebrate() }
 
     // A hiding spot tapped: the animal is found, or a butterfly flies out and the animal peeks
     fun tap(spot: HidingSpot) {
@@ -164,7 +174,6 @@ fun PeekabooScreen(
     // Puki flies in the sky here: in his usual corner he'd stand in front of the barn
     GameBackground(scene = Scene.FARM, withCompanion = false) {
       Box(modifier = Modifier.fillMaxSize()) {
-        CompanionParrot(modifier = Modifier.align(Alignment.TopStart).padding(top = 96.dp, start = 12.dp))
         Column(modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp)) {
             GameTopBar(onBack = onBack, roundIndex = state.roundIndex, totalRounds = state.totalRounds, starsEarned = state.stars)
             Row(
@@ -183,6 +192,8 @@ fun PeekabooScreen(
                             else -> 0f
                         },
                         hint = here && help.showHint && !state.found,
+                        hiding = here && !state.found,
+                        reaction = foundReaction,
                         butterflyKey = if (butterflyFrom == spot) butterflyKey else 0,
                         // The barn is the big one
                         modifier = Modifier.weight(if (spot == HidingSpot.BARN) 1.35f else 1f).fillMaxHeight(0.9f)
@@ -192,6 +203,9 @@ fun PeekabooScreen(
                 }
             }
         }
+        // After the farm: the barn doesn't cover him, and a tap on him isn't a tap on the barn
+        CompanionParrot(modifier = Modifier.align(Alignment.TopStart).padding(top = 96.dp, start = 12.dp))
+        ConfettiOverlay(show = state.found)
         if (state.sessionComplete) {
             RoundCompleteSheet(starsEarned = state.stars, onContinue = onPlayAgain, onHome = onBack)
         }
@@ -206,30 +220,44 @@ private fun SpotView(
     animal: AnimalDef?,
     show: Float,
     hint: Boolean,
+    hiding: Boolean,
+    reaction: ReactionState,
     butterflyKey: Int,
     modifier: Modifier,
     onTap: () -> Unit
 ) {
     val rise by animateFloatAsState(show, spring(dampingRatio = 0.45f, stiffness = 220f), label = "rise")
+    // The animal that was here stays until it has ducked back in, instead of vanishing
+    var shown by remember { mutableStateOf(animal) }
+    val settled = rise < 0.03f
+    LaunchedEffect(animal, settled) { if (settled || shown == null) shown = animal }
     val wobble = remember { Animatable(0f) }
+    // Something's in there: now and then the spot rustles
+    LaunchedEffect(hiding) {
+        while (hiding) {
+            delay(Random.nextLong(4000, 6000))
+            for (a in listOf(2f, -2f, 1.5f, -1f, 0f)) wobble.animateTo(a, tween(90))
+        }
+    }
     LaunchedEffect(butterflyKey) {
         if (butterflyKey == 0) return@LaunchedEffect
         for (a in listOf(6f, -5f, 4f, -2f, 0f)) wobble.animateTo(a, tween(70))
     }
-    BoxWithConstraints(
-        modifier = modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onTap),
-        contentAlignment = Alignment.BottomCenter
-    ) {
+    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.BottomCenter) {
         // A square-ish spot, as big as fits
         val w = minOf(maxWidth, maxHeight / 1.1f)
         Box(
             modifier = Modifier
                 .size(w, w * 1.1f)
                 .hintGlow(hint)
-                .graphicsLayer { rotationZ = wobble.value; transformOrigin = TransformOrigin(0.5f, 1f) },
+                .graphicsLayer { rotationZ = wobble.value; transformOrigin = TransformOrigin(0.5f, 1f) }
+                // Only the spot itself: the air above it isn't a wrong guess
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onTap),
             contentAlignment = Alignment.BottomCenter
         ) {
-            if (spot == HidingSpot.BARN) Barn(w, animal, rise) else Cover(spot, w, animal, rise)
+            // Out and found: it jumps, and keeps breathing there
+            val alive = (if (show >= 1f) Modifier.idleBob() else Modifier).reaction(reaction, jumpHeight = 16.dp)
+            if (spot == HidingSpot.BARN) Barn(w, shown, rise, alive) else Cover(spot, w, shown, rise, alive)
             if (butterflyKey != 0) Butterfly(butterflyKey)
         }
     }
@@ -237,7 +265,7 @@ private fun SpotView(
 
 /** The barn: the animal stands in the doorway, behind two doors that swing open. */
 @Composable
-private fun Barn(w: Dp, animal: AnimalDef?, open: Float) {
+private fun Barn(w: Dp, animal: AnimalDef?, open: Float, alive: Modifier) {
     Canvas(modifier = Modifier.fillMaxSize()) { drawBarn() }
     // The doorway: the lower middle of the barn
     Box(modifier = Modifier.size(w * 0.44f, w * 0.48f), contentAlignment = Alignment.BottomCenter) {
@@ -253,21 +281,25 @@ private fun Barn(w: Dp, animal: AnimalDef?, open: Float) {
                         transformOrigin = TransformOrigin(0.5f, 1f)
                         translationY = -size.height * 0.08f * open
                     }
+                    .then(alive)
             )
         }
-        Row(modifier = Modifier.fillMaxSize()) {
-            listOf(-1f, 1f).forEach { side ->
-                // Each door turns on its outer hinge, like a real barn door
-                Canvas(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .graphicsLayer {
-                            transformOrigin = TransformOrigin(if (side < 0) 0f else 1f, 0.5f)
-                            rotationY = side * -100f * open
-                            cameraDistance = 12f * density
-                        }
-                ) { drawDoor() }
+        // Left to right in both languages: mirrored, the doors would hinge in the middle
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                listOf(-1f, 1f).forEach { side ->
+                    // Each door turns on its outer hinge, like a real barn door
+                    Canvas(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .graphicsLayer {
+                                transformOrigin = TransformOrigin(if (side < 0) 0f else 1f, 0.5f)
+                                rotationY = side * -100f * open
+                                cameraDistance = 12f * density
+                            }
+                    ) { drawDoor() }
+                }
             }
         }
     }
@@ -275,7 +307,7 @@ private fun Barn(w: Dp, animal: AnimalDef?, open: Float) {
 
 /** A bush, the haystack or a tree stump; the animal rises from behind it. */
 @Composable
-private fun Cover(spot: HidingSpot, w: Dp, animal: AnimalDef?, rise: Float) {
+private fun Cover(spot: HidingSpot, w: Dp, animal: AnimalDef?, rise: Float, alive: Modifier) {
     Box(modifier = Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.BottomCenter) {
         if (animal != null) {
             Image(
@@ -288,16 +320,14 @@ private fun Cover(spot: HidingSpot, w: Dp, animal: AnimalDef?, rise: Float) {
                         translationY = (1f - rise) * size.height * 0.95f
                         alpha = if (rise < 0.03f) 0f else 1f  // fully hidden: not even a foot under the hay
                     }
+                    .then(alive)
             )
         }
-        when (spot) {
-            HidingSpot.HAY -> Image(
-                painter = painterResource(R.drawable.ic_food_hay),
-                contentDescription = null,
-                modifier = Modifier.size(w, w * 0.6f).offset(y = w * 0.04f)
-            )
-            else -> Canvas(modifier = Modifier.size(w, w * 0.56f)) {
-                if (spot == HidingSpot.BUSH) drawBush() else drawStump()
+        Canvas(modifier = Modifier.size(w, w * 0.56f)) {
+            when (spot) {
+                HidingSpot.HAY -> drawHaystack()
+                HidingSpot.BUSH -> drawBush()
+                else -> drawStump()
             }
         }
     }
@@ -377,6 +407,30 @@ private fun DrawScope.drawBush() {
     listOf(0.32f to 0.4f, 0.62f to 0.32f, 0.7f to 0.6f).forEach { (fx, fy) ->
         drawCircle(Color(0xFFE53935), h * 0.045f, Offset(w * fx, h * fy))
     }
+}
+
+private fun DrawScope.drawHaystack() {
+    val w = size.width
+    val h = size.height
+    val dome = Path().apply {
+        moveTo(w * 0.05f, h)
+        cubicTo(w * 0.08f, h * 0.4f, w * 0.3f, h * 0.04f, w * 0.5f, h * 0.04f)
+        cubicTo(w * 0.7f, h * 0.04f, w * 0.92f, h * 0.4f, w * 0.95f, h)
+        close()
+    }
+    drawPath(dome, Color(0xFFDDAA3E))
+    // Lighter on top, where the sun falls
+    drawOval(Color(0xFFF2CC62), Offset(w * 0.24f, h * 0.12f), Size(w * 0.5f, h * 0.42f))
+    // Loose straws, the same ones every time
+    val rnd = Random(5)
+    for (i in 0 until 26) {
+        val x = w * (0.14f + rnd.nextFloat() * 0.72f)
+        val y = h * (0.26f + rnd.nextFloat() * 0.68f)
+        val lean = (rnd.nextFloat() - 0.5f) * w * 0.09f
+        val straw = if (i % 3 == 0) Color(0xFFB9862B) else Color(0xFFFFE08A)
+        drawLine(straw, Offset(x, y), Offset(x + lean, y + h * 0.13f), strokeWidth = w * 0.012f, cap = StrokeCap.Round)
+    }
+    drawLine(Color(0xFFB9862B), Offset(w * 0.05f, h * 0.985f), Offset(w * 0.95f, h * 0.985f), strokeWidth = h * 0.03f, cap = StrokeCap.Round)
 }
 
 private fun DrawScope.drawStump() {
