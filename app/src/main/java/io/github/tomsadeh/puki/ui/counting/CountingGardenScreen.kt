@@ -226,7 +226,9 @@ fun CountingGardenScreen(
                                 scope.launch { itemReactions[i].celebrate() }
                                 if (viewModel.state.value.roundComplete) {
                                     // Level 1: the last one counted is the answer
-                                    voicePlayer.play("voice_number_$number", language) { scope.launch { delay(250); celebrate() } }
+                                    // (on a timer: a held Puki stops the line, and its callback would never come)
+                                    voicePlayer.play("voice_number_$number", language)
+                                    scope.launch { delay(900); celebrate() }
                                 } else {
                                     voicePlayer.play("voice_number_$number", language)
                                 }

@@ -143,7 +143,7 @@ fun ShapePlaygroundScreen(
                                     onDragEnd = { dropTargetId ->
                                         if (dropTargetId == "target") {
                                             val correct = viewModel.onShapeDropped(shape.id)
-                                            if (correct) {
+                                            if (correct == true) {
                                                 sfxPlayer.play(Sfx.SUCCESS)
                                                 if (companion != null) companion.react("במשחק הצורות שמו את ה${shape.name.he} במקום הנכון!", "In the shape game the child put the ${shape.name.en.lowercase()} in the right place!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
                                                 showRoundSuccess = true
@@ -153,7 +153,7 @@ fun ShapePlaygroundScreen(
                                                     showRoundSuccess = false
                                                     viewModel.nextRound()
                                                 }
-                                            } else {
+                                            } else if (correct == false) {
                                                 sfxPlayer.play(Sfx.WRONG_GENTLE)
                                                 if (companion != null) companion.react("במשחק הצורות ניסו לשים ${shape.name.he} במקום של ${state.targetShape.name.he}.", "In the shape game the child tried to put the ${shape.name.en.lowercase()} where the ${state.targetShape.name.en.lowercase()} goes.") { voicePlayer.play("voice_prompt_try_again", language) } else voicePlayer.play("voice_prompt_try_again", language)
                                                 help.missed()

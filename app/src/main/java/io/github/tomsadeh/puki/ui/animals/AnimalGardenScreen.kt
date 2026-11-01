@@ -105,7 +105,8 @@ fun AnimalGardenScreen(
             return
         }
         val target = state.currentAnimal
-        if (animalViewModel.onAnimalDropped(animal.id)) {
+        val correct = animalViewModel.onAnimalDropped(animal.id) ?: return  // (the round's already won)
+        if (correct) {
             sfxPlayer.play(Sfx.SUCCESS)
             showRoundSuccess = true
             scope.launch { animalReaction.celebrate() }
@@ -202,7 +203,7 @@ fun AnimalGardenScreen(
                                 onDropped = { dropTargetId ->
                                     if (dropTargetId == state.currentAnimal.id) {
                                         val correct = animalViewModel.onFoodDropped(food.id)
-                                        if (correct) {
+                                        if (correct == true) {
                                             sfxPlayer.play(Sfx.SUCCESS)
                                             if (companion != null) companion.react("נתנו ל${state.currentAnimal.name.he} ${food.name.he}. זה האוכל הנכון!", "The child fed the ${state.currentAnimal.name.en.lowercase()} ${food.name.en.lowercase()}. That's the right food!") { voicePlayer.playPraise(language) } else voicePlayer.playPraise(language)
                                             showRoundSuccess = true
@@ -227,7 +228,7 @@ fun AnimalGardenScreen(
                                                 }
                                                 animalViewModel.nextRound()
                                             }
-                                        } else {
+                                        } else if (correct == false) {
                                             sfxPlayer.play(Sfx.WRONG_GENTLE)
                                             // The animal shakes its head, makes its sound and says what it eats: a little fact, not a "no"
                                             val animal = state.currentAnimal

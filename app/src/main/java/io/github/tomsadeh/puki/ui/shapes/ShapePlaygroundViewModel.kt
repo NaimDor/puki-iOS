@@ -61,7 +61,9 @@ class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(appl
         )
     }
 
-    fun onShapeDropped(shapeId: String): Boolean {
+    /** True on the right shape, false on a wrong one, null once the round is already won. */
+    fun onShapeDropped(shapeId: String): Boolean? {
+        if (_state.value.roundComplete) return null
         val isCorrect = shapeId == _state.value.targetShape.id
         if (isCorrect) {
             val newStars = _state.value.totalStarsEarned + 1

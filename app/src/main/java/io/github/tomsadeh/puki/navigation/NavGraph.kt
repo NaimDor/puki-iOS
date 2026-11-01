@@ -1,9 +1,17 @@
 package io.github.tomsadeh.puki.navigation
 
+import android.os.SystemClock
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import io.github.tomsadeh.puki.audio.Sfx
+import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.hub.HubScreen
 import io.github.tomsadeh.puki.ui.animals.AnimalGardenScreen
 import io.github.tomsadeh.puki.ui.colors.ColorSplashScreen
@@ -54,18 +62,31 @@ object Routes {
     const val SETTINGS = "settings"
 }
 
+private const val NAV_WINDOW_MS = 400L
+
 @Composable
 fun PukiNavGraph(navController: NavHostController) {
+    val sfxPlayer = LocalSfxPlayer.current
+    // One navigation at a time: a toddler's double tap lands on the next screen, so a second tap
+    // inside this window (a back that would skip a level, say) is ignored
+    val lastNavAt = remember { longArrayOf(0L) }
+    val settled: () -> Boolean = {
+        val now = SystemClock.uptimeMillis()
+        (now - lastNavAt[0] >= NAV_WINDOW_MS).also { if (it) lastNavAt[0] = now }
+    }
+
     // Safe back navigation — prevents double-tap from popping past the hub
     val safeBack: () -> Unit = {
-        if (navController.currentBackStackEntry?.destination?.route != Routes.HUB) {
+        if (navController.currentBackStackEntry?.destination?.route != Routes.HUB && settled()) {
+            sfxPlayer.play(Sfx.POP)
             navController.popBackStack()
         }
     }
 
     // Safe navigate — prevents duplicate destinations from rapid tapping
     val safeNavigate: (String) -> Unit = { route ->
-        if (navController.currentBackStackEntry?.destination?.route != route) {
+        if (navController.currentBackStackEntry?.destination?.route != route && settled()) {
+            sfxPlayer.play(Sfx.WHOOSH, 0.4f)
             navController.navigate(route) {
                 launchSingleTop = true
             }
@@ -89,7 +110,12 @@ fun PukiNavGraph(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.HUB
+        startDestination = Routes.HUB,
+        // Quick, and with one live screen at a time (the default is a 700 ms crossfade of both)
+        enterTransition = { fadeIn(tween(150)) },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { fadeIn(tween(150)) },
+        popExitTransition = { ExitTransition.None }
     ) {
         composable(Routes.HUB) {
             HubScreen(
@@ -168,4 +194,7 @@ fun PukiNavGraph(navController: NavHostController) {
             SettingsScreen(onBack = safeBack)
         }
     }
+
+    // The system back gesture goes the same way; on the hub it does nothing (only the Quit hold leaves)
+    BackHandler { safeBack() }
 }

@@ -90,8 +90,10 @@ class AnimalGardenViewModel(application: Application) : AndroidViewModel(applica
         )
     }
 
-    fun onFoodDropped(foodId: String): Boolean {
+    /** True on the right food, false on a wrong one, null once the round is already won. */
+    fun onFoodDropped(foodId: String): Boolean? {
         val currentState = _state.value
+        if (currentState.roundComplete) return null
         val isCorrect = foodId == currentState.currentAnimal.foodId
         if (isCorrect) {
             val newStars = currentState.totalStarsEarned + 1
@@ -108,9 +110,9 @@ class AnimalGardenViewModel(application: Application) : AndroidViewModel(applica
     }
 
     /** A shadow round: the child put [animalId] on the shadow. True if it's the one. */
-    fun onAnimalDropped(animalId: String): Boolean {
+    fun onAnimalDropped(animalId: String): Boolean? {
         val currentState = _state.value
-        if (currentState.roundComplete) return false
+        if (currentState.roundComplete) return null
         val isCorrect = animalId == currentState.currentAnimal.id
         if (isCorrect) {
             _state.value = currentState.copy(showSuccess = true, roundComplete = true, totalStarsEarned = currentState.totalStarsEarned + 1)
