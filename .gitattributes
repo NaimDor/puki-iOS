@@ -1,0 +1,9 @@
+# One line ending everywhere (LF), whatever the checkout's settings, so the two repos diff clean
+* text=auto eol=lf
+*.bat eol=crlf
+*.ogg binary
+*.mp3 binary
+*.png binary
+*.jpg binary
+*.jar binary
+*.so binary
