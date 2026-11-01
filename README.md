@@ -34,8 +34,8 @@ goodbye. It's open source (MIT), so nobody can ever lock it behind a payment.
   (the xylophone walks up and down a scale), then repeat a little tune.
 - **My Day:** a cutaway house with a scene for each routine: soap the muddy spots off a child
   in the bath, set the plate, cup, fork and spoon on a table, dress the child from an open
-  wardrobe, put the toys away around a room, brush teeth, bake a cake in the kitchen, wash a
-  muddy car in the garage, and bedtime.
+  wardrobe, put the toys away around a room, brush Teddy's teeth (toothpaste, scrub, swish),
+  bake a cake in the kitchen, wash a muddy car in the garage, and bedtime.
 - **Drawing** on paper taped to an easel, with big paint pots, an eraser, stamps, color-in
   pages and tracing, a camera that saves the picture, and Puki looking at it.
   A **sticker album** fills up as stars are earned.

@@ -217,10 +217,15 @@ voice_lines = [
     ("voice_car_rinse", "Now rinse it with the hose!", ("עכשיו תשטפי עם הצינור!", "עכשיו תשטוף עם הצינור!")),
     ("voice_car_dry", "Dry it with the towel!", ("עכשיו תנגבי עם המגבת!", "עכשיו תנגב עם המגבת!")),
     ("voice_car_clean", "Beep beep! The car is clean!", "טוט טוט! המכונית נקייה!"),
+    # --- Brushing Teddy's teeth ---
+    ("voice_teeth_intro", "Let's brush Teddy's teeth! Put toothpaste on the brush.", ("בואי נצחצח לדובי את השיניים! תשימי משחה על המברשת.", "בוא נצחצח לדובי את השיניים! תשים משחה על המברשת.")),
+    ("voice_teeth_paste", "Tap the toothpaste!", ("תלחצי על המשחה!", "תלחץ על המשחה!")),
+    ("voice_teeth_scrub", "Brush every tooth!", ("תצחצחי כל שן!", "תצחצח כל שן!")),
+    ("voice_teeth_rinse", "Now give Teddy some water!", ("עכשיו תני לדובי מים!", "עכשיו תן לדובי מים!")),
+    ("voice_teeth_clean", "Sparkly teeth! What a big smile!", "שיניים מבריקות! איזה חיוך גדול!"),
 
     # --- My Day prompts ---
     ("voice_prompt_bath", "Let's take a bath!", ("בואי נתרחץ!", "בוא נתרחץ!")),
-    ("voice_prompt_brush_teeth", "Let's brush our teeth!", ("בואי נצחצח שיניים!", "בוא נצחצח שיניים!")),
     ("voice_prompt_tidy_up", "Let's tidy up the room!", ("בואי נסדר את החדר!", "בוא נסדר את החדר!")),
     ("voice_prompt_get_dressed", "Let's get dressed! What goes on first?",
      ("בואי נתלבש! מה שמים קודם?", "בוא נתלבש! מה שמים קודם?")),
