@@ -22,13 +22,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import build  # noqa: E402  (Puki's filter)
 import fmt  # noqa: E402
+import pronunciation  # noqa: E402
 import teacher  # noqa: E402
 
 
-def inputs():
+def inputs(data):
     """One of each held-out input (several lines were kept for some)."""
     seen, out = set(), []
-    with open(os.path.join(HERE, "data", "train_heldout.jsonl"), encoding="utf-8") as f:
+    with open(os.path.join(HERE, "data", data + "_heldout.jsonl"), encoding="utf-8") as f:
         for l in f:
             r = json.loads(l)
             key = (r["task"], r["lang"], r["girl"], r["input"], r.get("earlier"))
@@ -46,20 +47,42 @@ def write(model, tok, items, device, temperature=0.7):
         chunk = items[i:i + 16]
         prompts = [fmt.prompt(r["task"], r["lang"], r["girl"], r["input"], r.get("earlier")) for r in chunk]
         enc = tok(prompts, return_tensors="pt", padding=True, padding_side="left").to(device)
-        gen = model.generate(**enc, max_new_tokens=48, do_sample=True, temperature=temperature, top_p=0.95,
+        gen = model.generate(**enc, max_new_tokens=160, do_sample=True, temperature=temperature, top_p=0.95,
                              eos_token_id=end_id, pad_token_id=tok.pad_token_id or end_id)
         for g in gen[:, enc["input_ids"].shape[1]:]:
-            out.append(tok.decode(g, skip_special_tokens=True).split("\n")[0].strip())
+            out.append(fmt.parse(tok.decode(g, skip_special_tokens=True)))
     return out, (time.time() - t0) / max(len(items), 1)
 
 
-def score(items, lines):
-    """Per item: passes Puki's filter, exact (careful), and the judge's scores."""
+def gate_report(items, answers):
+    """How the gate did: on ordinary phrases, false alarms; on the rest, the ones it let through."""
+    pairs = [(r["line"], a[0].strip()[:1]) for r, a in zip(items, answers) if r["task"] == "gate"]
+    if not pairs:
+        return {}
+    ordinary = [got for want, got in pairs if want == "0"]
+    serious = [got for want, got in pairs if want != "0"]
+    return {"right": round(sum(want == got for want, got in pairs) / len(pairs), 3),
+            "false_alarms": round(sum(g != "0" for g in ordinary) / max(len(ordinary), 1), 3),
+            "let_through": round(sum(g == "0" for g in serious) / max(len(serious), 1), 3)}
+
+
+def say_report(items, answers):
+    """How the Hebrew phonemes did: written at all, and really the line they came with."""
+    hebrew = [a for r, a in zip(items, answers) if r["lang"] == "he" and r["task"] != "gate"]
+    if not hebrew:
+        return {}
+    return {"written": round(sum(1 for _, s in hebrew if s) / len(hebrew), 3),
+            "match_line": round(sum(1 for l, s in hebrew if s and pronunciation.say_matches(l, s)) / len(hebrew), 3)}
+
+
+def score(items, answers):
+    """Per item: passes Puki's filter, exact (careful, gate), and the judge's scores."""
+    lines = [a[0] for a in answers]
     from concurrent.futures import ThreadPoolExecutor
 
     def one(pair):
         r, line = pair
-        if r["task"] == "careful":
+        if r["task"] in ("careful", "gate"):
             return {"ok": line == r["line"], "exact": line == r["line"], "overall": 5 if line == r["line"] else 1}
         f = build.puki_filter(line, r["lang"], r["girl"]) if line else None
         if not f or "?" in f:
@@ -78,6 +101,7 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--run", default="dicta-1.7b")
     ap.add_argument("--only", help="just this checkpoint, e.g. epoch-3")
+    ap.add_argument("--data", default="train", help="data/<this>_heldout.jsonl")
     args = ap.parse_args()
     device = "cuda"
     run_dir = os.path.join(HERE, "out", args.run)
@@ -85,21 +109,23 @@ def main():
     if tok.pad_token_id is None:
         tok.pad_token = "<|endoftext|>"
     base = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.bfloat16).to(device).eval()
-    items = inputs()
+    items = inputs(args.data)
     torch.manual_seed(7)
     report, text = {}, []
     checkpoints = sorted(glob.glob(os.path.join(run_dir, "epoch-*")), key=lambda p: int(p.rsplit("-", 1)[1]))
     for ck in [c for c in checkpoints if not args.only or os.path.basename(c) == args.only]:
         name = os.path.basename(ck)
         model = PeftModel.from_pretrained(base, ck).eval()
-        lines, secs = write(model, tok, items, device)
-        scores = score(items, lines)
+        answers, secs = write(model, tok, items, device)
+        lines = [a[0] for a in answers]
+        scores = score(items, answers)
         by_task = {}
         for r, s in zip(items, scores):
             by_task.setdefault(r["task"], []).append(s["ok"])
         report[name] = {"pass": round(sum(s["ok"] for s in scores) / len(scores), 3),
                         "overall": round(sum(s["overall"] for s in scores) / len(scores), 2),
                         "by_task": {t: round(sum(v) / len(v), 3) for t, v in by_task.items()},
+                        "gate": gate_report(items, answers), "say": say_report(items, answers),
                         "secs_per_line_gpu": round(secs, 3)}
         print(name, json.dumps(report[name], ensure_ascii=False))
         text.append(f"===== {name}: pass {report[name]['pass']}, overall {report[name]['overall']}")

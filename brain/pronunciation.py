@@ -89,3 +89,50 @@ def phonemes(text, lang, girl, phonemize_segment):
             ipa = fixed
         pieces.append(f"<{seg_lang}>{ipa}</{seg_lang}>")
     return "".join(pieces) or None
+
+
+# What each Hebrew letter can sound like, for checking phonemes against their line
+LETTER_SOUNDS = {
+    "ב": ("b", "v"), "ג": ("ɡ", "dʒ"), "ד": ("d",), "ז": ("z", "ʒ"), "ח": ("χ",), "ט": ("t",), "כ": ("χ", "k"), "ך": ("χ", "k"),
+    "ל": ("l",), "מ": ("m",), "ם": ("m",), "נ": ("n",), "ן": ("n",), "ס": ("s",), "פ": ("p", "f"), "ף": ("f", "p"),
+    "צ": ("ts", "tʃ"), "ץ": ("ts", "tʃ"), "ק": ("k",), "ר": ("ʁ",), "ש": ("ʃ", "s"), "ת": ("t",),
+}
+
+CONSONANTS = "bvɡdzʒχtklmnspfʃʁ"
+FREE_SOUNDS = "v"  # (ו says v without being in the table above)
+PUNCTUATION = ".,!?\"'"
+
+
+def word_matches(word, ipa):
+    """True if [ipa] has [word]'s consonants, in order, and none it couldn't have: both ways, or a
+    short word like הוא would accept anything. A held sound, מממ as mːː, is one consonant."""
+    letters = re.sub(r"(.)\1+", r"\1", word).replace("׳", "").replace("'", "")
+    at = 0
+    for letter in letters:
+        sounds = LETTER_SOUNDS.get(letter)
+        if not sounds:
+            continue
+        found = [i for i in (ipa.find(s, at) for s in sounds) if i >= 0]
+        if not found:
+            return False
+        at = min(found) + 1
+    allowed = set(FREE_SOUNDS)
+    for letter in letters:
+        for s in LETTER_SOUNDS.get(letter, ()):
+            allowed.update(s)
+    return all(c in allowed for c in ipa if c in CONSONANTS)
+
+
+def say_matches(line, say):
+    """True if the phonemes [say] are really [line], so what the filters read is what she hears:
+    the same number of words, each with the right consonants. Every word, since one swapped word
+    is the whole danger. Non-Hebrew words and "@name" aren't checked."""
+    words, parts = line.split(), say.split()
+    if len(words) != len(parts):
+        return False
+    def fine(word, ipa):
+        # (a word in Puki's own table can say what its letters don't: א is ʔˈalef)
+        return ipa.strip(PUNCTUATION) in (lookup(word, True), lookup(word, False)) or word_matches(word, ipa)
+
+    return all(fine(HEBREW_WORD.search(w).group(0), p)
+               for w, p in zip(words, parts) if "@" not in w and HEBREW_WORD.search(w))

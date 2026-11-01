@@ -44,3 +44,12 @@ def test_english_spans_stay_and_misaligned_lines_fall_back():
     ph = pronunciation.phonemes("פוקי <en>yay</en> שמח", "he", True, g2p)
     assert ph == "<he>pˈuki</he><en>yay</en><he>samˈeaχ</he>"
     assert pronunciation.phonemes("פוקי שמח", "he", True, lambda c, l: "only-one") is None
+
+
+def test_phonemes_must_be_the_line_itself():
+    assert pronunciation.say_matches("פוקי שמח היום", "pˈuki samˈeaχ hajˈom")
+    assert pronunciation.say_matches("האריה קיבל בשר. מממ!", "haʔaʁjˈe kibˈel basˈaʁ. mːː!")  # a held sound
+    assert pronunciation.say_matches("שלום @name!", "ʃalˈom @name!")
+    assert not pronunciation.say_matches("פוקי שמח היום", "pˈuki sakˈin hajˈom")  # one word swapped
+    assert not pronunciation.say_matches("הוא שמח", "sakˈin samˈeaχ")  # a short word accepts nothing else
+    assert not pronunciation.say_matches("פוקי שמח", "pˈuki")  # a word left out

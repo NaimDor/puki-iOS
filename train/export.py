@@ -34,6 +34,7 @@ def main():
     ap.add_argument("--adapter", required=True)
     ap.add_argument("--llama", required=True, help="a llama.cpp checkout with build/bin (convert script, imatrix, quantize)")
     ap.add_argument("--quant", default="Q4_K_M")
+    ap.add_argument("--data", default="train", help="data/<this>.jsonl, for the importance matrix")
     args = ap.parse_args()
     run_dir = os.path.dirname(os.path.abspath(args.adapter))
     merged = os.path.join(run_dir, "merged")
@@ -53,7 +54,7 @@ def main():
 
     # 3. imatrix from Puki's own lines (the prompts and lines the model will really see)
     calib = os.path.join(run_dir, "calibration.txt")
-    with open(os.path.join(HERE, "data", "train.jsonl"), encoding="utf-8") as f, open(calib, "w", encoding="utf-8") as out:
+    with open(os.path.join(HERE, "data", args.data + ".jsonl"), encoding="utf-8") as f, open(calib, "w", encoding="utf-8") as out:
         for line in f:
             out.write(json.loads(line)["text"].replace("<|endoftext|>", "") + "\n\n")
     imatrix = os.path.join(run_dir, "imatrix.gguf")

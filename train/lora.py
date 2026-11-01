@@ -81,6 +81,7 @@ def main():
     ap.add_argument("--vram", type=float, default=0.9, help="share of the GPU's memory it may use: past that it stops, not spills")
     ap.add_argument("--max-len", type=int, default=160)
     ap.add_argument("--run", default="dicta-1.7b")
+    ap.add_argument("--data", default="train", help="data/<this>.jsonl and data/<this>_heldout.jsonl")
     ap.add_argument("--schedule", choices=["constant", "cosine"], default="constant",
                     help="constant: compare epochs within one run; cosine: the final run, cooled down to the end")
     args = ap.parse_args()
@@ -94,8 +95,8 @@ def main():
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     end = "<|endoftext|>"
     assert tok.convert_tokens_to_ids(end) is not None, "the base model needs <|endoftext|> to stop on"
-    train = [encode(tok, r["text"], args.max_len) for r in load(os.path.join(DATA, "train.jsonl"))]
-    held = [encode(tok, r["text"], args.max_len) for r in load(os.path.join(DATA, "train_heldout.jsonl"))]
+    train = [encode(tok, r["text"], args.max_len) for r in load(os.path.join(DATA, args.data + ".jsonl"))]
+    held = [encode(tok, r["text"], args.max_len) for r in load(os.path.join(DATA, args.data + "_heldout.jsonl"))]
 
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.bfloat16).to(device)
     model.gradient_checkpointing_enable()
