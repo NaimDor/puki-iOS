@@ -104,7 +104,7 @@ fun ColorSplashScreen(
     if (state.isLoading) return
 
     // Stuck? Ask again after a quiet moment; after misses, the right balloon wiggles
-    val help = rememberHelp(state.roundIndex, active = !round.won && !state.sessionComplete) {
+    val help = rememberHelp(state.roundIndex, active = !round.won && !state.sessionComplete, onAssisted = viewModel.session::slip) {
         voicePlayer.playSequence(listOf("voice_prompt_tap_the", "voice_color_${state.targetColor.id}"), language)
     }
 

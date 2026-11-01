@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
@@ -83,6 +84,12 @@ private enum class BrushStep { PASTE, SCRUB, RINSE }
 private val teeth = List(10) { i ->
     Offset(0.304f + (i % 5) * 0.098f, if (i < 5) 0.595f else 0.805f)
 }
+/** Is tooth [i] dirty at this [level]? The ones at the sides come in as she gets better. */
+private fun dirtyTooth(i: Int, level: Int) = when (level) {
+    1 -> i % 5 in 1..3
+    2 -> i % 5 in 0..3
+    else -> true
+}
 private const val TOOTH_W = 0.086f
 private const val TOOTH_H = 0.085f
 
@@ -103,10 +110,13 @@ fun BrushyBrushyScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
 
+    val level by produceState(0) { value = viewModel.session.level() }
+    if (level == 0) return
+
     val game = rememberStepGame(BrushStep.PASTE, BrushStep.entries.size, viewModel.session)
     val step = game.step
     val celebrate = game.celebrate
-    val dirt = remember { mutableStateListOf(*Array(teeth.size) { 1f }) }  // 1: dirty, 0: clean
+    val dirt = remember { mutableStateListOf(*Array(teeth.size) { if (dirtyTooth(it, level)) 1f else 0f }) }  // 1: dirty, 0: clean
     val foam = remember { mutableStateListOf<Offset>() }
     var foamLeft by remember { mutableStateOf(1f) }
     var brush by remember { mutableStateOf<Offset?>(null) }  // the brush, under the finger
@@ -142,7 +152,7 @@ fun BrushyBrushyScreen(
 
     LaunchedEffect(step) { brush = null }  // (a new step cancels the drag, so its end never comes)
 
-    val help = rememberHelp(step, active = !celebrate && !game.sessionComplete && !paste.isRunning && !swish.isRunning) {
+    val help = rememberHelp(step, active = !celebrate && !game.sessionComplete && !paste.isRunning && !swish.isRunning, onAssisted = viewModel.session::slip) {
         voicePlayer.play(
             when (step) {
                 BrushStep.PASTE -> "voice_teeth_paste"

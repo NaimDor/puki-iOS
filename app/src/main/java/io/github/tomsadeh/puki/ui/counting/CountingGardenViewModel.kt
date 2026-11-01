@@ -35,7 +35,7 @@ data class CountingState(
 
 class CountingGardenViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private var rounds = emptyList<CountingRound>()
     private var level = 1
 

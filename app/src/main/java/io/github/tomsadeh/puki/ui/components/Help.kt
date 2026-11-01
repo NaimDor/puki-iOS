@@ -40,10 +40,18 @@ private const val QUIET_MS = 8_000L
 class Help internal constructor() {
     /** True once the right answer should wiggle and glow. */
     var showHint by mutableStateOf(false)
-        internal set
+        private set
     internal var lastTouch = SystemClock.uptimeMillis()
     private var misses = 0
     internal var onMiss: () -> Unit = {}
+    internal var onAssisted: () -> Unit = {}
+
+    /** The answer's shown: once a round, that's the game helping. */
+    internal fun hint() {
+        if (showHint) return
+        showHint = true
+        onAssisted()
+    }
 
     fun touched() {
         lastTouch = SystemClock.uptimeMillis()
@@ -53,22 +61,24 @@ class Help internal constructor() {
     fun missed() {
         touched()
         onMiss()
-        if (++misses >= 2) showHint = true
+        if (++misses >= 2) hint()
     }
 }
 
 /**
  * Help for this round ([key]): after a quiet moment, [onNudge] (repeat the question); after a
  * second one, or two misses, [Help.showHint]. It stops nudging after three, so it never nags.
- * [active] pauses it (e.g. while the round is being celebrated).
+ * [active] pauses it (e.g. while the round is being celebrated); [onAssisted] hears when the answer
+ * is shown, which counts against the level like a wrong try.
  */
 @Composable
-fun rememberHelp(key: Any?, active: Boolean = true, onNudge: () -> Unit): Help {
+fun rememberHelp(key: Any?, active: Boolean = true, onAssisted: () -> Unit = {}, onNudge: () -> Unit): Help {
     val help = remember(key) { Help() }
     val nudge by rememberUpdatedState(onNudge)
     val mood = LocalPukiMood.current
     val scope = rememberCoroutineScope()
     help.onMiss = { scope.launch { mood?.oops() } }
+    help.onAssisted = onAssisted
     val paused = LocalGamePaused.current  // (the time limit's goodbye is up: no "where's the red one?" over it)
     LaunchedEffect(key, active, paused) {
         if (!active || paused) return@LaunchedEffect
@@ -80,7 +90,7 @@ fun rememberHelp(key: Any?, active: Boolean = true, onNudge: () -> Unit): Help {
                 nudges++
                 help.touched()
                 nudge()
-                if (nudges >= 2) help.showHint = true
+                if (nudges >= 2) help.hint()
             }
         }
     }

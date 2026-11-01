@@ -112,7 +112,7 @@ data class MusicState(
 private const val LONGEST_TUNE = 3
 
 class MusicMeadowViewModel(application: Application) : AndroidViewModel(application) {
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(MusicState())
     val state: StateFlow<MusicState> = _state.asStateFlow()
 
@@ -218,7 +218,7 @@ fun MusicMeadowScreen(
     }
 
     // Her turn and quiet: "your turn", and the next note lights up
-    val help = rememberHelp(state.roundIndex to state.playerInput.size, active = state.phase == MusicPhase.PLAYER_TURN) {
+    val help = rememberHelp(state.roundIndex to state.playerInput.size, active = state.phase == MusicPhase.PLAYER_TURN, onAssisted = viewModel.session::slip) {
         voicePlayer.play("voice_music_your_turn", language)
         val note = state.nextNote
         if (note >= 0) scope.launch {

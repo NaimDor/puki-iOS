@@ -140,9 +140,13 @@ and redraw only what moves; the tablet (Galaxy Tab A7 Lite) is slow.
 
 - Each island has a level, 1 to `ProgressRepository.MAX_LEVEL` (3), in DataStore (`"difficulty_animals"`).
 - At the end of a session (`GameSession.finish`): two easy sessions in a row (at most one slip every
-  other round) move it up; a hard one (two slips a round) moves it down. The rule is
+  other round) move it up; a hard one (a slip a round) moves it down. A round where the answer had to
+  be shown counts as a slip (`rememberHelp`'s `onAssisted`). The rule is
   `ProgressRepository.nextLevel`, tested in `LevelRuleTest`.
-- The ViewModel reads the level when it starts (`GameSession.level()`) and picks content for it.
+- The ViewModel reads the level when it starts (`GameSession.level()`) and picks content for it, or the
+  screen does for the scene games. Games that use it: Animals, Colors, Shapes, Counting, Music, Words,
+  Peekaboo, the car wash (mud spots), teeth (dirty teeth) and the cake (toppings). The other My Day
+  routines record sessions but don't change with the level.
 
 ### Testing Considerations
 

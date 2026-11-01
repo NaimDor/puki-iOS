@@ -27,7 +27,7 @@ data class ColorRoundState(
 
 class ColorSplashViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private var allColors = level1Colors
     private var rounds = emptyList<ColorDef>()
     private var level = 1

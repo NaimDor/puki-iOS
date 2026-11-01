@@ -37,7 +37,7 @@ data class AnimalRoundState(
 
 class AnimalGardenViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
 
     private val _state = MutableStateFlow(AnimalRoundState(isLoading = true))
     val state: StateFlow<AnimalRoundState> = _state.asStateFlow()

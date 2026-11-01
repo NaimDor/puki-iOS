@@ -22,7 +22,7 @@ class ProgressRepository(private val context: Context) {
         fun nextLevel(level: Int, streak: Int, rounds: Int, mistakes: Int): Pair<Int, Int> = when {
             mistakes <= rounds / 2 ->  // easy: at most one slip every other round
                 if (streak + 1 >= 2 && level < MAX_LEVEL) (level + 1) to 0 else level to streak + 1
-            mistakes >= rounds * 2 -> maxOf(1, level - 1) to 0  // two misses a round
+            mistakes >= rounds -> maxOf(1, level - 1) to 0  // a miss or a hint every round
             else -> level to 0
         }
     }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -98,12 +99,15 @@ fun PeekabooScreen(
     val scope = rememberCoroutineScope()
     val animal = state.animal
     val she = animal.id in FEMININE_ANIMALS
+    val level by produceState(0) { value = viewModel.session.level() }
+    if (level == 0) return
 
+    // At the top level the animal doesn't call out first: she has to look
     RoundPrompt(
         state.roundIndex,
         scene = "במשחק המחבואים: ${animal.name.he} ${if (she) "מתחבאת" else "מתחבא"} ומחפשים ${if (she) "אותה" else "אותו"}.",
         sceneEn = "In the peekaboo game: the ${animal.name.en.lowercase()} is hiding, and we're looking for it.",
-        "voice_prompt_whos_hiding", "voice_sound_${animal.id}"
+        *(if (level >= 3) arrayOf("voice_prompt_whos_hiding") else arrayOf("voice_prompt_whos_hiding", "voice_sound_${animal.id}"))
     )
 
     // The animal peeks out a little (with its sound): a clue
@@ -116,7 +120,14 @@ fun PeekabooScreen(
             peeking = false
         }
     }
-    val help = rememberHelp(state.roundIndex, active = !state.found) { peek() }
+    val help = rememberHelp(state.roundIndex, active = !state.found, onAssisted = viewModel.session::slip) { peek() }
+    // At the first level the animal gives itself away without being asked
+    LaunchedEffect(state.roundIndex) {
+        if (level == 1) {
+            delay(3500)
+            if (!state.found) peek()
+        }
+    }
     var butterflyFrom by remember { mutableStateOf<HidingSpot?>(null) }
     var butterflyKey by remember { mutableIntStateOf(0) }
     val foundReaction = rememberReactionState()

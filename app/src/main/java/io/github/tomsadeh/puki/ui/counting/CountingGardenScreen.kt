@@ -111,7 +111,7 @@ fun CountingGardenScreen(
     )
 
     // Stuck? Ask again after a quiet moment; then the next thing to count (or the answer) glows
-    val help = rememberHelp(state.roundIndex to state.phase, active = !flow.won && !state.roundComplete) {
+    val help = rememberHelp(state.roundIndex to state.phase, active = !flow.won && !state.roundComplete, onAssisted = viewModel.session::slip) {
         voicePlayer.play(if (state.phase == CountingPhase.HOW_MANY) "voice_prompt_how_many" else "voice_prompt_count_along", language)
     }
 

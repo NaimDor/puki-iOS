@@ -103,7 +103,7 @@ data class WordState(
 )
 
 class WordGardenViewModel(application: Application) : AndroidViewModel(application) {
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(WordState())
     val state: StateFlow<WordState> = _state.asStateFlow()
     private var letters = emptyList<LetterDef>()  // the whole alphabet, for the other blocks
@@ -179,7 +179,7 @@ fun WordGardenScreen(
     }
 
     // Stuck? Say the letter again after a quiet moment; after misses, the right block wiggles
-    val help = rememberHelp(state.roundIndex, active = !round.won && state.letterChoices.isNotEmpty()) {
+    val help = rememberHelp(state.roundIndex, active = !round.won && state.letterChoices.isNotEmpty(), onAssisted = viewModel.session::slip) {
         voicePlayer.play("voice_letter_${state.targetLetter.id}", language)
     }
 

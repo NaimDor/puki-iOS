@@ -83,7 +83,7 @@ fun AnimalGardenScreen(
     val choiceReactions = remember(state.roundIndex) { state.animalChoices.associate { it.id to ReactionState() } }
 
     // Stuck? Ask again after a quiet moment; after misses, the right food (or animal) wiggles
-    val help = rememberHelp(state.roundIndex, active = !state.roundComplete) {
+    val help = rememberHelp(state.roundIndex, active = !state.roundComplete, onAssisted = animalViewModel.session::slip) {
         if (shadowRound) voicePlayer.play("voice_prompt_whose_shadow", language)
         else voicePlayer.playSequence(listOf("voice_prompt_whos_hungry", "voice_animal_${state.currentAnimal.id}"), language)
     }

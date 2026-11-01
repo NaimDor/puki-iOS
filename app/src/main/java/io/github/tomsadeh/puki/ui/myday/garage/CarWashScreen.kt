@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
@@ -83,6 +84,12 @@ private val spots = listOf(
     Offset(0.2f, 0.55f), Offset(0.36f, 0.38f), Offset(0.52f, 0.6f),
     Offset(0.66f, 0.42f), Offset(0.82f, 0.58f), Offset(0.42f, 0.7f)
 )
+/** Which of the [spots] are muddy at each level: the rest of the car starts out clean. */
+private fun muddySpots(level: Int) = when (level) {
+    1 -> setOf(0, 2, 4)
+    2 -> setOf(0, 1, 3, 4)
+    else -> spots.indices.toSet()
+}
 private const val SPOT_R = 0.11f  // as a fraction of the car's width
 private val carColors = listOf(Color(0xFFE53935), Color(0xFF1E88E5), Color(0xFFFDD835), Color(0xFF43A047), Color(0xFF8E24AA))
 
@@ -103,12 +110,16 @@ fun CarWashScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
 
+    val level by produceState(0) { value = viewModel.session.level() }
+    if (level == 0) return
+
     val game = rememberStepGame(WashStep.SCRUB, WashStep.entries.size, viewModel.session)
     val step = game.step
     val celebrate = game.celebrate
     val carColor = remember { carColors.random() }
-    val mud = remember { mutableStateListOf(*Array(spots.size) { 1f }) }    // 1: muddy, 0: clean
-    val drops = remember { mutableStateListOf(*Array(spots.size) { 1f }) }  // water left after the rinse
+    val muddy = remember { muddySpots(level) }
+    val mud = remember { mutableStateListOf(*Array(spots.size) { if (it in muddy) 1f else 0f }) }    // 1: muddy, 0: clean
+    val drops = remember { mutableStateListOf(*Array(spots.size) { if (it in muddy) 1f else 0f }) }  // water left after the rinse
     val bubbles = remember { mutableStateListOf<Offset>() }
     var bubblesLeft by remember { mutableStateOf(1f) }
     var tool by remember { mutableStateOf<Offset?>(null) }  // the sponge or towel, under the finger
@@ -152,7 +163,7 @@ fun CarWashScreen(
 
     LaunchedEffect(step) { tool = null }  // (a new step cancels the drag, so its end never comes)
 
-    val help = rememberHelp(step, active = !celebrate && !spraying && !game.sessionComplete) {
+    val help = rememberHelp(step, active = !celebrate && !spraying && !game.sessionComplete, onAssisted = viewModel.session::slip) {
         voicePlayer.play(
             when (step) {
                 WashStep.SCRUB -> "voice_car_scrub"

@@ -29,7 +29,7 @@ data class ShapeRoundState(
 
 class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private var allShapes = level1Shapes
     private var rounds = emptyList<ShapeDef>()
     private val picture = ShapePicture.entries.random()

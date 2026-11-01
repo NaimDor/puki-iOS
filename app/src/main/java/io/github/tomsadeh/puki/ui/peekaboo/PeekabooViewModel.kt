@@ -30,7 +30,7 @@ data class PeekabooState(
  */
 class PeekabooViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
+    val session = GameSession(ISLAND, (application as PukiApplication).progressRepository, viewModelScope)
     private val animals = allAnimals.shuffled().take(PEEKABOO_ROUNDS)
     private var lastSpot: HidingSpot? = null
 

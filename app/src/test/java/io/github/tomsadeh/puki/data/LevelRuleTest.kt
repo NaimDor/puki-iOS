@@ -16,12 +16,12 @@ class LevelRuleTest {
 
     @Test
     fun aMiddlingSessionResetsTheStreak() {
-        assertEquals(2 to 0, nextLevel(2, 1, rounds = 5, mistakes = 5))
+        assertEquals(2 to 0, nextLevel(2, 1, rounds = 5, mistakes = 4))
     }
 
     @Test
     fun aHardSessionMovesDown() {
-        assertEquals(1 to 0, nextLevel(2, 1, rounds = 5, mistakes = 10))
+        assertEquals(1 to 0, nextLevel(2, 1, rounds = 5, mistakes = 5))
     }
 
     @Test

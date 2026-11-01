@@ -111,7 +111,7 @@ fun ShapePlaygroundScreen(
     if (state.isLoading) return
 
     // Stuck? Ask again after a quiet moment; after misses, the right piece wiggles
-    val help = rememberHelp(state.roundIndex, active = !round.won && !state.sessionComplete) {
+    val help = rememberHelp(state.roundIndex, active = !round.won && !state.sessionComplete, onAssisted = viewModel.session::slip) {
         voicePlayer.playSequence(listOf("voice_prompt_drag_it", "voice_shape_${state.targetShape.id}"), language)
     }
 

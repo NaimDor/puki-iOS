@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -84,7 +85,11 @@ private fun ingredientVoice(id: String) = when (id) {
     else -> "voice_cook_milk"
 }
 private const val STIR_TURNS = 3f  // about three times round the bowl
-private const val TOPPINGS_TO_FINISH = 6
+private fun toppingsToFinish(level: Int) = when (level) {
+    1 -> 3
+    2 -> 4
+    else -> 6
+}
 
 /** Keeps the session's bookkeeping alive past the screen's own coroutines. */
 class CakeViewModel(application: Application) : AndroidViewModel(application) {
@@ -108,6 +113,9 @@ fun CakeScreen(
     val scope = rememberCoroutineScope()
     val dragDropState = remember { DragDropState() }
 
+    val level by produceState(0) { value = viewModel.session.level() }
+    if (level == 0) return
+
     val game = rememberStepGame(CakeStep.ADD, CakeStep.entries.size, viewModel.session)
     val step = game.step
     val celebrate = game.celebrate
@@ -119,7 +127,7 @@ fun CakeScreen(
     val bake = remember { Animatable(0f) }
     val toppings = remember { mutableStateListOf<Topping>() }
 
-    val help = rememberHelp(step, active = !celebrate && !baking && !finished) {
+    val help = rememberHelp(step, active = !celebrate && !baking && !finished, onAssisted = viewModel.session::slip) {
         voicePlayer.play(
             when (step) {
                 CakeStep.ADD -> "voice_cook_add"
@@ -317,7 +325,7 @@ fun CakeScreen(
                                                 toppings.add(t)
                                                 sfxPlayer.play(Sfx.POP)
                                                 help.touched()
-                                                if (toppings.size == TOPPINGS_TO_FINISH) {
+                                                if (toppings.size == toppingsToFinish(level)) {
                                                     finished = true
                                                     voicePlayer.play("voice_cook_yum", language) {
                                                         companion?.react("במטבח: אפו עוגה וקישטו אותה, ופוקי טועם!", "In the kitchen: the child baked a cake and decorated it, and Puki tastes it!") { }
