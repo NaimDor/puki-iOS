@@ -124,8 +124,44 @@ Every line must:
 - when it fits naturally (about one line in four), use the child's name as "@name" exactly once; never invent a name."""
 
 
-def write_lines(task, lang, girl, inp, earlier=None, n=6):
-    """[n] candidate lines for one input of a task (see tasks.py), or []."""
+# The games built around the model (games.py): what to write, and where a game bends the rules
+GAME_BRIEFS = {
+    "silly": "This is Silly Puki: Puki gets something wrong on purpose so the child laughs and corrects him. Write "
+             "Puki's line: one confident, funny statement with exactly the one mistake asked for (\"The cow says "
+             "meow!\", \"Look, a blue banana!\"), a mistake a 2-year-old can easily spot. Never say the real answer, "
+             "never hint that it's a joke, and no question.",
+    "silly_fix": "Puki made that silly mistake on purpose, and the child answered. Write Puki's next line: he laughs "
+                 "at himself (\"Oops!\", \"Silly me!\") and says the real answer. If the child said it, Puki agrees with "
+                 "her; if she said something else or nothing, Puki says the real answer himself, gently, as his own "
+                 "discovery. Never say she was wrong.",
+    "care": "This is the caring game: the child looks after someone who needs a little help (if it's \"you\", Puki "
+            "himself is the one, and speaks of himself). Never anything scary, no medicine, no doctors.",
+    "recap": "It's bedtime, and Puki tells the child about her day. Retell it from this list: every line is a whole "
+             "little recap by itself that names two or three of the things (any of them), in the past tense, calm and "
+             "warm, adding nothing that isn't there.",
+}
+# The caring game's three moments, told apart (given all three, the writer mixed them up)
+CARE_MOMENTS = {
+    "start": "Now: nothing has been given yet. Say what's wrong, in a few words, and invite the child to help; don't "
+             "name any gift.",
+    "helps": "Now: the gift helps. Name the gift and say it worked, so the one who needed help feels better.",
+    "not_yet": "Now: the gift is nice but doesn't fix it. Enjoy the gift a little, then gently say the problem (name "
+               "it) is still there, all in the same line.",
+}
+ALTERNATIVES = "\n(Each line is a complete answer by itself: the lines are alternatives, not parts of one sequence.)"
+HEBREW_NUMBERS = ("In Hebrew a number must agree with its noun's gender (חמישה לבבות, חמש ציפורים, שלושה כוכבים); "
+                  "a wrong one is grammar 2.\n")
+GAME_RULES = {
+    "silly": "\n(In Silly Puki the one mistake asked for is on purpose; everything else in the line must be true.)" + ALTERNATIVES,
+    "silly_fix": ALTERNATIVES,
+    "care": ALTERNATIVES,
+    "recap": "\n(The bedtime recap may be up to 14 words.)" + ALTERNATIVES,
+    "story_next": "\n(A story sentence may be up to 12 words; it tells the story rather than talking to the child.)",
+}
+
+
+def write_lines(task, lang, girl, inp, earlier=None, n=6, note=None):
+    """[n] candidate lines for one input of a task (see build.py and games.py), or []."""
     language = "Hebrew" if lang == "he" else "English"
     if task == "talk":
         what = (f'The child just said to Puki (a toddler speaking, so it may be garbled or half a word): "{inp}".\n'
@@ -135,16 +171,18 @@ def write_lines(task, lang, girl, inp, earlier=None, n=6):
         what = (f"What just happened in the game: {inp}\nSomething like this happened in an earlier session: {earlier}\n"
                 "Link the two in a few words, naming the earlier thing (\"like the cow before!\", \"G was for camel, "
                 "B is for house\"), adding no details that aren't given and keeping the time right (yesterday, earlier today).")
+    elif task in GAME_BRIEFS:
+        what = f"{inp}\n{GAME_BRIEFS[task]}" + (f"\n{note}" if note else "")
     else:  # moment / tap
         what = f"What just happened in the game: {inp}"
-    system = (RULES + f"\n\nThe child is {_child(lang, girl)}. Write in {language} only.\n"
+    system = (RULES + GAME_RULES.get(task, "") + f"\n\nThe child is {_child(lang, girl)}. Write in {language} only.\n"
               f'Answer as JSON: {{"lines": [{n} different lines]}}, varied in wording and opening.')
     out = ask_json(WRITER, system, what, temperature=1.0)
     lines = out.get("lines", []) if isinstance(out, dict) else []
     return [str(l).strip() for l in lines if isinstance(l, (str, int, float)) and str(l).strip()][:n]
 
 
-def judge(task, lang, girl, inp, lines, earlier=None):
+def judge(task, lang, girl, inp, lines, earlier=None, note=None):
     """Scores for each line, as [{"grammar", "facts", "rules", "overall"}] (1-5), or []."""
     language = "Hebrew" if lang == "he" else "English"
     system = (f"You are a strict editor of short lines a toy parrot says to a toddler, in {language}.\n" + RULES +
@@ -153,11 +191,59 @@ def judge(task, lang, girl, inp, lines, earlier=None):
               "facts (matches the situation exactly, nothing invented), rules (follows every rule above), and overall "
               "(would a careful parent be happy to hear it). Be harsh: any grammar or gender mistake is at most 2.\n"
               + {"talk": "A line that doesn't answer what the child said (a hello when she named a thing) gets facts 2.\n",
-                 "reach_back": "A line that doesn't mention the earlier moment at all gets facts 2.\n"}.get(task, "") +
+                 "reach_back": "A line that doesn't mention the earlier moment at all gets facts 2.\n",
+                 "silly": "In Silly Puki the line MUST contain the one mistake asked for, and that is not a facts error. "
+                          "A line with no mistake, another kind of mistake (a shape mistake names another shape), two "
+                          "mistakes, or the real answer gets facts 2; a mistake too subtle for a 2-year-old gets overall "
+                          "3.\n" + HEBREW_NUMBERS,
+                 "silly_fix": "The line must say the real answer and laugh at Puki's own mistake; any hint the child was "
+                              "wrong gets rules 1.\n" + HEBREW_NUMBERS,
+                 "care": "The line must fit exactly the moment described under \"Now\" and name the right gift or "
+                         "problem for it; a line about another moment or another problem gets facts 1; anything scary "
+                         "or medical gets rules 1.\n",
+                 "recap": "Everything named must be on the list (anything invented gets facts 1), and a line that names "
+                          "only one thing gets facts 2.\n" + HEBREW_NUMBERS}.get(task, "") +
               'Answer as JSON: {"scores": [{"i": 0, "grammar": 5, "facts": 5, "rules": 5, "overall": 5, "note": "..."}]}')
-    situation = (f'The child said: "{inp}"' if task == "talk" else f"Situation: {inp}" +
-                 (f"\nEarlier: {earlier}" if earlier else ""))
+    if task in GAME_BRIEFS:
+        system = system.replace(RULES, RULES + GAME_RULES.get(task, ""))
+    situation = (f'The child said: "{inp}"' if task == "talk" else
+                 f"Situation: {inp}\nThe brief was: {GAME_BRIEFS[task]}" + (f"\n{note}" if note else "")
+                 if task in GAME_BRIEFS else
+                 f"Situation: {inp}" + (f"\nEarlier: {earlier}" if earlier else ""))
     user = situation + "\n\nLines:\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))
+    out = ask_json(JUDGE, system, user, temperature=0.0)
+    scores = out.get("scores", []) if isinstance(out, dict) else []
+    return [s for s in scores if isinstance(s, dict) and isinstance(s.get("i"), int)]
+
+
+def write_stories(lang, girl, hero, steps, n=3):
+    """[n] versions of a story with choices, each a list of one sentence per step, or []."""
+    language = "Hebrew" if lang == "he" else "English"
+    system = (RULES + GAME_RULES["story_next"] + f"\n\nThe child is {_child(lang, girl)}. Write in {language} only.\n"
+              "This is a story with choices: Puki tells a short story, and at each step the child picks what happens "
+              "next by tapping a picture. Write one sentence for each step, in order, each following from the ones "
+              "before and naming what was picked at that step. The first sentence introduces the hero; the last brings "
+              "the hero home to sleep, calm and cozy. Simple words, nothing scary, no questions.\n"
+              f'Answer as JSON: {{"stories": [{n} versions, each a list of {len(steps)} sentences]}}, different from each other.')
+    user = f"{hero}\nThe steps:\n" + "\n".join(f"{i + 1}. {s}" for i, s in enumerate(steps))
+    out = ask_json(WRITER, system, user, temperature=1.0, max_tokens=2000)
+    stories = out.get("stories", []) if isinstance(out, dict) else []
+    return [[x.strip() for x in st] for st in stories
+            if isinstance(st, list) and len(st) == len(steps) and all(isinstance(x, str) and x.strip() for x in st)][:n]
+
+
+def judge_stories(lang, girl, hero, steps, stories):
+    """Scores for each version of a story, as judge() gives them, or []."""
+    language = "Hebrew" if lang == "he" else "English"
+    system = (f"You are a strict editor of short stories a toy parrot tells a toddler, in {language}.\n" + RULES +
+              GAME_RULES["story_next"] + f"\n\nThe child is {_child(lang, girl)}.\nEach story has one sentence per "
+              "step; each sentence must name what was picked at that step and follow from the ones before. Score each "
+              f"story 1-5 on: grammar (correct, natural {language}; in Hebrew the right gender for the hero and every "
+              "noun), facts (every pick used at its step, nothing contradicting), rules (every rule above), and overall "
+              "(a careful parent would be happy to hear it at bedtime). Be harsh: any grammar or gender mistake is at most 2.\n"
+              'Answer as JSON: {"scores": [{"i": 0, "grammar": 5, "facts": 5, "rules": 5, "overall": 5, "note": "..."}]}')
+    user = (f"{hero}\nThe steps:\n" + "\n".join(f"{i + 1}. {s}" for i, s in enumerate(steps)) + "\n\nStories:\n" +
+            "\n".join(f"{i}. " + " / ".join(st) for i, st in enumerate(stories)))
     out = ask_json(JUDGE, system, user, temperature=0.0)
     scores = out.get("scores", []) if isinstance(out, dict) else []
     return [s for s in scores if isinstance(s, dict) and isinstance(s.get("i"), int)]

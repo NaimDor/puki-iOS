@@ -8,8 +8,9 @@ Puki's job with a LoRA on lines a frontier model writes.
    filters (`brain/persona.py`, `brain/safety.py`) and the teacher's judge keep the best one or
    two, and some inputs are held out to test on. Tasks today: game moments read from the app's
    code (`moments.py`), tapping Puki, talking back, careful moments (the exact fixed replies),
-   and reaching back to an earlier moment. A new feature is a new task: add it, make its data,
-   retrain.
+   reaching back to an earlier moment, and the games built around the model (`games.py`): Silly
+   Puki (a mistake on purpose, then putting it right), the caring game, the story with choices,
+   and the bedtime recap. A new feature is a new task: add it, make its data, retrain.
 2. **Format** (`fmt.py`): a short header (language, girl or boy, task, input) instead of Puki's
    long system prompt; "@name" where the brain puts the child's name.
 3. **Train** a LoRA on the base model, merge it, convert to GGUF, build an imatrix from the

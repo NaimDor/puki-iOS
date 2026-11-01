@@ -9,6 +9,8 @@ Tasks (add one for a new feature, make its data, retrain):
   talk        something a toddler said -> Puki's answer
   careful     hurt, danger, wanting a parent... -> safety.py's fixed reply, word for word
   reach_back  a moment, and a similar one from an earlier session -> a line linking them
+  silly, silly_fix, care, story_next, recap
+              the games built around the model; see games.py
 
     python build.py --pilot 10              # a few inputs per task, to read before spending more
     python build.py                         # everything
@@ -19,12 +21,14 @@ import hashlib
 import json
 import os
 import random
+import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "brain"))
 import fmt  # noqa: E402
+import games  # noqa: E402
 import moments as moments_mod  # noqa: E402
 import teacher  # noqa: E402
 
@@ -104,9 +108,35 @@ def inputs(tasks, pilot, rng):
                     for girl in (True, False):
                         jobs.append({"task": "careful", "lang": lang, "girl": girl, "input": p, "group": p,
                                      "category": cat})
+    # The games built around the model (games.py); their Hebrew inputs serve a girl and a boy alike
+    if "silly" in tasks:
+        for x in games.silly_inputs(rng):
+            for lang in ("he", "en"):
+                for girl in (True, False):
+                    jobs.append({"task": "silly", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"],
+                                 "truth": x["truth_" + lang]})
+    if "care" in tasks:
+        for x in games.care_inputs(rng):
+            for lang in ("he", "en"):
+                for girl in (True, False):
+                    jobs.append({"task": "care", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"],
+                                 "note": x["who"] + "\n" + teacher.CARE_MOMENTS[x["outcome"]]})
+    if "recap" in tasks:
+        for x in games.recap_inputs(rng, 150):
+            for lang in ("he", "en"):
+                for girl in (True, False):
+                    jobs.append({"task": "recap", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"]})
+    if "story_next" in tasks:
+        # A whole story is one job (written at once, then cut into its steps), for a girl or a boy
+        for plan in games.story_plans(rng, 120):
+            for lang in ("he", "en"):
+                jobs.append({"task": "story_next", "lang": lang, "girl": rng.random() < 0.5, "plan": plan,
+                             "input": games.story_input(plan, lang, [], 0), "group": plan["group"]})
     if pilot:  # a few of each task, in each language
         picked = []
         for task in tasks:
+            if task == "silly_fix":  # (made from silly's results)
+                continue
             for lang in ("he", "en"):
                 pool = [j for j in jobs if j["task"] == task and j["lang"] == lang]
                 picked += rng.sample(pool, min(pilot, len(pool)))
@@ -116,12 +146,51 @@ def inputs(tasks, pilot, rng):
 
 # ---------- One input: write, filter, judge ----------
 
+def said_truth(line, truth):
+    """Whether a silly line gives the real answer away (as a whole word or phrase)."""
+    words = re.findall(r"[\w']+", line.lower())
+    for alt in [truth] + games.NUMBER_WORDS.get(truth, []):  # (a number may be written out: 4, four, ארבעה)
+        t = re.findall(r"[\w']+", alt.lower())
+        if any(words[i:i + len(t)] == t or [w.lstrip("והבלמש") for w in words[i:i + len(t)]] == t
+               for i in range(len(words))):
+            return True
+    return False
+
+
+def run_story(job):
+    """A story with choices: the teacher writes it whole, and each step becomes an example."""
+    lang, girl, plan = job["lang"], job["girl"], job["plan"]
+    steps = games.story_steps(plan, lang)
+    hero = games.story_hero(plan, lang)
+    stories = teacher.write_stories(lang, girl, hero, steps)
+    passed, rejected = [], []
+    for st in stories:
+        f = [puki_filter(x, lang, girl) for x in st]
+        if all(f) and not any("?" in x for x in f):
+            passed.append(f)
+        else:
+            rejected.append(" / ".join(st))
+    scores = teacher.judge_stories(lang, girl, hero, steps, passed) if passed else []
+    good = sorted(((s.get("overall", 0) + s.get("grammar", 0), passed[s["i"]]) for s in scores
+                   if 0 <= s["i"] < len(passed) and min(s.get("grammar", 0), s.get("facts", 0), s.get("rules", 0)) >= 4
+                   and s.get("overall", 0) >= 4), key=lambda x: -x[0])
+    best = good[0][1] if good else None
+    out = []
+    for i in range(len(steps)):
+        out.append({**job, "input": games.story_input(plan, lang, best[:i] if best else [], i),
+                    "kept": [best[i]] if best else [], "rejected": rejected if i == 0 else [],
+                    "judged_out": [" / ".join(p) for p in passed if p is not best] if i == 0 else [], "scores": scores})
+    return out
+
+
 def run(job):
+    if job["task"] == "story_next":
+        return run_story(job)
     lang, girl = job["lang"], job["girl"]
     if job["task"] == "careful":
         reply = safety.replies(lang, girl)[job["category"]]
-        return {**job, "kept": [reply], "rejected": [], "scores": []}
-    lines = teacher.write_lines(job["task"], lang, girl, job["input"], job.get("earlier"))
+        return [{**job, "kept": [reply], "rejected": [], "scores": []}]
+    lines = teacher.write_lines(job["task"], lang, girl, job["input"], job.get("earlier"), note=job.get("note"))
     passed, rejected = [], []
     # What only the earlier moment had (the horse, not "hiding", which both have)
     earlier_words = (memory._content_words(job["earlier"].split(":", 1)[-1]) - memory._content_words(job["input"])
@@ -132,8 +201,15 @@ def run(job):
             f = None
         if f and job["task"] == "reach_back" and not (memory._content_words(f) & earlier_words):
             f = None  # a reach-back line names the earlier thing ("like the dog before!")
+        if f and job["task"] == "silly" and said_truth(f, job["truth"]):
+            f = None  # Silly Puki never gives the real answer away
+        if f and job["task"] == "recap" and games.events_named(f, job["input"]) < 2:
+            f = None  # a recap names two or three things from the day
+        if f and job["task"] == "silly_fix" and not said_truth(f, job["truth"]):
+            f = None  # ...and puts it right afterwards
         (passed if f else rejected).append(f or l)
-    scores = teacher.judge(job["task"], lang, girl, job["input"], passed, job.get("earlier")) if passed else []
+    scores = teacher.judge(job["task"], lang, girl, job["input"], passed, job.get("earlier"),
+                           note=job.get("note")) if passed else []
     good = []
     for s in scores:
         if 0 <= s["i"] < len(passed) and min(s.get("grammar", 0), s.get("facts", 0), s.get("rules", 0)) >= 4 \
@@ -142,13 +218,13 @@ def run(job):
     good.sort(key=lambda x: -x[0])
     kept = [l for _, l in good[:KEEP_PER_INPUT]]
     judged_out = [p for p in passed if p not in kept]
-    return {**job, "kept": kept, "rejected": rejected, "judged_out": judged_out, "scores": scores}
+    return [{**job, "kept": kept, "rejected": rejected, "judged_out": judged_out, "scores": scores}]
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pilot", type=int, default=0, help="only this many inputs per task and language")
-    ap.add_argument("--tasks", default="moment,tap,talk,careful,reach_back")
+    ap.add_argument("--tasks", default="moment,tap,talk,careful,reach_back,silly,silly_fix,care,story_next,recap")
     ap.add_argument("--workers", type=int, default=8)
     args = ap.parse_args()
     tasks = args.tasks.split(",")
@@ -156,7 +232,18 @@ def main():
     jobs = inputs(tasks, args.pilot, rng)
     print(f"{len(jobs)} inputs ({', '.join(f'{t} {sum(1 for j in jobs if j["task"] == t)}' for t in tasks)})")
     with ThreadPoolExecutor(args.workers) as ex:
-        results = list(ex.map(run, jobs))
+        results = [r for rs in ex.map(run, jobs) for r in rs]
+        if "silly_fix" in tasks:
+            # The child's answer to each silly line that was kept
+            fixes = []
+            for r in results:
+                if r["task"] == "silly":
+                    for line in r["kept"]:
+                        outcome, inp = games.silly_fix_input(r["lang"], line, r["truth"], rng)
+                        fixes.append({"task": "silly_fix", "lang": r["lang"], "girl": r["girl"], "input": inp,
+                                      "group": r["group"], "truth": r["truth"], "outcome": outcome})
+            print(f"{len(fixes)} silly_fix inputs")
+            results += [r for rs in ex.map(run, fixes) for r in rs]
 
     os.makedirs(DATA, exist_ok=True)
     name = "pilot" if args.pilot else "train"
