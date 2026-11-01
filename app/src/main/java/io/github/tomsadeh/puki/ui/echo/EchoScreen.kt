@@ -30,6 +30,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.absolutePadding
+import io.github.tomsadeh.puki.ui.hub.components.StarCounter
+import io.github.tomsadeh.puki.ui.components.rememberReactionState
+import io.github.tomsadeh.puki.ui.components.reaction
+import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
+import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
+import io.github.tomsadeh.puki.ui.common.GameSession
+import io.github.tomsadeh.puki.audio.Sfx
+import io.github.tomsadeh.puki.PukiApplication
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.AndroidViewModel
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import android.app.Application
 import io.github.tomsadeh.puki.ui.components.TalkingParrotImage
 import io.github.tomsadeh.puki.audio.hasMicPermission
 import androidx.compose.ui.draw.clip
@@ -58,8 +75,17 @@ private enum class EchoMode { IDLE, LISTENING, ECHOING }
  * records until she lets go; a tap records until she stops talking. Works with no PC at all
  * (the recording only goes to the speaker, a moment later, and is never kept).
  */
+class EchoViewModel(application: Application) : AndroidViewModel(application) {
+    private val session = GameSession("echo", (application as PukiApplication).progressRepository, viewModelScope)
+    fun star() = session.star()
+}
+
+/** A different parrot each time: squeaky, deep, squeakier. */
+private val ECHO_PITCHES = listOf(1.45f, 0.8f, 1.8f)
+private const val ECHOES_FOR_A_STAR = 3
+
 @Composable
-fun EchoScreen(onBack: () -> Unit) {
+fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     val context = LocalContext.current
     val voicePlayer = LocalVoicePlayer.current
     val language = LocalLanguage.current
@@ -67,6 +93,22 @@ fun EchoScreen(onBack: () -> Unit) {
     val recorder = remember { MicRecorder() }
     var mode by remember { mutableStateOf(EchoMode.IDLE) }
     var lastActive by remember { mutableStateOf(SystemClock.uptimeMillis()) }
+    var echoes by remember { mutableStateOf(0) }
+    var stars by remember { mutableStateOf(0) }
+    var party by remember { mutableStateOf(false) }
+    val puki = rememberReactionState()
+    val sfxPlayer = LocalSfxPlayer.current
+    var loudness by remember { mutableStateOf(0f) }  // how loud she is, smoothed, for the rings and the microphone
+    LaunchedEffect(mode) {
+        if (mode != EchoMode.LISTENING) {
+            loudness = 0f
+            return@LaunchedEffect
+        }
+        while (true) {
+            loudness += ((recorder.level * 6f).coerceIn(0f, 1f) - loudness) * 0.35f
+            delay(50)
+        }
+    }
     DisposableEffect(Unit) { onDispose { if (recorder.isRecording) recorder.stop() } }
 
     // The microphone is asked for once, the first time she talks to Puki
@@ -88,9 +130,20 @@ fun EchoScreen(onBack: () -> Unit) {
         val wav = recorder.stop()
         mode = EchoMode.ECHOING
         scope.launch {
-            EchoVoice.play(wav, voicePlayer.level)
+            EchoVoice.play(wav, voicePlayer.level, ECHO_PITCHES[echoes % ECHO_PITCHES.size])
             mode = EchoMode.IDLE
             lastActive = SystemClock.uptimeMillis()
+            echoes++
+            if (echoes % ECHOES_FOR_A_STAR == 0) {
+                // Every few echoes: a star, and Puki dances
+                stars++
+                viewModel.star()
+                sfxPlayer.play(Sfx.SUCCESS)
+                party = true
+                puki.celebrate()
+                delay(1800)
+                party = false
+            }
         }
     }
 
@@ -113,7 +166,14 @@ fun EchoScreen(onBack: () -> Unit) {
                 if (recorder.level > 0.08f) { heard = true; quietMs = 0 } else quietMs += 100
                 val elapsed = SystemClock.uptimeMillis() - t0
                 if ((heard && quietMs >= 900) || elapsed > 7000 || (!heard && elapsed > 4500)) {
-                    if (heard) echo() else { recorder.stop(); mode = EchoMode.IDLE }
+                    if (heard) echo() else {
+                        // Quiet: not a dead end, Puki tilts his head and asks again
+                        recorder.stop()
+                        mode = EchoMode.IDLE
+                        lastActive = SystemClock.uptimeMillis()
+                        voicePlayer.play("voice_say_again", language)
+                        scope.launch { puki.oops() }
+                    }
                     break
                 }
             }
@@ -126,9 +186,24 @@ fun EchoScreen(onBack: () -> Unit) {
     val bob by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(if (mode == EchoMode.ECHOING) 220 else 1400), RepeatMode.Reverse), label = "bob")
     val pulse by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(900)), label = "pulse")
 
-    GameBackground(scene = Scene.STAGE, withCompanion = false) {
+    GameBackground(scene = Scene.TREEHOUSE, withCompanion = false) {
         Box(modifier = Modifier.fillMaxSize()) {
             BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
+            StarCounter(stars = stars, modifier = Modifier.align(Alignment.TopEnd).padding(16.dp))
+
+            // A standing microphone for her, in front of his beak in either language, leaning in as she gets louder
+            Canvas(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .absolutePadding(right = 340.dp, bottom = 12.dp)
+                    .size(120.dp, 220.dp)
+                    .graphicsLayer {
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                        rotationZ = -6f * loudness
+                        val g = 1f + 0.06f * loudness
+                        scaleX = g; scaleY = g
+                    }
+            ) { drawStandingMic() }
 
             Box(
                 modifier = Modifier
@@ -165,9 +240,9 @@ fun EchoScreen(onBack: () -> Unit) {
                             val t = (pulse + k * 0.5f) % 1f
                             drawCircle(
                                 Color(0xFFFFEB3B).copy(alpha = 0.8f * (1f - t)),
-                                radius = size.minDimension * (0.32f + 0.18f * t),
+                                radius = size.minDimension * (0.32f + (0.14f + 0.14f * loudness) * t),
                                 center = Offset(size.width / 2, size.height / 2),
-                                style = Stroke(width = 8.dp.toPx())
+                                style = Stroke(width = (6f + 8f * loudness).dp.toPx())
                             )
                         }
                     }
@@ -177,6 +252,7 @@ fun EchoScreen(onBack: () -> Unit) {
                     flapMs = 110,
                     modifier = Modifier
                         .size(260.dp)
+                        .reaction(puki)
                         .graphicsLayer {
                             transformOrigin = TransformOrigin(0.5f, 1f)
                             val s = 1f + 0.08f * lean
@@ -187,5 +263,25 @@ fun EchoScreen(onBack: () -> Unit) {
                 )
             }
         }
+        ConfettiOverlay(show = party)
     }
+}
+
+/** A round microphone on a stand with a heavy foot. */
+private fun DrawScope.drawStandingMic() {
+    val w = size.width
+    val h = size.height
+    val steel = Color(0xFF78909C)
+    drawLine(steel, Offset(w / 2, h * 0.32f), Offset(w / 2, h * 0.95f), w * 0.07f, StrokeCap.Round)
+    drawOval(Color(0xFF546E7A), Offset(w * 0.2f, h * 0.91f), Size(w * 0.6f, h * 0.08f))
+    drawRoundRect(Color(0xFF455A64), Offset(w * 0.38f, h * 0.24f), Size(w * 0.24f, h * 0.12f), CornerRadius(w * 0.05f))
+    val c = Offset(w / 2, h * 0.15f)
+    val r = w * 0.27f
+    drawCircle(Color(0xFFB0BEC5), r, c)
+    val mesh = Color(0xFF78909C)
+    for (k in -2..2) {
+        drawLine(mesh, c + Offset(-r * 0.86f, k * r * 0.34f), c + Offset(r * 0.86f, k * r * 0.34f), w * 0.012f)
+        drawLine(mesh, c + Offset(k * r * 0.34f, -r * 0.86f), c + Offset(k * r * 0.34f, r * 0.86f), w * 0.012f)
+    }
+    drawCircle(Color.White.copy(alpha = 0.6f), r * 0.2f, c - Offset(r * 0.35f, r * 0.35f))
 }

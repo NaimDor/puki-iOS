@@ -165,11 +165,11 @@ fun Modifier.popAway(gone: Boolean, index: Int = 0): Modifier = composed {
 // ---------- Scenes ----------
 
 /** Illustrated backdrops for the games, drawn in code (no image files). */
-enum class Scene { FARM, GARDEN, PLAYGROUND, STAGE, HOME, SUNSET, BATH, SAVANNA, JUNGLE, ICE }
+enum class Scene { FARM, GARDEN, PLAYGROUND, STAGE, HOME, SUNSET, BATH, SAVANNA, JUNGLE, ICE, TREEHOUSE }
 
 @Composable
 fun SceneBackdrop(scene: Scene, modifier: Modifier = Modifier) {
-    val rooms = scene == Scene.HOME || scene == Scene.BATH
+    val rooms = scene == Scene.HOME || scene == Scene.BATH || scene == Scene.TREEHOUSE
     Box(modifier = modifier.fillMaxSize()) {
         // What never moves, drawn once in a layer of its own (hills built once per size)
         Spacer(modifier = Modifier.fillMaxSize().graphicsLayer().drawWithCache {
@@ -182,6 +182,7 @@ fun SceneBackdrop(scene: Scene, modifier: Modifier = Modifier) {
                     Scene.STAGE -> drawStage()
                     Scene.HOME -> drawRoom(wall = Color(0xFFFFF3E0), stripe = Color(0xFFFFE0B2), floor = Color(0xFFD7A86E))
                     Scene.BATH -> drawRoom(wall = Color(0xFFE1F5FE), stripe = Color(0xFFB3E5FC), floor = Color(0xFFB0BEC5), tiles = true)
+                    Scene.TREEHOUSE -> drawTreehouse()
                     else -> drawOutdoorsStill(scene, pal, hills!!)
                 }
             }
@@ -421,6 +422,38 @@ private fun DrawScope.drawStage() {
         drawCircle(red, w / scallops / 2f, Offset(cx, h * 0.07f))
     }
     drawRect(Color(0xFFFFD54F), Offset(0f, h * 0.065f), Size(w, h * 0.008f))
+}
+
+/** A cosy room up a tree: wooden planks, a round window onto the leaves, and a rug. */
+private fun DrawScope.drawTreehouse() {
+    val w = size.width
+    val h = size.height
+    val floor = h * 0.78f
+    drawRect(Color(0xFFD9A873), size = Size(w, floor))
+    var y = h * 0.11f
+    while (y < floor) {
+        drawLine(Color(0xFFB98352), Offset(0f, y), Offset(w, y), h * 0.006f)
+        y += h * 0.11f
+    }
+    drawRect(Color(0xFFA9774A), Offset(0f, floor), Size(w, h - floor))
+    drawRect(Color(0xFF8D6240), Offset(0f, floor), Size(w, h * 0.014f))
+    // The window, full of leaves
+    val r = h * 0.2f
+    val c = Offset(maxOf(w * 0.12f, r * 1.25f), h * 0.36f)
+    drawCircle(Color(0xFF8D6240), r * 1.12f, c)
+    drawCircle(Color(0xFFB3E5FC), r, c)
+    for ((dx, dy, s) in listOf(Triple(-0.5f, 0.5f, 0.55f), Triple(0.45f, 0.55f, 0.6f), Triple(0f, 0.75f, 0.5f), Triple(0.62f, -0.2f, 0.38f))) {
+        drawCircle(Color(0xFF66BB6A), r * s, c + Offset(r * dx * 0.8f, r * dy * 0.8f))
+    }
+    drawLine(Color(0xFF8D6240), c - Offset(r, 0f), c + Offset(r, 0f), h * 0.012f)
+    drawLine(Color(0xFF8D6240), c - Offset(0f, r), c + Offset(0f, r), h * 0.012f)
+    // A rug under Puki and a little shelf
+    drawOval(Color(0xFFEF9A9A), Offset(w * 0.28f, h * 0.84f), Size(w * 0.44f, h * 0.12f))
+    drawOval(Color(0xFFFFCDD2), Offset(w * 0.32f, h * 0.855f), Size(w * 0.36f, h * 0.09f))
+    drawRoundRect(Color(0xFF8D6240), Offset(w * 0.72f, h * 0.34f), Size(w * 0.2f, h * 0.02f), CornerRadius(h * 0.01f))
+    for ((i, color) in listOf(Color(0xFFEF5350), Color(0xFF42A5F5), Color(0xFFFFCA28)).withIndex()) {
+        drawRoundRect(color, Offset(w * (0.75f + i * 0.04f), h * (0.26f - (i % 2) * 0.02f)), Size(w * 0.03f, h * (0.08f + (i % 2) * 0.02f)), CornerRadius(h * 0.006f))
+    }
 }
 
 private fun DrawScope.drawRoom(wall: Color, stripe: Color, floor: Color, tiles: Boolean = false) {
