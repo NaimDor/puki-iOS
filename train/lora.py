@@ -61,7 +61,7 @@ def batches(items, size, pad_id, shuffle, rng):
 def held_out_loss(model, items, pad_id, device):
     model.eval()
     total, count = 0.0, 0
-    for ids, labels, mask in batches(items, 32, pad_id, False, None):
+    for ids, labels, mask in batches(items, 16, pad_id, False, None):
         out = model(input_ids=ids.to(device), attention_mask=mask.to(device), labels=labels.to(device))
         n = int((labels[:, 1:] != -100).sum())
         total += out.loss.item() * n
@@ -76,7 +76,9 @@ def main():
     ap.add_argument("--epochs", type=int, default=4)
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--rank", type=int, default=32)
-    ap.add_argument("--batch", type=int, default=16)
+    ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--accum", type=int, default=2, help="batches to a step: batch x accum examples, in a batch's memory")
+    ap.add_argument("--vram", type=float, default=0.9, help="share of the GPU's memory it may use: past that it stops, not spills")
     ap.add_argument("--max-len", type=int, default=160)
     ap.add_argument("--run", default="dicta-1.7b")
     ap.add_argument("--schedule", choices=["constant", "cosine"], default="constant",
@@ -86,6 +88,8 @@ def main():
     rng = random.Random(7)
     device = "cuda"
 
+    if device == "cuda":
+        torch.cuda.set_per_process_memory_fraction(args.vram)
     tok = AutoTokenizer.from_pretrained(args.model)
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     end = "<|endoftext|>"
@@ -101,7 +105,7 @@ def main():
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]))
     model.print_trainable_parameters()
 
-    steps_per_epoch = math.ceil(len(train) / args.batch)
+    steps_per_epoch = math.ceil(len(train) / (args.batch * args.accum))
     warmup = max(10, steps_per_epoch // 10)
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=args.lr, weight_decay=0.0)
     total = steps_per_epoch * args.epochs
@@ -117,26 +121,28 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     log = {"args": vars(args), "train_examples": len(train), "held_examples": len(held),
            "held_loss": [{"epoch": 0, "loss": held_out_loss(model, held, pad_id, device)}], "train_loss": []}
-    print(f"{len(train)} train, {len(held)} held out; held-out loss before: {log['held_loss'][0]['loss']:.3f}")
+    print(f"{len(train)} train, {len(held)} held out; held-out loss before: {log['held_loss'][0]['loss']:.3f}", flush=True)
     step, t0 = 0, time.time()
     model.train()
     for epoch in range(1, args.epochs + 1):
         running, n = 0.0, 0
-        for ids, labels, mask in batches(train, args.batch, pad_id, True, rng):
+        for i, (ids, labels, mask) in enumerate(batches(train, args.batch, pad_id, True, rng)):
             out = model(input_ids=ids.to(device), attention_mask=mask.to(device), labels=labels.to(device))
-            out.loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            opt.step()
-            sched.step()
-            opt.zero_grad(set_to_none=True)
+            (out.loss / args.accum).backward()
             running += out.loss.item()
             n += 1
-            step += 1
+            if (i + 1) % args.accum == 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                opt.step()
+                sched.step()
+                opt.zero_grad(set_to_none=True)
+                step += 1
         held_loss = held_out_loss(model, held, pad_id, device)
         log["train_loss"].append({"epoch": epoch, "loss": running / n})
         log["held_loss"].append({"epoch": epoch, "loss": held_loss})
         model.save_pretrained(os.path.join(out_dir, f"epoch-{epoch}"))
-        print(f"epoch {epoch}: train {running / n:.3f}, held out {held_loss:.3f}  ({time.time() - t0:.0f} s)")
+        peak = torch.cuda.max_memory_reserved() / 2**30 if device == "cuda" else 0
+        print(f"epoch {epoch}: train {running / n:.3f}, held out {held_loss:.3f}  ({time.time() - t0:.0f} s, peak {peak:.1f} GB)", flush=True)
         with open(os.path.join(out_dir, "log.json"), "w", encoding="utf-8") as f:
             json.dump(log, f, indent=1)
 
