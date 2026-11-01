@@ -259,6 +259,8 @@ voice_lines = [
     ("voice_clothing_shoes", "Shoes", "אלה נעליים."),
 
     # --- Table items ---
+    ("voice_table_done", "Dinner's ready! Yum!", "הארוחה מוכנה! יאמי!"),
+    ("voice_tidy_done", "All tidy! Everything's in its place!", "החדר מסודר! הכול במקום!"),
     ("voice_table_plate", "Plate", "זאת צלחת."),
     ("voice_table_cup", "Cup", "זאת כוס."),
     ("voice_table_fork", "Fork", "זה מזלג."),

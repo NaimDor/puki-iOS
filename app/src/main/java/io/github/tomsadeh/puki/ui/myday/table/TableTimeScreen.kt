@@ -39,6 +39,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
+import io.github.tomsadeh.puki.ui.myday.PukiCorner
+import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.reaction
+import io.github.tomsadeh.puki.ui.components.noticeTouches
+import io.github.tomsadeh.puki.ui.components.hintGlow
+import io.github.tomsadeh.puki.ui.components.RoundPrompt
+import io.github.tomsadeh.puki.ui.components.ReactionState
+import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
+import io.github.tomsadeh.puki.ui.common.GameSession
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -78,16 +96,20 @@ data class TableState(
 )
 
 class TableTimeViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
+    val session = GameSession("table", (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(TableState())
     val state: StateFlow<TableState> = _state.asStateFlow()
 
     fun onItemPlaced(itemId: String, targetId: String): Boolean {
-        if (itemId != targetId) return false
+        if (itemId != targetId) {
+            session.slip()
+            return false
+        }
         val updated = _state.value.items.map { if (it.id == itemId) it.copy(placed = true) else it }
         val complete = updated.all { it.placed }
         _state.value = _state.value.copy(items = updated, isComplete = complete)
-        if (complete) viewModelScope.launch { progressRepository.addStars(1) }
+        session.star()
+        if (complete) session.finish(updated.size)
         return true
     }
 }
@@ -100,21 +122,26 @@ fun TableTimeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine)
-    LaunchedEffect(Unit) {
-        companion?.setScene("בעריכת השולחן: שמים צלחת, כוס, מזלג וכף.", "Setting the table: plate, cup, fork and spoon.")
-    }
-    LaunchedEffect(state.isComplete) {
-        if (state.isComplete) companion?.react("ערכו את כל השולחן: צלחת, כוס, מזלג וכף!", "The child set the whole table: plate, cup, fork and spoon!")
-    }
+    RoundPrompt(0, "בעריכת השולחן: שמים צלחת, כוס, מזלג וכף.", "Setting the table: plate, cup, fork and spoon.", "voice_prompt_set_table")
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
     val sfxPlayer = LocalSfxPlayer.current
     val dragDropState = remember { DragDropState() }
+    val scope = rememberCoroutineScope()
+    val done = state.items.count { it.placed }
+    val next = state.items.firstOrNull { !it.placed }
+    val itemReactions = remember { state.items.associate { it.id to ReactionState() } }
+    var showCard by remember { mutableStateOf(false) }
+    val help = rememberHelp(done, active = !state.isComplete) { voicePlayer.play("voice_prompt_set_table", language) }
 
-    LaunchedEffect(Unit) {
-        delay(500)
-        voicePlayer.play("voice_prompt_set_table", language)
+    // All set: dinner's served, and then the end card
+    LaunchedEffect(state.isComplete) {
+        if (!state.isComplete) return@LaunchedEffect
+        voicePlayer.play("voice_table_done", language) {
+            companion?.react("ערכו את כל השולחן: צלחת, כוס, מזלג וכף!", "The child set the whole table: plate, cup, fork and spoon!")
+        }
+        delay(3400)
+        showCard = true
     }
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
@@ -122,26 +149,31 @@ fun TableTimeScreen(
             scene = Scene.HOME
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                GameTopBar(onBack = onBack, roundIndex = state.items.count { it.placed }, totalRounds = state.items.size)
-
-                Spacer(modifier = Modifier.height(16.dp))
+                GameTopBar(onBack = onBack, roundIndex = done, totalRounds = state.items.size, starsEarned = done)
 
                 // The table seen from above, with the basket of things to set beside it
+                BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                val fit = minOf(1f, maxHeight / 360.dp)  // the basket is drawn for this much height
                 Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize().padding(start = PukiCorner),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TableScene(items = state.items, modifier = Modifier.weight(1f).fillMaxHeight())
-                    Basket(modifier = Modifier.width(300.dp).fillMaxHeight()) {
+                    TableScene(
+                        items = state.items,
+                        served = state.isComplete,
+                        hintId = if (help.showHint) next?.id else null,
+                        modifier = Modifier.weight(1f).fillMaxHeight()
+                    )
+                    Basket(fit = fit, modifier = Modifier.width(300.dp * fit).fillMaxHeight()) {
                         state.items.forEachIndexed { i, item ->
                             if (!item.placed) {
                                 val (dx, dy, tilt) = BASKET_SPOTS[i]
                                 DragTarget(
                                     itemId = item.id,
-                                    modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(dx.dp, dy.dp),
+                                    modifier = Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset(dx.dp * fit, dy.dp * fit),
                                     tapToZone = item.id,
                                     onDragEnd = { dropId ->
                                         if (dropId != null) {
@@ -149,8 +181,12 @@ fun TableTimeScreen(
                                             if (correct) {
                                                 sfxPlayer.play(Sfx.DROP)
                                                 voicePlayer.play("voice_table_${item.id}", language)
+                                                if (done + 1 == 2) companion?.react("בעריכת השולחן: כבר חצי מהשולחן ערוך.", "Setting the table: half of it is set already.")
                                             } else {
                                                 sfxPlayer.play(Sfx.WRONG_GENTLE)
+                                                voicePlayer.playSequence(listOf("voice_table_${item.id}", "voice_prompt_try_again"), language)
+                                                help.missed()
+                                                scope.launch { itemReactions[item.id]?.shake() }
                                             }
                                         }
                                     }
@@ -159,8 +195,10 @@ fun TableTimeScreen(
                                         painter = painterResource(item.icon),
                                         contentDescription = item.name.resolve(language),
                                         modifier = Modifier
+                                            .reaction(itemReactions.getValue(item.id))
+                                            .hintGlow(help.showHint && item.id == next?.id)
                                             .idleBob(i, 0.5f)
-                                            .size(118.dp)
+                                            .size(118.dp * fit)
                                             .graphicsLayer { rotationZ = tilt }
                                     )
                                 }
@@ -168,10 +206,12 @@ fun TableTimeScreen(
                         }
                     }
                 }
+                }
             }
 
-            if (state.isComplete) {
-                RoundCompleteSheet(starsEarned = 1, onContinue = onPlayAgain, onHome = onBack)
+            ConfettiOverlay(show = state.isComplete)
+            if (showCard) {
+                RoundCompleteSheet(starsEarned = done, onContinue = onPlayAgain, onHome = onBack)
             }
         }
     }
@@ -193,7 +233,7 @@ private val BASKET_SPOTS = listOf(Triple(40f, 70f, -12f), Triple(150f, 40f, 10f)
 
 /** A wooden table seen from above, with a placemat and a faint outline where each thing goes. */
 @Composable
-private fun TableScene(items: List<PlaceSetting>, modifier: Modifier = Modifier) {
+private fun TableScene(items: List<PlaceSetting>, served: Boolean, hintId: String?, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val w = minOf(maxWidth, maxHeight * 1.35f)
         val h = w / 1.35f
@@ -222,11 +262,13 @@ private fun TableScene(items: List<PlaceSetting>, modifier: Modifier = Modifier)
                         .align(AbsoluteAlignment.TopLeft)
                         .absoluteOffset(w * (place.x - place.w / 2), h * (place.y - place.h / 2 * 1.35f))
                         .size(w * place.w, h * place.h * 1.35f)
+                        .hintGlow(hintId == place.id)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (item.placed) {
                             Image(painter = painterResource(item.icon), contentDescription = null,
                                 modifier = Modifier.popIn().fillMaxSize(0.95f))
+                            if (served && place.id == "plate") Dinner(Modifier.popIn().fillMaxSize())
                         } else {
                             // A faint outline of what goes here
                             Image(painter = painterResource(item.icon), contentDescription = null,
@@ -240,11 +282,41 @@ private fun TableScene(items: List<PlaceSetting>, modifier: Modifier = Modifier)
     }
 }
 
-/** A woven basket the things are tumbled into. */
+/** Dinner on the plate, with steam going up. */
 @Composable
-private fun Basket(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+private fun Dinner(modifier: Modifier) {
+    val rise by rememberInfiniteTransition(label = "steam").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(1800, easing = LinearEasing)), label = "steam_rise"
+    )
+    Canvas(modifier = modifier) {
+        val c = Offset(size.width / 2, size.height / 2)
+        val r = size.minDimension * 0.27f
+        // Noodles in a heap, with peas and a slice of carrot
+        drawCircle(Color(0xFFFFD54F), r, c)
+        for (k in 0 until 5) {
+            drawArc(Color(0xFFFFB300), 20f + k * 70f, 170f, false, c - Offset(r * (0.8f - k * 0.1f), r * (0.8f - k * 0.1f)),
+                Size(r * (1.6f - k * 0.2f), r * (1.6f - k * 0.2f)), style = Stroke(r * 0.08f, cap = StrokeCap.Round))
+        }
+        for ((dx, dy) in listOf(-0.4f to -0.2f, 0.3f to -0.45f, 0.45f to 0.25f, -0.15f to 0.5f)) drawCircle(Color(0xFF66BB6A), r * 0.13f, c + Offset(r * dx, r * dy))
+        drawCircle(Color(0xFFFF7043), r * 0.2f, c + Offset(r * 0.05f, r * 0.02f))
+        for (k in 0..2) {
+            val t = (rise + k / 3f) % 1f
+            val x = c.x + (k - 1) * r * 0.7f
+            val y = c.y - r * (1f + 1.3f * t)
+            val path = Path().apply {
+                moveTo(x, y + r * 0.45f)
+                cubicTo(x - r * 0.2f, y + r * 0.3f, x + r * 0.2f, y + r * 0.15f, x, y)
+            }
+            drawPath(path, Color(0xFF90A4AE).copy(alpha = 0.8f * (1f - t)), style = Stroke(r * 0.09f, cap = StrokeCap.Round))
+        }
+    }
+}
+
+/** A woven basket the things are tumbled into, [fit] times its full size. */
+@Composable
+private fun Basket(fit: Float, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Box(modifier = Modifier.size(300.dp, 360.dp)) {
+        Box(modifier = Modifier.size(300.dp * fit, 360.dp * fit)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val top = size.height * 0.18f
                 // Handle

@@ -27,6 +27,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import io.github.tomsadeh.puki.ui.components.rememberHelp
+import io.github.tomsadeh.puki.ui.components.reaction
+import io.github.tomsadeh.puki.ui.components.noticeTouches
+import io.github.tomsadeh.puki.ui.components.hintGlow
+import io.github.tomsadeh.puki.ui.components.RoundPrompt
+import io.github.tomsadeh.puki.ui.components.ReactionState
+import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
+import io.github.tomsadeh.puki.ui.common.GameSession
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -73,17 +84,22 @@ data class TidyState(
 )
 
 class TidyUpViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
+    val session = GameSession("tidy", (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(TidyState())
     val state: StateFlow<TidyState> = _state.asStateFlow()
 
     fun onItemDropped(itemId: String, homeId: String): Boolean {
         val item = _state.value.items.find { it.id == itemId } ?: return false
-        if (item.homeId != homeId) return false
+        if (item.tidied) return false
+        if (item.homeId != homeId) {
+            session.slip()
+            return false
+        }
         val updated = _state.value.items.map { if (it.id == itemId) it.copy(tidied = true) else it }
         val complete = updated.all { it.tidied }
         _state.value = _state.value.copy(items = updated, isComplete = complete)
-        if (complete) viewModelScope.launch { progressRepository.addStars(1) }
+        session.star()
+        if (complete) session.finish(updated.size)
         return true
     }
 }
@@ -96,21 +112,28 @@ fun TidyUpScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine)
-    LaunchedEffect(Unit) {
-        companion?.setScene("בסידור החדר: מחזירים כל צעצוע למקום שלו.", "Tidying up: putting every toy back where it belongs.")
-    }
-    LaunchedEffect(state.isComplete) {
-        if (state.isComplete) companion?.react("סידרו את כל החדר, כל צעצוע במקום!", "The child tidied the whole room, every toy in its place!")
-    }
+    RoundPrompt(0, "בסידור החדר: מחזירים כל צעצוע למקום שלו.", "Tidying up: putting every toy back where it belongs.", "voice_prompt_tidy_up")
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
     val sfxPlayer = LocalSfxPlayer.current
     val dragDropState = remember { DragDropState() }
+    val scope = rememberCoroutineScope()
+    val done = state.items.count { it.tidied }
+    val next = state.items.firstOrNull { !it.tidied }
+    val homeReactions = remember { state.homes.associate { it.id to ReactionState() } }
+    val itemReactions = remember { state.items.associate { it.id to ReactionState() } }
+    var showCard by remember { mutableStateOf(false) }
+    val help = rememberHelp(done, active = !state.isComplete) { voicePlayer.play("voice_prompt_tidy_up", language) }
 
-    LaunchedEffect(Unit) {
-        delay(500)
-        voicePlayer.play("voice_prompt_tidy_up", language)
+    // All put away: every home hops, and then the end card
+    LaunchedEffect(state.isComplete) {
+        if (!state.isComplete) return@LaunchedEffect
+        voicePlayer.play("voice_tidy_done", language) {
+            companion?.react("סידרו את כל החדר, כל צעצוע במקום!", "The child tidied the whole room, every toy in its place!")
+        }
+        homeReactions.values.forEachIndexed { i, r -> launch { delay(i * 120L); r.celebrate() } }
+        delay(3200)
+        showCard = true
     }
 
     CompositionLocalProvider(LocalDragDropState provides dragDropState) {
@@ -118,17 +141,16 @@ fun TidyUpScreen(
             scene = Scene.HOME
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                GameTopBar(onBack = onBack, roundIndex = state.items.count { it.tidied }, totalRounds = state.items.size)
-
-                Spacer(modifier = Modifier.height(16.dp))
+                GameTopBar(onBack = onBack, roundIndex = done, totalRounds = state.items.size, starsEarned = done)
 
                 // The room: homes where they belong, toys scattered on the floor
                 BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     val w = maxWidth
                     val h = maxHeight
+                    val toySize = minOf(130.dp, h * 0.27f)  // (the floor is short on a phone)
                     state.homes.forEach { home ->
                         val spot = HOME_SPOTS.getValue(home.id)
                         val inside = state.items.firstOrNull { it.homeId == home.id && it.tidied }
@@ -138,8 +160,9 @@ fun TidyUpScreen(
                                 .align(AbsoluteAlignment.TopLeft)
                                 .absoluteOffset(w * spot.x, h * spot.y)
                                 .size(w * spot.w, h * spot.h)
+                                .hintGlow(help.showHint && next?.homeId == home.id)
                         ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.fillMaxSize().reaction(homeReactions.getValue(home.id), jumpHeight = 14.dp)) {
                                 Image(painter = painterResource(home.icon), contentDescription = home.name.resolve(language),
                                     alignment = Alignment.BottomCenter,  // furniture stands on the floor
                                     modifier = Modifier.fillMaxSize())
@@ -171,8 +194,13 @@ fun TidyUpScreen(
                                         if (correct) {
                                             sfxPlayer.play(Sfx.DROP)
                                             voicePlayer.play("voice_tidy_${item.id}", language)
+                                            scope.launch { homeReactions[item.homeId]?.celebrate() }
+                                            if (done + 1 == 2) companion?.react("בסידור החדר: חצי מהצעצועים כבר במקום.", "Tidying up: half the toys are back in their places.")
                                         } else {
                                             sfxPlayer.play(Sfx.WRONG_GENTLE)
+                                            voicePlayer.playSequence(listOf("voice_tidy_${item.id}", "voice_prompt_try_again"), language)
+                                            help.missed()
+                                            scope.launch { itemReactions[item.id]?.shake() }
                                         }
                                     }
                                 }
@@ -181,8 +209,10 @@ fun TidyUpScreen(
                                     painter = painterResource(item.icon),
                                     contentDescription = item.name.resolve(language),
                                     modifier = Modifier
+                                        .reaction(itemReactions.getValue(item.id))
+                                        .hintGlow(help.showHint && item.id == next?.id)
                                         .idleBob(i, 0.5f)
-                                        .size(130.dp)
+                                        .size(toySize)
                                         .graphicsLayer { rotationZ = spot.third }
                                 )
                             }
@@ -191,8 +221,9 @@ fun TidyUpScreen(
                 }
             }
 
-            if (state.isComplete) {
-                RoundCompleteSheet(starsEarned = 1, onContinue = onPlayAgain, onHome = onBack)
+            ConfettiOverlay(show = state.isComplete)
+            if (showCard) {
+                RoundCompleteSheet(starsEarned = done, onContinue = onPlayAgain, onHome = onBack)
             }
         }
     }
@@ -213,8 +244,8 @@ private val HOME_SPOTS = mapOf(
 
 /** Where each toy lies on the floor (fractions of the play area) and how it's tilted. */
 private val FLOOR_SPOTS = listOf(
-    Triple(0.27f, 0.64f, -14f),  // teddy
-    Triple(0.79f, 0.74f, 22f),   // book, in front of the hamper (not its home)
-    Triple(0.43f, 0.72f, 9f),    // shirt
-    Triple(0.07f, 0.72f, 0f),    // ball, in front of the bookcase
+    Triple(0.29f, 0.66f, -14f),  // teddy
+    Triple(0.66f, 0.74f, 22f),   // book, by the toy box (not its home)
+    Triple(0.46f, 0.72f, 9f),    // shirt
+    Triple(0.16f, 0.72f, 0f),    // ball, in front of the bookcase (and clear of Puki's corners)
 )
