@@ -157,7 +157,8 @@ fun Modifier.popAway(gone: Boolean, index: Int = 0): Modifier = composed {
     val t by animateFloatAsState(
         if (gone) 0f else 1f, tween(260, delayMillis = if (gone) 60 * index else 0), label = "pop_away"
     )
-    graphicsLayer { scaleX = t; scaleY = t; alpha = t }
+    // (modulating, not offscreen: an offscreen layer would clip whatever's tilted past its bounds)
+    graphicsLayer { scaleX = t; scaleY = t; alpha = t; compositingStrategy = CompositingStrategy.ModulateAlpha }
 }
 
 // ---------- Scenes ----------
@@ -218,7 +219,8 @@ private class Palette(val skyTop: Color, val skyBottom: Color, val hillBack: Col
 private fun paletteFor(scene: Scene) = when (scene) {
     Scene.FARM -> Palette(Color(0xFF64B5F6), Color(0xFFBBDEFB), Color(0xFF9CCC65), Color(0xFF66BB6A), Color(0xFFFFF176))
     Scene.GARDEN -> Palette(Color(0xFF81D4FA), Color(0xFFE1F5FE), Color(0xFFAED581), Color(0xFF7CB342), Color(0xFFF48FB1))
-    Scene.PLAYGROUND -> Palette(Color(0xFFCE93D8), Color(0xFFF8BBD0), Color(0xFF80CBC4), Color(0xFF4DB6AC), Color(0xFFFFE082))
+    // Pale, so the only strong colors on the screen are the ones she's looking for
+    Scene.PLAYGROUND -> Palette(Color(0xFFD6EAF8), Color(0xFFF4FAFE), Color(0xFFE3EFD3), Color(0xFFD3E5BD), Color(0xFFFFFFFF))
     Scene.SUNSET -> Palette(Color(0xFFFFB74D), Color(0xFFFFF59D), Color(0xFFFFCC80), Color(0xFFA5D6A7), Color(0xFFFFFFFF))
     else -> Palette(Color(0xFF81D4FA), Color(0xFFE1F5FE), Color(0xFFAED581), Color(0xFF7CB342), Color(0xFFFFF176))
 }
@@ -234,7 +236,6 @@ private fun DrawScope.drawOutdoorsStill(scene: Scene, p: Palette, hills: Pair<Pa
     drawCircle(Brush.radialGradient(listOf(Color(0x88FFF59D), Color.Transparent), center = sun, radius = h * 0.2f), h * 0.2f, sun)
     drawCircle(Color(0xFFFFE082), h * 0.075f, sun)
     drawCircle(Color(0xFFFFF59D), h * 0.055f, sun)
-    if (scene == Scene.PLAYGROUND) drawRainbow(Offset(w * 0.5f, h * 0.78f), h * 0.62f)
     // Two rows of hills
     drawPath(hills.first, p.hillBack)
     drawPath(hills.second, p.hillFront)
@@ -293,15 +294,6 @@ private fun DrawScope.drawCloud(c: Offset, r: Float) {
     drawCircle(cloud, r * 0.75f, c + Offset(-r * 1.0f, r * 0.25f))
     drawCircle(cloud, r * 0.8f, c + Offset(r * 1.05f, r * 0.2f))
     drawRoundRect(cloud, Offset(c.x - r * 1.6f, c.y + r * 0.1f), Size(r * 3.3f, r * 0.85f), CornerRadius(r * 0.45f))
-}
-
-private fun DrawScope.drawRainbow(center: Offset, radius: Float) {
-    val bands = listOf(0xFFEF9A9A, 0xFFFFCC80, 0xFFFFF59D, 0xFFA5D6A7, 0xFF90CAF9, 0xFFCE93D8)
-    val band = radius * 0.06f
-    bands.forEachIndexed { i, c ->
-        val r = radius - i * band
-        drawArc(Color(c).copy(alpha = 0.55f), 180f, 180f, false, Offset(center.x - r, center.y - r), Size(r * 2, r * 2), style = Stroke(band))
-    }
 }
 
 private fun DrawScope.drawFence(y: Float) {
