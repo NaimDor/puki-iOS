@@ -88,7 +88,7 @@ val allIslands = listOf(
         id = "words",
         name = BilingualText("מילים", "Words"),
         route = Routes.WORDS,
-        color = CoralPink,
+        color = Color(0xFF9FA8DA),
         emoji = "\uD83D\uDCD6",
         drawableRes = R.drawable.ic_island_words,
         fractionalX = 0.77f,
@@ -102,7 +102,7 @@ val allIslands = listOf(
         color = Color(0xFFCE93D8),
         emoji = "\uD83E\uDD9C",
         drawableRes = R.drawable.ic_island_echo,
-        fractionalX = 0.565f,
+        fractionalX = 0.58f,
         fractionalY = 0.80f
     ),
     IslandDef(
@@ -112,17 +112,17 @@ val allIslands = listOf(
         color = EarthBrown,
         emoji = "\uD83C\uDFE0",
         drawableRes = R.drawable.ic_island_myday,
-        fractionalX = 0.36f,
+        fractionalX = 0.385f,
         fractionalY = 0.80f
     ),
     IslandDef(
         id = "say",
         name = BilingualText("מדברים עם פוקי", "Say it with Puki"),
         route = Routes.SAY,
-        color = GrassGreen,
+        color = Color(0xFF81D4FA),
         emoji = "\uD83E\uDD9C",
         drawableRes = R.drawable.ic_companion_parrot_talk,
-        fractionalX = 0.155f,
+        fractionalX = 0.205f,  // (clear of the Drawing button in the corner)
         fractionalY = 0.80f
     )
 )

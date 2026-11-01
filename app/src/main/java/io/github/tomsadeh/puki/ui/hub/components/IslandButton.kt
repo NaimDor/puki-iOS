@@ -2,6 +2,7 @@ package io.github.tomsadeh.puki.ui.hub.components
 
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -22,12 +23,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -49,10 +53,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.hub.IslandDef
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Size of the whole island composable; HubScreen centers it on the island's position. */
 val IslandWidth = 220.dp
 val IslandHeight = 230.dp
+
+/** What answers a tap: the disc, the sand and the plank. The rest of the box is water, and the
+ *  boxes overlap, so a full box would take the tap meant for the island behind it. */
+private val IslandHitShape = GenericShape { size, _ ->
+    val w = size.width
+    val h = size.height
+    val unit = h / IslandHeight.value  // (a dp, in this box's pixels)
+    addOval(Rect(Offset(w / 2, 72 * unit), 60 * unit))
+    addOval(Rect(w * 0.04f, h * 0.48f, w * 0.96f, h * 0.76f))
+    addRect(Rect(w * 0.08f, 148 * unit, w * 0.92f, 192 * unit))
+}
 
 private val PlankColor = Color(0xFFFFF8E1)
 private val PlankBorder = Color(0xFFBC8F5F)
@@ -61,6 +78,7 @@ private val PlankText = Color(0xFF5D4037)
 @Composable
 fun IslandButton(
     island: IslandDef,
+    onTap: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     palmOnLeft: Boolean = true
@@ -68,6 +86,8 @@ fun IslandButton(
     val language = LocalLanguage.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val scope = rememberCoroutineScope()
+    val hop = remember { Animatable(0f) }
 
     // Islands bob on the water, each at its own pace so they don't move in lockstep
     val transition = rememberInfiniteTransition(label = "island_${island.id}")
@@ -105,8 +125,8 @@ fun IslandButton(
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale
+                translationY = -hop.value * 16.dp.toPx()
             }
-            .clickable(interactionSource = interactionSource, indication = null) { onClick() }
     ) {
         // Water ripple stays put while the island bobs above it
         Spacer(modifier = Modifier.fillMaxSize().drawWithCache {
@@ -176,8 +196,29 @@ fun IslandButton(
                     .padding(horizontal = 14.dp, vertical = 4.dp)
             )
         }
+
+        // Last, so it's on top: the only part that takes a tap. A little hop and the island says
+        // its name, then off we go
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(IslandHitShape)
+                .clickable(interactionSource = interactionSource, indication = null) {
+                    onTap()
+                    scope.launch {
+                        launch {
+                            hop.animateTo(1f, tween(90))
+                            hop.animateTo(0f, spring(dampingRatio = 0.4f, stiffness = 400f))
+                        }
+                        delay(TAP_TO_GO_MS)
+                        onClick()
+                    }
+                }
+        )
     }
 }
+
+private const val TAP_TO_GO_MS = 150L
 
 /** The island's shapes for a [w] x [h] box: sand, grass, the palm's trunk and one leaf. */
 private class IslandShapes(w: Float, h: Float, palmOnLeft: Boolean) {

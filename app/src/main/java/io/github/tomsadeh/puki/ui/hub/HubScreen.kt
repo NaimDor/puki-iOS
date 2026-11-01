@@ -17,15 +17,17 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -36,13 +38,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.R
+import io.github.tomsadeh.puki.audio.Sfx
+import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
+import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.hub.components.HubBackground
 import io.github.tomsadeh.puki.ui.hub.components.IslandButton
 import io.github.tomsadeh.puki.ui.hub.components.IslandHeight
@@ -59,8 +62,8 @@ fun HubScreen(
 ) {
     val hubViewModel: HubViewModel = viewModel()
     val progress by hubViewModel.progress.collectAsStateWithLifecycle()
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val voicePlayer = LocalVoicePlayer.current
+    val sfxPlayer = LocalSfxPlayer.current
     val language = LocalLanguage.current
 
     // Look for a game update now and then (at most once a day); a dot on the settings button shows one
@@ -80,17 +83,16 @@ fun HubScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         HubBackground()
 
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = AbsoluteAlignment.TopLeft) {
             val width = maxWidth
             val height = maxHeight
-            fun fx(island: IslandDef) = if (isRtl) 1f - island.fractionalX else island.fractionalX
             // The islands a parent left on the map (all of them unless some were hidden in settings)
             val hidden = LocalAppSettings.current.hiddenIslands
             val islands = allIslands.filter { it.id !in hidden }.ifEmpty { allIslands }
 
             // Dotted sea route linking the islands in order, like a treasure map
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val points = islands.map { Offset(size.width * fx(it), size.height * it.fractionalY + 40.dp.toPx()) }
+                val points = islands.map { Offset(size.width * it.fractionalX, size.height * it.fractionalY + 40.dp.toPx()) }
                 if (points.size < 2) return@Canvas
                 val route = Path().apply {
                     moveTo(points.first().x, points.first().y)
@@ -117,17 +119,24 @@ fun HubScreen(
 
             // On a phone's short screen the islands would pile up: smaller there (tablets keep full size)
             val screenScale = (height / 560.dp).coerceIn(0.6f, 1f)
+            // The map is the same in both languages (the bottom row reads right to left in the
+            // order the route visits it), so absolute: a plain offset would mirror it in Hebrew.
             // Islands nearer the horizon are drawn a little smaller, for depth
             islands.forEach { island ->
                 val index = allIslands.indexOf(island)  // (each keeps its own palm side)
                 val depthScale = (0.82f + 0.35f * ((island.fractionalY - 0.42f) / 0.38f).coerceIn(0f, 1f)) * screenScale
                 IslandButton(
                     island = island,
+                    onTap = {
+                        sfxPlayer.play(Sfx.POP)
+                        voicePlayer.stop()  // (her tap comes before Puki's hello)
+                        voicePlayer.play("voice_island_${island.id}", language)
+                    },
                     onClick = { onIslandClick(island.route) },
                     palmOnLeft = index % 2 == 0,
                     modifier = Modifier
-                        .offset(
-                            x = width * fx(island) - IslandWidth / 2,
+                        .absoluteOffset(
+                            x = width * island.fractionalX - IslandWidth / 2,
                             y = height * island.fractionalY - IslandHeight / 2
                         )
                         .graphicsLayer {
@@ -140,16 +149,10 @@ fun HubScreen(
 
         StarCounter(
             stars = progress.totalStars,
+            onClick = onStickersClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp)
-        )
-
-        // Sticker album — top start
-        CornerButton(
-            icon = R.drawable.ic_ui_stickers,
-            onClick = onStickersClick,
-            modifier = Modifier.align(Alignment.TopStart)
         )
 
         // Settings — top end, a 2-second hold so the child doesn't open it by accident
@@ -168,7 +171,7 @@ fun HubScreen(
             modifier = Modifier.align(Alignment.BottomStart)
         )
 
-        // Free canvas — bottom end
+        // Free canvas — bottom end, a big bright button: this one's for her
         CornerButton(
             icon = R.drawable.ic_ui_canvas,
             onClick = { onIslandClick("canvas") },
@@ -177,8 +180,9 @@ fun HubScreen(
     }
 }
 
-/** A round corner button. With [onHold] it's for grown-ups: it needs a 2-second hold (a ring
- *  fills up around it), so a toddler's taps and double taps do nothing. */
+/** A round corner button: big and bright for her. With [onHold] it's for grown-ups, small and
+ *  faded: it needs a 2-second hold (a ring fills up around it), so a toddler's taps and double
+ *  taps do nothing. */
 @Composable
 private fun CornerButton(
     @DrawableRes icon: Int,
@@ -188,27 +192,28 @@ private fun CornerButton(
     dot: Boolean = false
 ) {
   Box(modifier = modifier) {
+    val forGrownUps = onHold != null
     val circle = Modifier
-        .size(64.dp)
-        .shadow(6.dp, CircleShape)
+        .size(if (forGrownUps) 52.dp else 100.dp)
+        .shadow(if (forGrownUps) 2.dp else 8.dp, CircleShape)
         .clip(CircleShape)
-        .background(Color.White.copy(alpha = 0.9f))
+        .background(if (forGrownUps) Color(0xFFCFD8DC) else Color(0xFFFFE082))
     val face: @Composable (Modifier) -> Unit = { m ->
         Box(modifier = m, contentAlignment = Alignment.Center) {
             Image(
                 painter = painterResource(icon),
                 contentDescription = null,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(if (forGrownUps) 30.dp else 72.dp)
             )
         }
     }
     if (onHold != null) {
         // The gap between the gate and the button leaves room for the ring to show
         LongPressGate(onUnlocked = onHold, modifier = Modifier.padding(10.dp)) {
-            face(Modifier.padding(6.dp).then(circle))
+            face(Modifier.padding(6.dp).alpha(0.6f).then(circle))
         }
     } else {
-        face(Modifier.padding(16.dp).then(circle).clickable(onClick = onClick))
+        face(Modifier.padding(12.dp).idleBob().then(circle).clickable(onClick = onClick))
     }
     if (dot) {
         // Something for the grown-up (a game update), small enough not to tempt the child

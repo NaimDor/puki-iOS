@@ -173,6 +173,18 @@ voice_lines = [
     ("voice_letter_e", "E, like Elephant", "זאת האות <en>E</en>."),
     ("voice_letter_f", "F, like Fish", "זאת האות <en>F</en>."),
 
+    # --- Island names (said on the hub when she taps one) ---
+    ("voice_island_animals", "Animal Garden", "גן החיות."),
+    ("voice_island_colors", "Colors", "צבעים."),
+    ("voice_island_shapes", "Shapes", "צורות."),
+    ("voice_island_counting", "Counting", "ספירה."),
+    ("voice_island_peekaboo", "Peekaboo", "מחבואים."),
+    ("voice_island_music", "Music", "מוזיקה."),
+    ("voice_island_words", "Words", "מילים."),
+    ("voice_island_echo", "Echo Puki", "תוכי מחקה."),
+    ("voice_island_myday", "My Day", "היום שלי."),
+    ("voice_island_say", "Say it with Puki", "מדברים עם פוקי."),
+
     # --- Game prompts ---
     ("voice_prompt_whos_hungry", "Who's hungry?", "מי רוצה לאכול?"),
     ("voice_prompt_whos_hiding", "Who's hiding?", "מי מתחבא?"),

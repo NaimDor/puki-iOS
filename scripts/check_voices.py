@@ -38,6 +38,7 @@ TEMPLATE_SOURCES = {
     "voice_say_": "SayWord",
     "voice_bedtime_": "BedtimeStep",
     "voice_number_": "CountingRound",  # ids are 1..max targetNumber
+    "voice_island_": "IslandDef",
 }
 
 # Files whose voice keys are optional by design (e.g. praise variants picked at random)
