@@ -308,6 +308,16 @@ voice_lines = [
     ("voice_album_hello", "Here are your stickers!", "הנה המדבקות שלך!"),
     ("voice_more_stars", "A few more stars!", "עוד כמה כוכבים!"),
 
+    # --- Drawing ---
+    ("voice_canvas_hello", "Let's paint!", "בואו נצייר!"),
+    ("voice_page_blank", "A clean page!", "דף חלק!"),
+    ("voice_page_fish", "A fish!", "דג!"),
+    ("voice_page_flower", "A flower!", "פרח!"),
+    ("voice_page_house", "A house!", "בית!"),
+    ("voice_page_car", "A car!", "מכונית!"),
+    ("voice_page_letters", "Letters!", "אותיות!"),
+    ("voice_page_numbers", "Numbers!", "מספרים!"),
+
     # --- Bedtime steps ---
     ("voice_bedtime_pajamas", "Let's put on pajamas!", "נִלְבַּשׁ פִּיגָ׳מָה!"),
     ("voice_bedtime_brush", "Let's brush our teeth!", "נְצַחְצֵחַ שִׁנַּיִם!"),

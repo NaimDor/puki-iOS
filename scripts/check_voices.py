@@ -34,6 +34,7 @@ TEMPLATE_SOURCES = {
     "voice_table_": "PlaceSetting",
     "voice_tidy_": "TidyItem",
     "voice_sticker_": "StickerDef",
+    "voice_page_": "ColoringPage",
     "voice_food_": "FoodDef",
     "voice_say_": "SayWord",
     "voice_bedtime_": "BedtimeStep",

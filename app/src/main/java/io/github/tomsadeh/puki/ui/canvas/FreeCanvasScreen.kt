@@ -9,14 +9,11 @@ import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
 import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
-import kotlinx.coroutines.delay
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.unit.Dp
 
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.drawscope.translate
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -43,7 +40,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -57,33 +53,33 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlin.math.sin
+import kotlin.math.ceil
+import io.github.tomsadeh.puki.ui.components.rememberCompact
+import io.github.tomsadeh.puki.ui.components.popIn
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Animatable
+import androidx.activity.ComponentActivity
+import android.content.ContextWrapper
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.tomsadeh.puki.R
@@ -98,26 +94,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
-import java.io.ByteArrayOutputStream
-import kotlin.math.sin
 
-/** A stroke of paint, or of the eraser ([erase]), which rubs out what's under it. */
-data class DrawPath(val path: List<Offset>, val color: Color, val strokeWidth: Float, val erase: Boolean = false) {
-    /** The smoothed outline, built once (finished strokes never change), not on every frame. */
-    val smooth: Path by lazy {
-        // Through the midpoints, so lines look painted, not jagged
-        Path().apply {
-            moveTo(path[0].x, path[0].y)
-            for (i in 1 until path.size - 1) {
-                val mid = (path[i] + path[i + 1]) / 2f
-                quadraticBezierTo(path[i].x, path[i].y, mid.x, mid.y)
-            }
-            lineTo(path.last().x, path.last().y)
-        }
-    }
-}
-
-// Six pots on the left, three more under the brushes on the right
+// Six pots on one side, three more under the brushes on the other
 private val leftColors = listOf(
     Color(0xFFEF5350), Color(0xFF42A5F5), Color(0xFFFFEE58),
     Color(0xFF66BB6A), Color(0xFFAB47BC), Color(0xFFFF9800)
@@ -138,65 +116,95 @@ private val stampIcons = listOf(
     R.drawable.ic_sticker_unicorn, R.drawable.ic_count_bird, R.drawable.ic_sticker_rocket
 )
 
-/** A sticker stamped on the paper. */
-data class Stamp(val icon: Int, val center: Offset, val size: Float, val rotation: Float)
-
 private val PaperColor = Color(0xFFFFFDF6)
 private val Highlight = Color(0xFFFFD54F)
 
+/** What the voice calls a page on the shelf. */
+private fun pageVoice(page: CanvasPage?) = when (page) {
+    null -> "voice_page_blank"
+    is ColoringPage -> "voice_page_${page.id}"
+    is TracePage -> if (page.numbers) "voice_page_numbers" else "voice_page_letters"
+}
+
+/** The drawing on the easel: it belongs to the app's visit, so leaving and coming back finds it still there. */
+class DrawingViewModel : ViewModel() {
+    var selectedColor by mutableStateOf(leftColors[0])
+    var brushDp by mutableStateOf(brushWidths[1])
+    var stamping by mutableStateOf(false)  // the stamp tool instead of a brush
+    var erasing by mutableStateOf(false)  // the eraser instead of a brush
+    val stamps = mutableStateListOf<Stamp>()
+    var nextStamp by mutableIntStateOf(0)
+    val stampOrder = stampIcons.shuffled()
+    var pageIndex by mutableIntStateOf(0)  // 0: blank paper
+    val fills = mutableStateMapOf<Int, Color>()
+    var letterTurn by mutableIntStateOf(-1)
+    var numberTurn by mutableIntStateOf(-1)
+    var strokeCount by mutableIntStateOf(0)
+    var lastStroke: DrawPath? = null
+    var marks by mutableIntStateOf(0)  // strokes, stamps and fills so far: what Puki looks out for
+    var lastLooked by mutableIntStateOf(0)
+    val art = ArtLayer()
+
+    fun noted(stroke: DrawPath) {
+        lastStroke = stroke
+        strokeCount++
+        marks++
+    }
+
+    fun clearStrokes() {
+        art.clearStrokes()
+        lastStroke = null
+        strokeCount = 0
+    }
+}
+
+/** The activity under [context], so the drawing outlives the screen. */
+private fun activityOf(context: android.content.Context): ComponentActivity =
+    generateSequence(context) { (it as? ContextWrapper)?.baseContext }.filterIsInstance<ComponentActivity>().first()
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FreeCanvasScreen(onBack: () -> Unit) {
-    var selectedColor by remember { mutableStateOf(leftColors[0]) }
-    var brushDp by remember { mutableStateOf(brushWidths[1]) }
-    var stamping by remember { mutableStateOf(false) }  // the stamp tool instead of a brush
-    var erasing by remember { mutableStateOf(false) }  // the eraser instead of a brush
-    val paths = remember { mutableStateListOf<DrawPath>() }
-    val stamps = remember { mutableStateListOf<Stamp>() }
-    var nextStamp by remember { mutableIntStateOf(0) }
-    val stampOrder = remember { stampIcons.shuffled() }
+fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(activityOf(LocalContext.current))) {
+    val art = drawing.art
+    val stamps = drawing.stamps
+    val fills = drawing.fills
     val stampPainters = stampIcons.associateWith { painterResource(it) }
-    var pageIndex by remember { mutableIntStateOf(0) }  // 0: blank paper
-    val fills = remember { mutableStateMapOf<Int, Color>() }
     val currentPath = remember { mutableStateListOf<Offset>() }  // grows in place as the finger moves
     val companion = LocalCompanion.current
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val context = LocalContext.current
-    val brushSize = with(density) { (if (erasing) EraserDp else brushDp).dp.toPx() }
+    val brushSize = with(density) { (if (drawing.erasing) EraserDp else drawing.brushDp).dp.toPx() }
     val stampSize = with(density) { 96.dp.toPx() }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     val paperSize = Size(canvasSize.width.toFloat(), canvasSize.height.toFloat())
-    val pageShapes = remember(pageIndex, canvasSize) {
-        (coloringPages[pageIndex] as? ColoringPage)?.placed(paperSize) ?: emptyList()
+    val pageShapes = remember(drawing.pageIndex, canvasSize) {
+        (coloringPages[drawing.pageIndex] as? ColoringPage)?.placed(paperSize) ?: emptyList()
     }
-    // The paint (the page's fills and the finished strokes) lives in one bitmap: a new stroke is
-    // drawn into it once, the eraser clears it, and the screen just shows it
-    val art = remember { ArtLayer() }
-    fun repaint() {
-        art.reset(canvasSize, density) {
-            drawPageFills(pageShapes, fills, PaperColor)
-            paths.forEach { drawStroke(it) }
+    fun repaintFills() {
+        art.paintFills(density) { drawPageFills(pageShapes, fills, PaperColor) }
+    }
+    LaunchedEffect(canvasSize, pageShapes) {
+        if (canvasSize.width > 0) {
+            art.ensure(canvasSize)
+            repaintFills()
         }
     }
-    LaunchedEffect(canvasSize, pageShapes) { if (canvasSize.width > 0) repaint() }
     fun addStroke(stroke: DrawPath) {
-        paths.add(stroke)
-        art.paint(density) { drawStroke(stroke) }
+        art.paint(density, erase = stroke.erase) { drawStroke(stroke) }
+        drawing.noted(stroke)
     }
 
     // Tracing: the next letter (or number) each time its page comes round
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
-    val tracePage = coloringPages[pageIndex] as? TracePage
-    var letterTurn by remember { mutableIntStateOf(-1) }
-    var numberTurn by remember { mutableIntStateOf(-1) }
+    val tracePage = coloringPages[drawing.pageIndex] as? TracePage
     val letters = if (language == Language.ENGLISH) englishLetters else hebrewLetters
     val traceText = when {
         tracePage == null -> null
-        tracePage.numbers -> "${numberTurn.coerceAtLeast(0) % 9 + 1}"
-        else -> letters[letterTurn.coerceAtLeast(0) % letters.size].let { if (language == Language.ENGLISH) it.englishLetter else it.hebrewLetter }
+        tracePage.numbers -> "${drawing.numberTurn.coerceAtLeast(0) % 9 + 1}"
+        else -> letters[drawing.letterTurn.coerceAtLeast(0) % letters.size].let { if (language == Language.ENGLISH) it.englishLetter else it.hebrewLetter }
     }
     val traceGlyph = remember(traceText, canvasSize) { if (traceText == null || canvasSize.width == 0) null else glyphPath(traceText, paperSize) }
     val traceStep = with(density) { 14.dp.toPx() }
@@ -205,10 +213,10 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
     var traced by remember(traceGlyph) { mutableStateOf(false) }
     var tracedParty by remember { mutableStateOf(false) }
     // After each stroke: which bits of the letter it painted, and the party once most of it is
-    LaunchedEffect(paths.size, traceGlyph) {
+    LaunchedEffect(drawing.strokeCount, traceGlyph) {
         if (traceGlyph == null || traced) return@LaunchedEffect
-        if (paths.isEmpty()) { covered.fill(false); return@LaunchedEffect }
-        val stroke = paths.last()
+        if (drawing.strokeCount == 0) { covered.fill(false); return@LaunchedEffect }
+        val stroke = drawing.lastStroke ?: return@LaunchedEffect
         if (stroke.erase) return@LaunchedEffect
         val reach = stroke.strokeWidth / 2 + traceStep * 0.6f
         traceSamples.forEachIndexed { i, s ->
@@ -220,8 +228,8 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
             tracedParty = true
             val page = tracePage
             voicePlayer.play(
-                if (page?.numbers == true) "voice_number_${numberTurn.coerceAtLeast(0) % 9 + 1}"
-                else "voice_letter_${letters[letterTurn.coerceAtLeast(0) % letters.size].id}",
+                if (page?.numbers == true) "voice_number_${drawing.numberTurn.coerceAtLeast(0) % 9 + 1}"
+                else "voice_letter_${letters[drawing.letterTurn.coerceAtLeast(0) % letters.size].id}",
                 language
             )
             delay(2200)
@@ -229,11 +237,21 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
         }
     }
 
+    val stampPop = remember { Animatable(1f) }
     fun stampAt(offset: Offset) {
-        val icon = stampOrder[nextStamp % stampOrder.size]
-        nextStamp++
+        val icon = drawing.stampOrder[drawing.nextStamp % drawing.stampOrder.size]
+        drawing.nextStamp++
         stamps.add(Stamp(icon, offset, stampSize, (offset.x * 7 + offset.y * 13) % 30f - 15f))
+        drawing.marks++
+        if (stamps.size > LOOSE_STAMPS) {
+            val oldest = stamps.removeAt(0)
+            stampPainters[oldest.icon]?.let { painter -> art.paint(density) { drawStamp(oldest, painter) } }
+        }
         sfxPlayer.play(Sfx.POP, 0.7f)
+        scope.launch {
+            stampPop.snapTo(0.5f)
+            stampPop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium))
+        }
     }
 
     /** The eraser at [at] lifts off any sticker it touches (they sit on top of the paint). */
@@ -241,65 +259,142 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
         stamps.removeAll { (it.center - at).getDistance() < it.size * 0.45f + brushSize / 2 }
     }
 
+    // A white sweep across the paper, and the page is clean behind it
+    val sweep = remember { Animatable(0f) }
     fun wipe() {
-        paths.clear()
-        stamps.clear()
-        fills.clear()
-        currentPath.clear()
-        repaint()
+        if (sweep.isRunning) return
         sfxPlayer.play(Sfx.WHOOSH)
+        scope.launch {
+            sweep.animateTo(1f, tween(350))
+            drawing.clearStrokes()
+            drawing.marks = 0
+            stamps.clear()
+            fills.clear()
+            currentPath.clear()
+            repaintFills()
+            sweep.snapTo(0f)
+        }
     }
+
     var flash by remember { mutableStateOf(false) }  // a camera flash over the paper when it's saved
     var looking by remember { mutableStateOf(false) }
-    var lastLooked by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) { companion?.wake() }
+    var shelfOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        companion?.wake()
+        voicePlayer.play("voice_canvas_hello", language)
+    }
 
     fun pickColor(color: Color) {
-        selectedColor = color
-        erasing = false  // a pot of paint means painting again
+        drawing.selectedColor = color
+        drawing.erasing = false  // a pot of paint means painting again
         sfxPlayer.play(Sfx.POP, 0.6f)
     }
 
+    /** Takes page [index] off the shelf (its paint goes with it; the strokes stay, except on a page to trace). */
+    fun choosePage(index: Int) {
+        shelfOpen = false
+        val page = coloringPages[index]
+        if (index == drawing.pageIndex && page !is TracePage) return
+        drawing.pageIndex = index
+        (page as? TracePage)?.let {
+            if (it.numbers) drawing.numberTurn++ else drawing.letterTurn++
+            drawing.clearStrokes()  // a clean sheet to trace on
+        }
+        fills.clear()
+        repaintFills()
+        sfxPlayer.play(Sfx.WHOOSH, 0.6f)
+        voicePlayer.play(pageVoice(page), language)
+    }
+
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        // Pots and tool plates sized so each side column fits: a round button and seven of them
-        val unit = ((maxHeight - 32.dp - 64.dp) / 7.6f).coerceIn(48.dp, 92.dp)
+        // On a phone the pots and tools stand two by two, with the buttons side by side above them;
+        // sized from the rows that's left them
+        val compact = rememberCompact()
+        val across = if (compact) 2 else 1
+        val rows = if (compact) 4 else 7
+        val buttons = if (compact) 64.dp else 128.dp
+        val unit = ((maxHeight - 32.dp - buttons) / (rows * 1.06f)).coerceAtMost(92.dp)
+        val sideWidth = if (compact) unit * 2.3f + 12.dp else 136.dp
         Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawStudioWall() }
 
+        val saveButton: @Composable () -> Unit = {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .shadow(6.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Color(0xFF81D4FA))
+                    .clickable {
+                        if (canvasSize.width == 0 || flash) return@clickable
+                        flash = true
+                        sfxPlayer.play(Sfx.SUCCESS, 0.7f)
+                        scope.launch {
+                            // As it looks on the easel: the paper and the letter to trace under the artwork
+                            val bitmap = snapshot(canvasSize, density, maxSide = 2048, paper = {
+                                traceGlyph?.let { drawTraceGlyph(it) }
+                            }, over = { traceGlyph?.let { drawTraceEdge(it) } }) {
+                                drawArtwork(art, pageShapes, stamps, stampPainters)
+                            }
+                            withContext(Dispatchers.IO) { saveDrawing(context, bitmap.toPng()) }
+                            delay(150)
+                            flash = false
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) { Canvas(modifier = Modifier.size(46.dp)) { drawCamera() } }
+        }
+        val pots: List<@Composable () -> Unit> = leftColors.mapIndexed { i, color ->
+            { PaintPot(color = color, selected = color == drawing.selectedColor, index = i, height = unit, onClick = { pickColor(color) }) }
+        }
+        val tools: List<@Composable () -> Unit> = brushWidths.mapIndexed<Float, @Composable () -> Unit> { i, width ->
+            {
+                ToolPlate(selected = !drawing.stamping && !drawing.erasing && drawing.brushDp == width, index = i, size = unit, onClick = {
+                    drawing.brushDp = width
+                    drawing.stamping = false
+                    drawing.erasing = false
+                    sfxPlayer.play(Sfx.POP, 0.6f)
+                }) {
+                    Canvas(modifier = Modifier.size(unit * 0.84f)) { drawBrush(drawing.selectedColor, fat = i == 1) }
+                }
+            }
+        } + listOf<@Composable () -> Unit>(
+            {
+                ToolPlate(selected = drawing.stamping, index = 2, size = unit, onClick = {
+                    drawing.stamping = true
+                    drawing.erasing = false
+                    sfxPlayer.play(Sfx.POP, 0.6f)
+                }) {
+                    Image(painter = painterResource(drawing.stampOrder[drawing.nextStamp % drawing.stampOrder.size]), contentDescription = null, modifier = Modifier.size(unit * 0.64f))
+                }
+            },
+            {
+                ToolPlate(selected = drawing.erasing, index = 3, size = unit, onClick = {
+                    drawing.erasing = true
+                    drawing.stamping = false
+                    sfxPlayer.play(Sfx.POP, 0.6f)
+                }) {
+                    Canvas(modifier = Modifier.size(unit * 0.7f)) { drawEraser() }
+                }
+            }
+        ) + rightColors.mapIndexed<Color, @Composable () -> Unit> { i, color ->
+            { PaintPot(color = color, selected = color == drawing.selectedColor, index = i + 7, height = unit, onClick = { pickColor(color) }) }
+        }
+
         Row(modifier = Modifier.fillMaxSize()) {
-            // Left: back, the paint pots, and the camera that saves the drawing
+            // One side: back, the paint pots, and the camera that saves the drawing
             Column(
-                modifier = Modifier.width(136.dp).fillMaxHeight().padding(vertical = 16.dp),
+                modifier = Modifier.width(sideWidth).fillMaxHeight().padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
-                BackButton(onBack)
-                leftColors.forEachIndexed { i, color ->
-                    PaintPot(color = color, selected = color == selectedColor, index = i, height = unit, onClick = { pickColor(color) })
-                }
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .shadow(6.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(Color(0xFF81D4FA))
-                        .clickable {
-                            if (canvasSize.width == 0 || flash) return@clickable
-                            flash = true
-                            sfxPlayer.play(Sfx.SUCCESS, 0.7f)
-                            scope.launch {
-                                // As it looks on the easel: the paper and the letter to trace under the artwork
-                                val bitmap = snapshot(canvasSize, density, maxSide = 2048, paper = {
-                                    traceGlyph?.let { drawTraceGlyph(it) }
-                                }, over = { traceGlyph?.let { drawTraceEdge(it) } }) {
-                                    drawArtwork(art, pageShapes, stamps, stampPainters)
-                                }
-                                withContext(Dispatchers.IO) { saveDrawing(context, bitmap.toPng()) }
-                                delay(150)
-                                flash = false
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) { Text("📸", fontSize = 30.sp) }
+                if (compact) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        BackButton(onBack)
+                        saveButton()
+                    }
+                } else BackButton(onBack)
+                ToolRows(pots, across)
+                if (!compact) saveButton()
             }
 
             // The easel with a sheet of paper taped to it
@@ -324,69 +419,78 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
                             .clip(RoundedCornerShape(6.dp))
                             .background(PaperColor)
                             .onSizeChanged { canvasSize = it }
-                            .pointerInput(selectedColor, brushSize, stamping, erasing, pageShapes) {
+                            .pointerInput(drawing.selectedColor, brushSize, drawing.stamping, drawing.erasing, pageShapes) {
                                 // A tap stamps a sticker, rubs out a spot, fills the shape it lands in, or leaves a dot of paint
                                 detectTapGestures { offset ->
                                     val shape = shapeAt(pageShapes, offset)
                                     when {
-                                        stamping -> stampAt(offset)
-                                        erasing -> {
+                                        drawing.stamping -> stampAt(offset)
+                                        drawing.erasing -> {
                                             eraseStampsAt(offset)
                                             addStroke(DrawPath(listOf(offset), PaperColor, brushSize, erase = true))
                                         }
                                         shape >= 0 -> {
-                                            fills[shape] = selectedColor
-                                            repaint()  // the fill goes under the strokes already there
+                                            fills[shape] = drawing.selectedColor
+                                            drawing.marks++
+                                            repaintFills()  // the strokes already there stay on top
                                             sfxPlayer.play(Sfx.POP, 0.8f)
                                         }
-                                        else -> addStroke(DrawPath(listOf(offset), selectedColor, brushSize))
+                                        else -> addStroke(DrawPath(listOf(offset), drawing.selectedColor, brushSize))
                                     }
                                 }
                             }
-                            .pointerInput(selectedColor, brushSize, stamping, erasing) {
+                            .pointerInput(drawing.selectedColor, brushSize, drawing.stamping, drawing.erasing) {
                                 var lastStamp = Offset.Zero
+                                var rubbedTo = 0  // how much of the eraser's path has gone into the paint
+                                fun rub() {
+                                    if (currentPath.size < 2 || rubbedTo >= currentPath.size) return
+                                    val piece = currentPath.subList((rubbedTo - 1).coerceAtLeast(0), currentPath.size).toList()
+                                    rubbedTo = currentPath.size
+                                    art.paint(density, erase = true) { drawStroke(DrawPath(piece, PaperColor, brushSize, erase = true)) }
+                                }
                                 detectDragGestures(
                                     onDragStart = { offset ->
-                                        if (stamping) {
+                                        if (drawing.stamping) {
                                             stampAt(offset)
                                             lastStamp = offset
                                         } else {
                                             currentPath.clear(); currentPath.add(offset)
-                                            if (erasing) {
+                                            rubbedTo = 0
+                                            if (drawing.erasing) {
                                                 eraseStampsAt(offset)
-                                                art.paint(density) { drawStroke(DrawPath(listOf(offset), PaperColor, brushSize, erase = true)) }
+                                                art.paint(density, erase = true) { drawStroke(DrawPath(listOf(offset), PaperColor, brushSize, erase = true)) }
                                             }
                                         }
                                     },
                                     onDrag = { change, _ ->
                                         change.consume()
-                                        if (stamping) {
+                                        if (drawing.stamping) {
                                             // A trail of stickers, a little apart
                                             if ((change.position - lastStamp).getDistance() > stampSize * 0.8f) {
                                                 stampAt(change.position)
                                                 lastStamp = change.position
                                             }
-                                        } else if (erasing) {
-                                            // Rubbed straight out of the paint, as the finger moves
+                                        } else if (drawing.erasing) {
+                                            // Rubbed out of the paint as the finger moves, a few points at a time
                                             eraseStampsAt(change.position)
-                                            val from = currentPath.lastOrNull() ?: change.position
                                             currentPath.add(change.position)
-                                            art.paint(density) { drawStroke(DrawPath(listOf(from, change.position), PaperColor, brushSize, erase = true)) }
+                                            if (currentPath.size - rubbedTo >= 3) rub()
                                         } else {
                                             currentPath.add(change.position)
                                             // A long scribble goes into the paint in pieces, so the live stroke stays short
                                             if (currentPath.size >= LIVE_POINTS) {
                                                 val last = currentPath.last()
-                                                addStroke(DrawPath(currentPath.toList(), selectedColor, brushSize))
+                                                addStroke(DrawPath(currentPath.toList(), drawing.selectedColor, brushSize))
                                                 currentPath.clear(); currentPath.add(last)
                                             }
                                         }
                                     },
                                     onDragEnd = {
-                                        if (erasing) {
-                                            if (currentPath.isNotEmpty()) paths.add(DrawPath(currentPath.toList(), PaperColor, brushSize, erase = true))
+                                        if (drawing.erasing) {
+                                            rub()
+                                            if (currentPath.isNotEmpty()) drawing.noted(DrawPath(currentPath.toList(), PaperColor, brushSize, erase = true))
                                         } else if (currentPath.size > 1) {
-                                            addStroke(DrawPath(currentPath.toList(), selectedColor, brushSize))
+                                            addStroke(DrawPath(currentPath.toList(), drawing.selectedColor, brushSize))
                                         }
                                         currentPath.clear()
                                     }
@@ -400,12 +504,16 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
                         }
                         // The paint, the page's lines and the stickers, in a layer of their own
                         Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) {
-                            drawArtwork(art, pageShapes, stamps, stampPainters)
+                            drawArtwork(art, pageShapes, stamps, stampPainters, stampPop.value)
                         }
                         // The stroke being drawn right now (the only thing redrawn as the finger moves)
                         Canvas(modifier = Modifier.fillMaxSize()) {
-                            if (!erasing) drawStroke(DrawPath(currentPath, selectedColor, brushSize))
-                            traceGlyph?.let { drawTraceEdge(it) }
+                            if (!drawing.erasing) drawStroke(DrawPath(currentPath, drawing.selectedColor, brushSize))
+                        }
+                        if (traceGlyph != null) Canvas(modifier = Modifier.fillMaxSize().graphicsLayer()) { drawTraceEdge(traceGlyph) }
+                        // The white sweep that wipes the page
+                        if (sweep.value > 0f) Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawRect(PaperColor, size = Size(size.width * sweep.value, size.height))
                         }
                         // The camera flash when the drawing is saved
                         val flashAlpha by animateFloatAsState(if (flash) 0.85f else 0f, tween(if (flash) 80 else 500), label = "flash")
@@ -416,12 +524,12 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
                 Canvas(modifier = Modifier.fillMaxSize()) { drawTape() }
 
                 // פוקי looks at the drawing: on tap, or by itself after a pause in drawing
-                val drawn = paths.size + stamps.size + fills.size
+                val drawn = drawing.marks
                 val companionStatus = companion?.status?.collectAsStateWithLifecycle()?.value
                 fun lookNow() {
                     if (companion == null || looking || canvasSize.width == 0) return
                     looking = true
-                    lastLooked = drawn
+                    drawing.lastLooked = drawn
                     scope.launch {
                         // Drawn here (the stickers' painters belong to this thread), compressed in the background
                         val bitmap = snapshot(canvasSize, density) { drawArtwork(art, pageShapes, stamps, stampPainters) }
@@ -431,7 +539,7 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
                     }
                 }
                 LaunchedEffect(drawn, companionStatus) {
-                    if (drawn > 0 && drawn != lastLooked && companionStatus == CompanionStatus.READY) {
+                    if (drawn > 0 && drawn != drawing.lastLooked && companionStatus == CompanionStatus.READY) {
                         delay(7000)
                         lookNow()
                     }
@@ -458,82 +566,137 @@ fun FreeCanvasScreen(onBack: () -> Unit) {
                 }
             }
 
-            // Right: wipe the paper clean, the next page, brushes, stamps, the eraser and three more pots
+            // The other side: the shelf of pages, brushes, stamps, the eraser, three more pots, and the wipe at the far end
             Column(
-                modifier = Modifier.width(136.dp).fillMaxHeight().padding(vertical = 16.dp),
+                modifier = Modifier.width(sideWidth).fillMaxHeight().padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .shadow(6.dp, CircleShape)
-                            .clip(CircleShape)
-                            .background(Color(0xFFFF8A80))
-                            .clickable { wipe() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(painter = painterResource(R.drawable.ic_stamp_trash), contentDescription = null, modifier = Modifier.size(36.dp))
-                    }
-                    // The next page to color in (its paint goes with it; the strokes stay)
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .shadow(6.dp, RoundedCornerShape(12.dp))
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(PaperColor)
-                            .border(3.dp, Highlight, RoundedCornerShape(12.dp))
-                            .clickable {
-                                pageIndex = (pageIndex + 1) % coloringPages.size
-                                (coloringPages[pageIndex] as? TracePage)?.let { if (it.numbers) numberTurn++ else letterTurn++ }
-                                if (coloringPages[pageIndex] is TracePage) paths.clear()  // a clean sheet to trace on
-                                fills.clear()
-                                repaint()
-                                sfxPlayer.play(Sfx.WHOOSH, 0.6f)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (val next = coloringPages[(pageIndex + 1) % coloringPages.size]) {
-                            is ColoringPage -> Canvas(modifier = Modifier.size(48.dp)) { drawPageLines(next.placed(size)) }
-                            is TracePage -> Text(
-                                if (next.numbers) "1" else if (language == Language.ENGLISH) "A" else "א",
-                                fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9575CD)
-                            )
-                            null -> {}
-                        }
-                    }
-                }
-                brushWidths.forEachIndexed { i, width ->
-                    ToolPlate(selected = !stamping && !erasing && brushDp == width, index = i, size = unit, onClick = {
-                        brushDp = width
-                        stamping = false
-                        erasing = false
-                        sfxPlayer.play(Sfx.POP, 0.6f)
-                    }) {
-                        Canvas(modifier = Modifier.size(unit * 0.84f)) { drawBrush(selectedColor, fat = i == 1) }
-                    }
-                }
-                ToolPlate(selected = stamping, index = 2, size = unit, onClick = {
-                    stamping = true
-                    erasing = false
-                    sfxPlayer.play(Sfx.POP, 0.6f)
-                }) {
-                    Image(painter = painterResource(stampOrder[nextStamp % stampOrder.size]), contentDescription = null, modifier = Modifier.size(unit * 0.64f))
-                }
-                ToolPlate(selected = erasing, index = 3, size = unit, onClick = {
-                    erasing = true
-                    stamping = false
-                    sfxPlayer.play(Sfx.POP, 0.6f)
-                }) {
-                    Canvas(modifier = Modifier.size(unit * 0.7f)) { drawEraser() }
-                }
-                rightColors.forEachIndexed { i, color ->
-                    PaintPot(color = color, selected = color == selectedColor, index = i + 7, height = unit, onClick = { pickColor(color) })
-                }
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .shadow(6.dp, RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(PaperColor)
+                        .border(3.dp, Highlight, RoundedCornerShape(12.dp))
+                        .clickable {
+                            shelfOpen = true
+                            sfxPlayer.play(Sfx.WHOOSH, 0.4f)
+                        },
+                    contentAlignment = Alignment.Center
+                ) { PagePicture(coloringPages[drawing.pageIndex], language, 50.dp) }
+                val wipeButton: @Composable () -> Unit = { HoldToWipe(if (compact) unit else 60.dp, onWipe = { wipe() }) }
+                ToolRows(if (compact) tools + wipeButton else tools, across)
+                if (!compact) wipeButton()
             }
         }
+
+        if (shelfOpen) PageShelf(
+            current = drawing.pageIndex,
+            language = language,
+            width = maxWidth,
+            onPick = { choosePage(it) },
+            onClose = { shelfOpen = false }
+        )
         ConfettiOverlay(show = tracedParty)
+    }
+}
+
+/** [items] in rows of [across], evenly down what's left of a side column. */
+@Composable
+private fun ToolRows(items: List<@Composable () -> Unit>, across: Int) {
+    items.chunked(across).forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            row.forEach { it() }
+        }
+    }
+}
+
+/** A page's own little picture: its lines, its first letter or number, or plain paper. */
+@Composable
+private fun PagePicture(page: CanvasPage?, language: Language, size: Dp) {
+    when (page) {
+        is ColoringPage -> Canvas(modifier = Modifier.size(size)) { drawPageLines(page.placed(this.size)) }
+        is TracePage -> Text(
+            if (page.numbers) "1" else if (language == Language.ENGLISH) "A" else "א",
+            fontSize = (size.value * 0.72f).sp, fontWeight = FontWeight.Bold, color = Color(0xFF9575CD)
+        )
+        null -> Spacer(modifier = Modifier.size(size))
+    }
+}
+
+/** The pages laid out to choose from; a tap outside puts the shelf away. */
+@Composable
+private fun PageShelf(current: Int, language: Language, width: Dp, onPick: (Int) -> Unit, onClose: () -> Unit) {
+    val thumb = ((width - 80.dp) / coloringPages.size - 10.dp).coerceIn(96.dp, 136.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClose),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .shadow(10.dp, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.verticalGradient(listOf(Color(0xFFC8935B), Color(0xFFAE7642))))
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            coloringPages.forEachIndexed { i, page ->
+                Box(
+                    modifier = Modifier
+                        .popIn(i)
+                        .size(thumb)
+                        .shadow(4.dp, RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(PaperColor)
+                        .border(if (i == current) 5.dp else 0.dp, Highlight, RoundedCornerShape(10.dp))
+                        .clickable { onPick(i) },
+                    contentAlignment = Alignment.Center
+                ) { PagePicture(page, language, thumb * 0.82f) }
+            }
+        }
+    }
+}
+
+/** The bin: held down for a second it wobbles harder and harder and then wipes; a tap only shakes it. */
+@Composable
+private fun HoldToWipe(size: Dp, onWipe: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val held = remember { Animatable(0f) }
+    Box(
+        modifier = Modifier
+            .size(size)
+            .graphicsLayer {
+                val k = held.value
+                rotationZ = sin(k * 34f) * 16f * k
+                val g = 1f + k * 0.22f
+                scaleX = g
+                scaleY = g
+            }
+            .shadow(6.dp, CircleShape)
+            .clip(CircleShape)
+            .background(Color(0xFFFF8A80))
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    val hold = scope.launch {
+                        held.animateTo(1f, tween(1000, easing = LinearEasing))
+                        onWipe()
+                    }
+                    tryAwaitRelease()
+                    hold.cancel()
+                    scope.launch { held.animateTo(0f, tween(180)) }
+                })
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Image(painter = painterResource(R.drawable.ic_stamp_trash), contentDescription = null, modifier = Modifier.size(size * 0.6f))
+        val k = held.value
+        if (k > 0f) Canvas(modifier = Modifier.fillMaxSize()) {
+            drawArc(Color.White, -90f, 360f * k, false, style = Stroke(5.dp.toPx()))
+        }
     }
 }
 
@@ -547,7 +710,7 @@ private fun PaintPot(color: Color, selected: Boolean, index: Int, height: Dp, on
     )
     Canvas(
         modifier = Modifier
-            .idleBob(index, amount = if (selected) 1.4f else 0.4f)
+            .then(if (selected) Modifier.idleBob(index, amount = 1.4f) else Modifier)
             .graphicsLayer {
                 translationY = -lift * 10.dp.toPx()
                 scaleX = 1f + lift * 0.14f
@@ -570,7 +733,7 @@ private fun ToolPlate(selected: Boolean, index: Int, size: Dp, onClick: () -> Un
     val shown = lift.coerceIn(0f, 1f)
     Box(
         modifier = Modifier
-            .idleBob(index + 9, amount = if (selected) 1.2f else 0.3f)
+            .then(if (selected) Modifier.idleBob(index + 9, amount = 1.2f) else Modifier)
             .graphicsLayer {
                 scaleX = 1f + lift * 0.12f
                 scaleY = 1f + lift * 0.12f
@@ -578,245 +741,9 @@ private fun ToolPlate(selected: Boolean, index: Int, size: Dp, onClick: () -> Un
             .size(size)
             .shadow(if (selected) 10.dp else 4.dp, CircleShape)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.6f + 0.4f * shown))
+            .background(Color.White)
             .border(6.dp, Highlight.copy(alpha = shown), CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { content() }
 }
-
-// ---------- Drawing the studio ----------
-
-/** A warm wall with soft polka dots behind the easel. */
-private fun DrawScope.drawStudioWall() {
-    drawRect(Brush.verticalGradient(listOf(Color(0xFFFFF1DC), Color(0xFFFFE2BF))))
-    val dot = Color(0x22FF8A65)
-    val step = 70.dp.toPx()
-    var row = 0
-    var y = step / 2
-    while (y < size.height) {
-        var x = if (row % 2 == 0) step / 2 else step
-        while (x < size.width) {
-            drawCircle(dot, 6.dp.toPx(), Offset(x, y))
-            x += step
-        }
-        y += step * 0.75f
-        row++
-    }
-    // Floorboards along the bottom
-    val floorTop = size.height * 0.93f
-    drawRect(Color(0xFFD7A86E), Offset(0f, floorTop), Size(size.width, size.height - floorTop))
-    drawRect(Color(0xFFBF8A55), Offset(0f, floorTop), Size(size.width, 4.dp.toPx()))
-}
-
-/** Very faint fibres so the page reads as paper rather than a white screen. */
-private fun DrawScope.drawPaperGrain() {
-    val fibre = Color(0x068D6E63)
-    val step = 22.dp.toPx()
-    var y = step
-    var i = 0
-    while (y < size.height) {
-        val wobble = sin(i * 1.7f) * 3.dp.toPx()
-        drawLine(fibre, Offset(0f, y + wobble), Offset(size.width, y - wobble), 1.dp.toPx())
-        y += step
-        i++
-    }
-}
-
-private fun DrawScope.drawTape() {
-    val tape = Color(0xAAFFF59D)
-    val w = 110.dp.toPx()
-    val h = 34.dp.toPx()
-    listOf(
-        Triple(Offset(30.dp.toPx(), 26.dp.toPx()), -35f, tape),
-        Triple(Offset(size.width - 30.dp.toPx(), 26.dp.toPx()), 35f, Color(0xAAB3E5FC)),
-        Triple(Offset(30.dp.toPx(), size.height - 26.dp.toPx()), 35f, Color(0xAAF8BBD0)),
-        Triple(Offset(size.width - 30.dp.toPx(), size.height - 26.dp.toPx()), -35f, tape)
-    ).forEach { (c, angle, color) ->
-        rotate(angle, pivot = c) {
-            drawRect(color, Offset(c.x - w / 2, c.y - h / 2), Size(w, h))
-            // Zig-zag torn ends
-            for (end in listOf(-1f, 1f)) {
-                val x = c.x + end * w / 2
-                var y = c.y - h / 2
-                val tooth = h / 5
-                while (y < c.y + h / 2 - 1f) {
-                    val tri = Path().apply {
-                        moveTo(x, y); lineTo(x + end * tooth * 0.6f, y + tooth / 2); lineTo(x, y + tooth); close()
-                    }
-                    drawPath(tri, color)
-                    y += tooth
-                }
-            }
-        }
-    }
-}
-
-private fun DrawScope.drawPaintPot(color: Color, lift: Float) {
-    val w = size.width
-    val h = size.height
-    val dark = color.copy(red = color.red * 0.8f, green = color.green * 0.8f, blue = color.blue * 0.8f)
-    // Shadow on the "table"
-    drawOval(Color(0x33000000), Offset(w * 0.2f, h * 0.88f), Size(w * 0.6f, h * 0.1f))
-
-    // A brush standing in the chosen pot
-    if (lift > 0.01f) {
-        rotate(18f, pivot = Offset(w * 0.5f, h * 0.45f)) {
-            val top = h * (0.42f - 0.42f * lift)
-            drawLine(Color(0xFFA1683A), Offset(w * 0.5f, top), Offset(w * 0.5f, h * 0.5f), w * 0.07f, StrokeCap.Round)
-            drawRoundRect(Color(0xFFB0BEC5), Offset(w * 0.46f, h * 0.38f), Size(w * 0.08f, h * 0.1f), CornerRadius(3f))
-        }
-    }
-
-    // Pot body: a white ceramic jar with paint dribbling down and a coloured band
-    val bodyTop = h * 0.36f
-    val bodyLeft = w * 0.18f
-    val bodyW = w * 0.64f
-    drawRoundRect(Color(0xFFFAFAFA), Offset(bodyLeft, bodyTop), Size(bodyW, h * 0.54f), CornerRadius(w * 0.12f))
-    // Paint pooled at the bottom, and drips running down from the rim
-    drawRoundRect(color.copy(alpha = 0.35f), Offset(bodyLeft, h * 0.76f), Size(bodyW, h * 0.14f), CornerRadius(w * 0.12f))
-    listOf(0.3f to 0.3f, 0.5f to 0.4f, 0.68f to 0.2f).forEach { (fx, len) ->
-        val x = w * fx
-        drawLine(color, Offset(x, bodyTop), Offset(x, bodyTop + h * len), w * 0.07f, StrokeCap.Round)
-        drawCircle(color, w * 0.05f, Offset(x, bodyTop + h * len))
-    }
-    // Rim and the paint inside
-    drawOval(Color(0xFFE0E0E0), Offset(w * 0.14f, h * 0.27f), Size(w * 0.72f, h * 0.18f))
-    drawOval(color, Offset(w * 0.19f, h * 0.29f), Size(w * 0.62f, h * 0.13f))
-    drawOval(dark.copy(alpha = 0.35f), Offset(w * 0.3f, h * 0.33f), Size(w * 0.4f, h * 0.06f))
-    // Shine
-    drawRoundRect(Color.White.copy(alpha = 0.7f), Offset(bodyLeft + w * 0.06f, h * 0.48f), Size(w * 0.06f, h * 0.3f), CornerRadius(w * 0.03f))
-}
-
-/** A paintbrush lying diagonally, its tip dipped in [color]. */
-private fun DrawScope.drawBrush(color: Color, fat: Boolean) {
-    val w = size.width
-    val h = size.height
-    rotate(-45f, pivot = Offset(w / 2, h / 2)) {
-        val cx = w / 2
-        val handleW = if (fat) w * 0.13f else w * 0.09f
-        drawLine(Color(0xFFA1683A), Offset(cx, h * 0.92f), Offset(cx, h * 0.5f), handleW, StrokeCap.Round)
-        val ferruleW = if (fat) w * 0.22f else w * 0.13f
-        drawRoundRect(Color(0xFFB0BEC5), Offset(cx - ferruleW / 2, h * 0.38f), Size(ferruleW, h * 0.14f), CornerRadius(4f))
-        val tipW = if (fat) w * 0.3f else w * 0.15f
-        val tip = Path().apply {
-            moveTo(cx - tipW / 2, h * 0.39f)
-            cubicTo(cx - tipW / 2, h * 0.2f, cx, h * 0.12f, cx, h * 0.04f)
-            cubicTo(cx, h * 0.12f, cx + tipW / 2, h * 0.2f, cx + tipW / 2, h * 0.39f)
-            close()
-        }
-        drawPath(tip, color)
-        drawLine(Color.White.copy(alpha = 0.5f), Offset(cx - tipW * 0.15f, h * 0.34f), Offset(cx - tipW * 0.05f, h * 0.16f), w * 0.025f, StrokeCap.Round)
-    }
-}
-
-/** A pink rubber eraser with a blue paper sleeve, lying at a slant. */
-private fun DrawScope.drawEraser() {
-    val w = size.width
-    val h = size.height
-    rotate(-30f, pivot = Offset(w / 2, h / 2)) {
-        val top = h * 0.3f
-        val bodyH = h * 0.4f
-        drawRoundRect(Color(0xFFF48FB1), Offset(w * 0.08f, top), Size(w * 0.84f, bodyH), CornerRadius(w * 0.08f))
-        drawRect(Color(0xFF64B5F6), Offset(w * 0.5f, top), Size(w * 0.3f, bodyH))
-        drawRoundRect(Color.White.copy(alpha = 0.45f), Offset(w * 0.14f, top + bodyH * 0.15f), Size(w * 0.28f, bodyH * 0.18f), CornerRadius(w * 0.04f))
-    }
-}
-
-// ---------- The artwork ----------
-
-private fun DrawScope.drawStroke(stroke: DrawPath) {
-    val pts = stroke.path
-    if (pts.isEmpty()) return
-    // The eraser clears its own layer (the artwork's), so the paper underneath shows again
-    val blend = if (stroke.erase) BlendMode.Clear else DrawScope.DefaultBlendMode
-    if (pts.size == 1) {
-        drawCircle(stroke.color, stroke.strokeWidth / 2, pts[0], blendMode = blend)
-        return
-    }
-    drawPath(stroke.smooth, stroke.color, style = Stroke(width = stroke.strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round), blendMode = blend)
-}
-
-/** The paint (fills and strokes, from [art]), the page's lines over it, and the stickers on top. */
-private fun DrawScope.drawArtwork(
-    art: ArtLayer,
-    pageShapes: List<androidx.compose.ui.graphics.Path>,
-    stamps: List<Stamp>,
-    painters: Map<Int, Painter>
-) {
-    art.version  // read, so this redraws when the paint changes
-    art.bitmap?.let { drawImage(it) }
-    drawPageLines(pageShapes)
-    stamps.forEach { stamp ->
-        val painter = painters[stamp.icon] ?: return@forEach
-        translate(stamp.center.x - stamp.size / 2, stamp.center.y - stamp.size / 2) {
-            rotate(stamp.rotation, pivot = Offset(stamp.size / 2, stamp.size / 2)) {
-                with(painter) { draw(Size(stamp.size, stamp.size)) }
-            }
-        }
-    }
-}
-
-/** How many points the stroke being drawn holds before it goes into the paint (see [ArtLayer]). */
-private const val LIVE_POINTS = 64
-
-/**
- * The drawing's paint as a bitmap the size of the paper: strokes are drawn into it once (and the
- * eraser clears it with BlendMode.Clear), so the screen shows one image however long the drawing
- * gets. [version] changes with every stroke, to redraw what shows it.
- */
-private class ArtLayer {
-    var bitmap: ImageBitmap? = null
-        private set
-    var version by mutableIntStateOf(0)
-        private set
-
-    /** A new, empty bitmap of [size], with [paint] drawn on it. */
-    fun reset(size: IntSize, density: Density, paint: DrawScope.() -> Unit) {
-        if (size.width <= 0 || size.height <= 0) return
-        bitmap = ImageBitmap(size.width, size.height)
-        paint(density, paint)
-    }
-
-    /** Draws [paint] onto the bitmap. */
-    fun paint(density: Density, paint: DrawScope.() -> Unit) {
-        val b = bitmap ?: return
-        CanvasDrawScope().draw(density, LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(b),
-            Size(b.width.toFloat(), b.height.toFloat())) { paint() }
-        version++
-    }
-}
-
-/**
- * The drawing on white paper, scaled to at most [maxSide] px (640 is plenty for Gemma to see it):
- * [paper] under the artwork, which the eraser doesn't clear, and [over] on top of it.
- */
-private fun snapshot(
-    size: IntSize,
-    density: Density,
-    maxSide: Int = 640,
-    paper: DrawScope.() -> Unit = {},
-    over: DrawScope.() -> Unit = {},
-    artwork: DrawScope.() -> Unit
-): ImageBitmap {
-    val factor = minOf(1f, maxSide.toFloat() / maxOf(size.width, size.height))
-    val w = (size.width * factor).toInt()
-    val h = (size.height * factor).toInt()
-    // The artwork on its own clear layer first (the eraser clears it), then onto the paper
-    val art = ImageBitmap(w, h)
-    CanvasDrawScope().draw(density, LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(art), Size(w.toFloat(), h.toFloat())) {
-        scale(factor, factor, pivot = Offset.Zero) { artwork() }
-    }
-    val bitmap = ImageBitmap(w, h)
-    CanvasDrawScope().draw(density, LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(bitmap), Size(w.toFloat(), h.toFloat())) {
-        drawRect(Color.White)
-        scale(factor, factor, pivot = Offset.Zero) { paper() }
-        drawImage(art)
-        scale(factor, factor, pivot = Offset.Zero) { over() }
-    }
-    return bitmap
-}
-
-private fun ImageBitmap.toPng(): ByteArray = ByteArrayOutputStream().also {
-    asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
-}.toByteArray()
