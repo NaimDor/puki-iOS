@@ -6,6 +6,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// -Ppuki.profile: the build the baseline profile is generated on. A separate ".bench" app with the
+// debug key, so generating it can't reach the real game, its progress or the release key
+val makingProfile = project.hasProperty("puki.profile")
+if (makingProfile) apply(plugin = "androidx.baselineprofile")
+
 // The game's version. Bump it for each release; scripts/release.py reads it from here, and the
 // game updates itself to a newer one found in the GitHub releases.
 val pukiVersion = "0.7.0"
@@ -62,7 +67,8 @@ android {
             }
         }
         release {
-            signingConfig = pukiSigning
+            signingConfig = if (makingProfile) signingConfigs.getByName("debug") else pukiSigning
+            if (makingProfile) applicationIdSuffix = ".bench"
             // Shrunk: a smaller download and faster start (keep rules for native code in proguard-rules.pro)
             isMinifyEnabled = true
             isShrinkResources = true
@@ -124,6 +130,9 @@ kotlin {
 }
 
 dependencies {
+    if (makingProfile) add("baselineProfile", project(":baselineprofile"))
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")  // applies baseline-prof.txt on sideloads
+
     // Core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

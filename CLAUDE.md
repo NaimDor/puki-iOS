@@ -148,6 +148,14 @@ and redraw only what moves; the tablet (Galaxy Tab A7 Lite) is slow.
   Peekaboo, the car wash (mud spots), teeth (dirty teeth) and the cake (toppings). The other My Day
   routines record sessions but don't change with the level.
 
+### Baseline Profile
+
+`app/src/main/baseline-prof.txt` ships in both repos. To refresh it once screens change, plug in a
+device on Android 13 or newer and run `./gradlew.bat -Ppuki.profile :app:generateGithubReleaseBaselineProfile`,
+then move `app/src/githubRelease/generated/baselineProfiles/baseline-prof.txt` over it. The generator (`baselineprofile/`,
+only in this repo) exists only with `-Ppuki.profile` and runs a separate `.bench` app with the debug
+key, so it can't reach the real game, its progress or the release key.
+
 ### Testing Considerations
 
 - JVM unit tests in `app/src/test` (`./gradlew testGithubDebugUnitTest`): the phone brain's Persona,
