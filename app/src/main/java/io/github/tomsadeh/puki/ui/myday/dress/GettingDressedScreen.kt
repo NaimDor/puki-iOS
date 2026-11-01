@@ -47,6 +47,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import io.github.tomsadeh.puki.ui.common.GameSession
+import io.github.tomsadeh.puki.ui.components.RoundPrompt
+import io.github.tomsadeh.puki.ui.components.ReactionState
+import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -74,32 +81,35 @@ data class ClothingItem(val id: String, val name: BilingualText, @DrawableRes va
 
 data class DressState(
     val clothes: List<ClothingItem> = listOf(
-        ClothingItem("underwear", BilingualText("תחתונים", "Underwear"), R.drawable.ic_clothing_underwear, 0),
-        ClothingItem("shirt", BilingualText("חולצה", "Shirt"), R.drawable.ic_clothing_shirt, 1),
-        ClothingItem("pants", BilingualText("מכנסיים", "Pants"), R.drawable.ic_clothing_pants, 2),
-        ClothingItem("socks", BilingualText("גרביים", "Socks"), R.drawable.ic_clothing_socks, 3),
-        ClothingItem("shoes", BilingualText("נעליים", "Shoes"), R.drawable.ic_clothing_shoes, 4)
+        ClothingItem("shirt", BilingualText("חולצה", "Shirt"), R.drawable.ic_clothing_shirt, 0),
+        ClothingItem("pants", BilingualText("מכנסיים", "Pants"), R.drawable.ic_clothing_pants, 1),
+        ClothingItem("socks", BilingualText("גרביים", "Socks"), R.drawable.ic_clothing_socks, 2),
+        ClothingItem("shoes", BilingualText("נעליים", "Shoes"), R.drawable.ic_clothing_shoes, 3)
     ),
-    val currentStep: Int = 0,
-    val isComplete: Boolean = false
-)
+    val worn: Set<String> = emptySet()
+) {
+    val isComplete get() = worn.size == clothes.size
+    /** What to suggest next; she can pick anything. */
+    val next get() = clothes.firstOrNull { it.id !in worn }
+}
 
 class GettingDressedViewModel(application: Application) : AndroidViewModel(application) {
-    private val progressRepository = (application as PukiApplication).progressRepository
+    private val session = GameSession("dress", (application as PukiApplication).progressRepository, viewModelScope)
     private val _state = MutableStateFlow(DressState())
     val state: StateFlow<DressState> = _state.asStateFlow()
 
+    /** She can dress in any order; only shoes wait for socks. False when they have to wait. */
     fun onClothingTapped(clothingId: String): Boolean {
         val current = _state.value
-        val item = current.clothes.find { it.id == clothingId } ?: return false
-        if (item.order == current.currentStep) {
-            val nextStep = current.currentStep + 1
-            val complete = nextStep >= current.clothes.size
-            _state.value = current.copy(currentStep = nextStep, isComplete = complete)
-            if (complete) viewModelScope.launch { progressRepository.addStars(1) }
-            return true
+        if (clothingId == "shoes" && "socks" !in current.worn) {
+            session.slip()
+            return false
         }
-        return false
+        val updated = current.copy(worn = current.worn + clothingId)
+        _state.value = updated
+        session.star()
+        if (updated.isComplete) session.finish(updated.clothes.size)
+        return true
     }
 }
 
@@ -111,34 +121,29 @@ fun GettingDressedScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val companion = LocalCompanion.current
-    // Puki knows where she is (tapping him talks about this routine)
-    LaunchedEffect(Unit) {
-        companion?.setScene("בהתלבשות: בוחרים בגדים מהארון ומתלבשים לפי הסדר.", "Getting dressed: picking clothes from the wardrobe, in order.")
-    }
-    LaunchedEffect(state.isComplete) {
-        if (state.isComplete) companion?.react("התלבשו מכף רגל ועד ראש, עד הנעליים!", "The child got dressed from head to toe, shoes and all!")
-    }
+    RoundPrompt(0, "בהתלבשות: בוחרים בגדים מהארון ומתלבשים.", "Getting dressed: picking clothes from the wardrobe.", "voice_prompt_get_dressed")
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
     val sfxPlayer = LocalSfxPlayer.current
     val scope = rememberCoroutineScope()
 
-    // Stuck? Name the next piece again after a quiet moment; after misses, it wiggles
-    val help = rememberHelp(state.currentStep, active = !state.isComplete) {
-        state.clothes.firstOrNull { it.order == state.currentStep }?.let { voicePlayer.play("voice_clothing_${it.id}", language) }
+    val childReaction = rememberReactionState()
+    var showCard by remember { mutableStateOf(false) }
+
+    // Stuck? Suggest a piece after a quiet moment; after a while, it wiggles
+    val help = rememberHelp(state.worn.size, active = !state.isComplete) {
+        state.next?.let { voicePlayer.play("voice_clothing_${it.id}", language) }
     }
 
-    // Always say what comes next: "get dressed… shirt!", then each next piece
-    LaunchedEffect(state.currentStep) {
-        if (state.isComplete) return@LaunchedEffect
-        val nextItem = state.clothes.firstOrNull { it.order == state.currentStep } ?: return@LaunchedEffect
-        if (state.currentStep == 0) {
-            delay(500)
-            voicePlayer.playSequence(listOf("voice_prompt_get_dressed", "voice_clothing_${nextItem.id}"), language)
-        } else {
-            delay(1300)  // let the name of what she just put on finish first
-            voicePlayer.play("voice_clothing_${nextItem.id}", language)
+    // All dressed: she hops, and then the end card
+    LaunchedEffect(state.isComplete) {
+        if (!state.isComplete) return@LaunchedEffect
+        voicePlayer.play("voice_dress_done", language) {
+            companion?.react("התלבשו מכף רגל ועד ראש, עד הנעליים!", "The child got dressed from head to toe, shoes and all!")
         }
+        launch { childReaction.celebrate() }
+        delay(3000)
+        showCard = true
     }
 
     GameBackground(
@@ -148,23 +153,20 @@ fun GettingDressedScreen(
             modifier = Modifier.fillMaxSize().noticeTouches(help).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            GameTopBar(onBack = onBack, roundIndex = state.currentStep, totalRounds = state.clothes.size)
-
-            Spacer(modifier = Modifier.height(16.dp))
+            GameTopBar(onBack = onBack, roundIndex = state.worn.size, totalRounds = state.clothes.size, starsEarned = state.worn.size)
 
             // The child, dressed as far as we've got, and the open wardrobe (clear of Puki's corner)
             Row(
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(start = PukiCorner),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                DressedChild(worn = state.clothes.filter { it.order < state.currentStep },
-                    modifier = Modifier.weight(1f).fillMaxHeight())
+                DressedChild(worn = state.worn, reaction = childReaction, modifier = Modifier.weight(1f).fillMaxHeight())
                 Wardrobe(modifier = Modifier.width(430.dp).fillMaxHeight()) { s ->
                     state.clothes.forEach { item ->
-                        if (item.order >= state.currentStep) {
+                        if (item.id !in state.worn) {
                             val spot = WARDROBE_SPOTS.getValue(item.id)
                             val reaction = rememberReactionState(item.id)
-                            val next = item.order == state.currentStep
+                            val next = item.id == state.next?.id
                             Image(
                                 painter = painterResource(item.icon),
                                 contentDescription = item.name.resolve(language),
@@ -177,16 +179,16 @@ fun GettingDressedScreen(
                                     .size(spot.size.dp * s)
                                     .graphicsLayer { rotationZ = spot.tilt }
                                     .clickable {
-                                        val correct = viewModel.onClothingTapped(item.id)
-                                        if (correct) {
-                                            sfxPlayer.play(Sfx.SUCCESS)
+                                        if (viewModel.onClothingTapped(item.id)) {
+                                            sfxPlayer.play(Sfx.SUCCESS, 0.6f)
                                             voicePlayer.play("voice_clothing_${item.id}", language)
+                                            scope.launch { childReaction.hop() }
                                         } else {
+                                            // Shoes wait for socks: a puzzled look, and the socks
                                             sfxPlayer.play(Sfx.WRONG_GENTLE)
-                                            // …and which piece it is now
-                                            val nextId = state.clothes.firstOrNull { it.order == state.currentStep }?.id
-                                            voicePlayer.playSequence(listOfNotNull("voice_prompt_try_again", nextId?.let { "voice_clothing_$it" }), language)
+                                            voicePlayer.play("voice_clothing_socks", language)
                                             help.missed()
+                                            scope.launch { childReaction.oops() }
                                             scope.launch { reaction.shake() }
                                         }
                                     }
@@ -197,8 +199,9 @@ fun GettingDressedScreen(
             }
         }
 
-        if (state.isComplete) {
-            RoundCompleteSheet(starsEarned = 1, onContinue = onPlayAgain, onHome = onBack)
+        ConfettiOverlay(show = state.isComplete)
+        if (showCard) {
+            RoundCompleteSheet(starsEarned = state.worn.size, onContinue = onPlayAgain, onHome = onBack)
         }
     }
 }
@@ -206,19 +209,19 @@ fun GettingDressedScreen(
 
 /** The big child, drawn with whatever's been put on so far (each piece grows into place). */
 @Composable
-private fun DressedChild(worn: List<ClothingItem>, modifier: Modifier = Modifier) {
+private fun DressedChild(worn: Set<String>, reaction: ReactionState, modifier: Modifier = Modifier) {
     val girl = LocalGender.current == Gender.GIRL
-    val ids = listOf("underwear", "shirt", "pants", "socks", "shoes")
+    val ids = listOf("shirt", "pants", "socks", "shoes")
     val shown = ids.associateWith { id ->
         animateFloatAsState(
-            targetValue = if (worn.any { it.id == id }) 1f else 0f,
+            targetValue = if (id in worn) 1f else 0f,
             animationSpec = spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow),
             label = "worn_$id"
         ).value
     }
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
-        Canvas(modifier = Modifier.size(side)) { drawToddler(girl, shown) }
+        Canvas(modifier = Modifier.reaction(reaction, jumpHeight = 24.dp).size(side)) { drawToddler(girl, shown + ("underwear" to 1f)) }
     }
 }
 
@@ -228,8 +231,7 @@ private data class WardrobeSpot(val x: Float, val y: Float, val size: Float, val
 private val WARDROBE_SPOTS = mapOf(
     "shirt" to WardrobeSpot(55f, 70f, 140f, -4f),
     "pants" to WardrobeSpot(225f, 70f, 140f, 5f),
-    "underwear" to WardrobeSpot(50f, 268f, 110f, -6f),
-    "socks" to WardrobeSpot(230f, 262f, 110f, 8f),
+    "socks" to WardrobeSpot(150f, 262f, 120f, 8f),
     "shoes" to WardrobeSpot(140f, 390f, 130f, 0f),
 )
 

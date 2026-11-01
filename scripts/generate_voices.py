@@ -255,7 +255,7 @@ voice_lines = [
     ("voice_body_face", "Face", "אלה פנים."),
 
     # --- Clothing ---
-    ("voice_clothing_underwear", "Underwear", "אלה תחתונים."),
+    ("voice_dress_done", "All dressed! Let's go!", "התלבשנו! אפשר לצאת!"),
     ("voice_clothing_shirt", "Shirt", "זאת חולצה."),
     ("voice_clothing_pants", "Pants", "אלה מכנסיים."),
     ("voice_clothing_socks", "Socks", "אלה גרביים."),
