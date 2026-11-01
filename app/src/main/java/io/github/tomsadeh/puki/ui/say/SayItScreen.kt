@@ -262,7 +262,7 @@ fun SayItScreen(
             // Sized from the room there is, so the word still fits on a phone
             val pictureSize = minOf(300.dp, maxHeight - 72.dp)
             val hostSize = minOf(260.dp, maxHeight)
-            val compact = maxHeight < 440.dp
+            val compact = maxHeight < 400.dp
             val rim by animateDpAsState(if (listening) 8.dp else 0.dp, label = "listen_rim")
             val grow by animateFloatAsState(if (listening) 1.05f else 1f, label = "listen_grow")
             Row(

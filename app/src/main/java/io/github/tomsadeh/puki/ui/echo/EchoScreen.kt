@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.absolutePadding
 import io.github.tomsadeh.puki.ui.hub.components.StarCounter
 import io.github.tomsadeh.puki.ui.components.rememberReactionState
@@ -187,7 +188,10 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     val pulse by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(900)), label = "pulse")
 
     GameBackground(scene = Scene.TREEHOUSE, withCompanion = false) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            // Sized from the screen's height, so the microphone stays at his beak
+            val stage = minOf(maxHeight * 0.92f, 560.dp)
+            val micHeight = maxHeight * 0.62f
             BackButton(onBack, Modifier.align(Alignment.TopStart).padding(16.dp))
             StarCounter(stars = stars, modifier = Modifier.align(Alignment.TopEnd).padding(16.dp))
 
@@ -195,8 +199,8 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
             Canvas(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .absolutePadding(right = 340.dp, bottom = 12.dp)
-                    .size(120.dp, 220.dp)
+                    .absolutePadding(right = stage, bottom = 12.dp)
+                    .size(micHeight * 0.55f, micHeight)
                     .graphicsLayer {
                         transformOrigin = TransformOrigin(0.5f, 1f)
                         rotationZ = -6f * loudness
@@ -208,7 +212,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(340.dp)
+                    .size(stage)
                     .pointerInput(Unit) {
                         detectTapGestures(onPress = {
                             if (mode == EchoMode.ECHOING) return@detectTapGestures
@@ -251,7 +255,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
                     talking = mode == EchoMode.ECHOING,
                     flapMs = 110,
                     modifier = Modifier
-                        .size(260.dp)
+                        .size(stage * 0.76f)
                         .reaction(puki)
                         .graphicsLayer {
                             transformOrigin = TransformOrigin(0.5f, 1f)
