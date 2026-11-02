@@ -27,7 +27,7 @@ EOT = 0  # <|endoftext|>, the first of pt_corpus.SPECIAL
 # Where each source came from. English commits are read from the download's own cache; the licences are as
 # each source states them, checked at the source on 2026-11-02.
 ORIGIN = {
-    "hebrew": {"repo": "HeNLP/HeDC4", "files": "HeDC4.csv", "commit": "84395a7af1fc1be19ad02df0af609069253a9f9e",
+    "hebrew": {"repo": "HeNLP/HeDC4", "files": "HeDC4.csv", "commit": "36fd9d3",  # (main's head; csv_sha256 is what pins the file)
                "licence": None, "note": "cleaned by pt_clean.py, see \"cleaning\"; the card states no licence and asks to cite "
                                         "Shalumov & Haskey, HeRo, arXiv:2304.11077"},
     "fineweb-edu": {"repo": "HuggingFaceFW/fineweb-edu", "files": "sample/10BT/", "licence": "ODC-By",

@@ -53,7 +53,7 @@
   "hebrew": {
    "repo": "HeNLP/HeDC4",
    "files": "HeDC4.csv",
-   "commit": "84395a7af1fc1be19ad02df0af609069253a9f9e",
+   "commit": "36fd9d3",
    "licence": null,
    "note": "cleaned by pt_clean.py, see \"cleaning\"; the card states no licence and asks to cite Shalumov & Haskey, HeRo, arXiv:2304.11077",
    "url": "https://huggingface.co/datasets/HeNLP/HeDC4",
