@@ -80,10 +80,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun downloadDeviceBrain() {
         downloadError = null
-        // In the app's scope, so it carries on when the parent leaves settings
+        // In the app's scope, so it carries on when the parent leaves settings (or the welcome screen).
+        // Once it's all in, Puki starts thinking on the device: that's what the parent asked for
         app.appScope.launch {
             try {
                 app.deviceModels.download()
+                settingsRepository.updateBrainOnDevice(true)
             } catch (e: Exception) {
                 downloadError = e.message ?: e.javaClass.simpleName
             }

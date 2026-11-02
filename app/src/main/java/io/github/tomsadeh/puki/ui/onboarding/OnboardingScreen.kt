@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.R
+import io.github.tomsadeh.puki.brain.DeviceModels
 import io.github.tomsadeh.puki.data.models.AppSettings
 import io.github.tomsadeh.puki.data.models.BilingualText
 import io.github.tomsadeh.puki.data.models.Gender
@@ -56,7 +59,8 @@ private val Wood = Color(0xFFBC8F5F)
 
 /**
  * Shown once, on first launch, for a parent: language, the child's name and gender,
- * and whether to use the parrot. Everything can be changed later in parent settings.
+ * whether to use the parrot, and (on devices that can run it) his brain's download.
+ * Everything can be changed later in parent settings.
  */
 @Composable
 fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewModel()) {
@@ -130,6 +134,52 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
                 )
                 Spacer(Modifier.width(12.dp))
                 Switch(checked = settings.companionEnabled, onCheckedChange = { viewModel.setCompanionEnabled(it) })
+            }
+
+            // His brain: offered here so parents know it exists; it downloads only if they tap
+            val context = LocalContext.current
+            if (settings.companionEnabled && DeviceModels.OFFERED && remember { DeviceModels.capable(context) }) {
+                val progress by viewModel.deviceModels.progress.collectAsState()
+                val gb = "%.1f".format(viewModel.deviceModels.totalBytes / 1e9)
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 520.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .border(BorderStroke(1.dp, Wood), RoundedCornerShape(20.dp))
+                        .padding(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        t("פוקי יכול לדבר באמת, עם מוח משלו שרץ בטאבלט הזה, בלי אינטרנט. צריך להוריד אותו פעם אחת ($gb GB, עדיף ב-Wi-Fi). בינתיים הוא מדבר עברית.",
+                            "Puki can really talk, with a brain of his own that runs on this tablet, with no internet. It's a one-time download ($gb GB, Wi-Fi is best). For now he speaks Hebrew."),
+                        style = MaterialTheme.typography.bodyLarge.copy(shadow = null),
+                        color = Ink
+                    )
+                    when {
+                        progress != null -> Text(
+                            t("מוריד ברקע. כשזה ייגמר, פוקי יתחיל לדבר.", "Downloading in the background. When it's done, Puki starts talking."),
+                            style = MaterialTheme.typography.bodyMedium.copy(shadow = null),
+                            fontWeight = FontWeight.Bold,
+                            color = Ink
+                        )
+                        viewModel.deviceModels.ready() -> Text(
+                            t("המוח של פוקי כבר כאן.", "Puki's brain is already here."),
+                            style = MaterialTheme.typography.bodyMedium.copy(shadow = null),
+                            fontWeight = FontWeight.Bold,
+                            color = Ink
+                        )
+                        else -> {
+                            Choice(t("הורדה עכשיו", "Download now"), selected = false) { viewModel.downloadDeviceBrain() }
+                            Text(
+                                t("או אחר כך, בהגדרות ההורים: \"פוקי במכשיר הזה\".", "Or later, in the parent settings: \"Puki on this device\"."),
+                                style = MaterialTheme.typography.bodyMedium.copy(shadow = null),
+                                color = Ink.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
+                }
             }
 
             Box(
