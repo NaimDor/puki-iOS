@@ -36,11 +36,14 @@ SOURCES = {
     "gutenberg": (RAW_EN / "gutenberg", "jsonl.gz", 0.15),
     "youtube": (RAW_EN / "youtube", "jsonl.gz", 0.15),
 }
-# One language only (PUKI_LANG=he): no English sources, and only that language's lines of Puki's
+# One language only (PUKI_LANG=he or en): that language's sources, and only its lines of Puki's
 LANG = os.environ.get("PUKI_LANG", "")
 if LANG == "he":
     SOURCES = {"hebrew": SOURCES["hebrew"]}
     HEBREW_SHARE = 1.0
+elif LANG == "en":
+    del SOURCES["hebrew"]
+    HEBREW_SHARE = 0.0  # (the English shares split the BPE sample, and the build takes every English token)
 # The mid-train: Puki's own training lines as a last source, MID_REPEAT times over, kept out of the stable
 # phase by an allowed-chunks list and mixed into one cooldown branch (PUKI_MID: the SFT jsonl files)
 MID = [Path(p) for p in os.environ.get("PUKI_MID", "").split(",") if p]
@@ -158,7 +161,7 @@ def build(a):
     chunks, meta = [], {}
     hebrew_tokens = 0
     for sid, (name, (_, fmt, share)) in enumerate(SOURCES.items()):
-        budget = 1e18 if share is None else hebrew_tokens * (1 - HEBREW_SHARE) / HEBREW_SHARE * share
+        budget = 1e18 if share is None or LANG == "en" else hebrew_tokens * (1 - HEBREW_SHARE) / HEBREW_SHARE * share
         n_tok = n_doc = 0
         with (out / f"{name}.bin").open("wb") as fbin:
             batch = []
