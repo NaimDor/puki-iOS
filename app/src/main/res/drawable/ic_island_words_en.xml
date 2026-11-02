@@ -1,0 +1,31 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- The Words island in English: the same book as ic_island_words, with A and B -->
+    <!-- Book body -->
+    <path android:fillColor="#42A5F5"
+        android:pathData="M15,20 L15,80 L85,80 L85,20Z"/>
+    <!-- Book spine -->
+    <path android:fillColor="#1E88E5"
+        android:pathData="M15,20 L15,80 L20,80 L20,20Z"/>
+    <!-- Left page -->
+    <path android:fillColor="#FAFAFA"
+        android:pathData="M20,22 L20,78 L48,78 L48,22Z"/>
+    <!-- Right page -->
+    <path android:fillColor="#FAFAFA"
+        android:pathData="M52,22 L52,78 L80,78 L80,22Z"/>
+    <!-- Center fold -->
+    <path android:fillColor="#E0E0E0"
+        android:pathData="M48,22 L48,78 L52,78 L52,22Z"/>
+    <!-- Letter A on the left page (read first) -->
+    <path android:strokeColor="#F44336" android:strokeWidth="4.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M26,58 L34,36 L42,58 M29,50 L39,50"/>
+    <!-- Letter B on the right page -->
+    <path android:strokeColor="#4CAF50" android:strokeWidth="4.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M59,36 L59,58 M59,36 L66,36 Q71,36 71,41.5 Q71,47 66,47 L59,47 M66,47 Q73,47 73,52.5 Q73,58 66,58 L59,58"/>
+    <!-- Sparkle stars -->
+    <path android:fillColor="#FFEB3B"
+        android:pathData="M75,15 L77,20 L82,18 L78,22 L82,26 L77,24 L75,28 L73,24 L68,26 L72,22 L68,18 L73,20Z"/>
+</vector>

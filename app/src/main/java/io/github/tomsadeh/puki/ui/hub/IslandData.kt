@@ -19,7 +19,9 @@ data class IslandDef(
     val color: Color,
     @DrawableRes val drawableRes: Int,
     val fractionalX: Float,
-    val fractionalY: Float
+    val fractionalY: Float,
+    /** The icon in English, where it differs (the Words book shows A and B, not א and ב). */
+    @DrawableRes val drawableResEn: Int? = null
 )
 
 val allIslands = listOf(
@@ -83,6 +85,7 @@ val allIslands = listOf(
         route = Routes.WORDS,
         color = Color(0xFF9FA8DA),
         drawableRes = R.drawable.ic_island_words,
+        drawableResEn = R.drawable.ic_island_words_en,
         fractionalX = 0.77f,
         fractionalY = 0.81f
     ),

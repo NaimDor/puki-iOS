@@ -54,6 +54,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.components.stillLayer
 import io.github.tomsadeh.puki.ui.hub.IslandDef
@@ -191,7 +192,7 @@ fun IslandButton(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = island.drawableRes),
+                    painter = painterResource(id = (if (language == Language.ENGLISH) island.drawableResEn else null) ?: island.drawableRes),
                     contentDescription = island.name.en,
                     modifier = Modifier.size(84.dp)
                 )
