@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Puki · בודקים את פוקי</title>
+<meta name="description" content="Help Puki reach Google Play: join the testers' group, opt in, and keep the game installed for 14 days. A free Hebrew/English toddler game with no ads.">
+<link rel="icon" href="puki.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --sand: #fff3e0; --ink: #3e2723; --muted: #6d5d57; --grass: #43a047; --sun: #ffca28; --shadow: 0 8px 24px rgba(62, 39, 35, 0.10); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: "Rubik", system-ui, "Segoe UI", Arial, sans-serif; color: var(--ink); background: var(--sand); line-height: 1.65; font-size: 17px; }
+  html[data-lang="he"] [lang="en"], html[data-lang="en"] [lang="he"] { display: none !important; }
+  a { color: #0277bd; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
+  header { background: linear-gradient(180deg, #87ceeb, #e1f5fe); padding: 18px 0 28px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; text-decoration: none; color: var(--ink); }
+  .brand img { width: 44px; height: 44px; }
+  .lang { font: inherit; font-size: 15px; font-weight: 500; border: 2px solid rgba(62, 39, 35, 0.15); background: rgba(255, 255, 255, 0.7); color: var(--ink); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+  h1 { font-size: clamp(28px, 4vw, 40px); margin: 22px 0 6px; }
+  .lead { color: var(--muted); margin: 0; font-size: 18px; }
+  main { padding: 26px 0 40px; }
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  ol.steps li { counter-increment: s; background: #fff; border-radius: 18px; padding: 16px 18px; box-shadow: var(--shadow); position: relative; padding-inline-start: 64px; }
+  ol.steps li::before { content: counter(s); position: absolute; inset-inline-start: 16px; top: 14px; width: 34px; height: 34px; border-radius: 50%; background: var(--sun); font-weight: 700; display: grid; place-items: center; }
+  ol.steps b { display: block; font-size: 19px; }
+  .btn { display: inline-block; margin-top: 10px; background: var(--grass); color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 999px; font-weight: 700; }
+  .note { background: #fff8e1; border: 2px solid #ffe082; border-radius: 16px; padding: 12px 16px; margin-top: 22px; }
+  h2 { font-size: 22px; margin: 30px 0 6px; }
+  ul { padding-inline-start: 22px; }
+  li { margin: 4px 0; }
+  footer { padding: 22px 0 34px; color: var(--muted); font-size: 15px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <a class="brand" href="./"><img src="puki.svg" alt=""> <span lang="he">פוקי</span><span lang="en">Puki</span></a>
+      <button class="lang" id="lang" type="button"><span lang="he">English</span><span lang="en">עברית</span></button>
+    </div>
+    <h1><span lang="he">עוזרים לפוקי להגיע ל-Google Play</span><span lang="en">Help Puki reach Google Play</span></h1>
+    <p class="lead"><span lang="he">לפני שמשחק חדש עולה לחנות, Google מבקשת שלפחות 12 אנשים יבדקו אותו במשך 14 יום. זה לוקח שתי דקות, ופוקי חינמי לתמיד, בלי פרסומות ובלי רכישות.</span><span lang="en">Before a new game goes on the store, Google asks for at least 12 people to test it for 14 days. It takes two minutes, and Puki is free forever, with no ads and no purchases.</span></p>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <ol class="steps">
+      <li><b><span lang="he">מצטרפים לקבוצת הבודקים</span><span lang="en">Join the testers' group</span></b>
+        <span lang="he">עם אותו חשבון Google שבטלפון או בטאבלט. לא תקבלו ממנה מיילים, והחברים בה לא רואים זה את זה.</span>
+        <span lang="en">With the same Google account your phone or tablet uses. You won't get emails from it, and members can't see each other.</span><br>
+        <a class="btn" href="https://groups.google.com/g/puki-testers"><span lang="he">להצטרפות לקבוצה</span><span lang="en">Join the group</span></a></li>
+      <li><b><span lang="he">נרשמים לבדיקה</span><span lang="en">Become a tester</span></b>
+        <span lang="he">פותחים את הקישור ולוחצים "הצטרפות לבדיקה" (באנגלית: <bdi dir="ltr">Become a tester</bdi>).</span>
+        <span lang="en">Open the link and tap "Become a tester".</span><br>
+        <a class="btn" href="https://play.google.com/apps/testing/io.github.tomsadeh.puki"><span lang="he">לרישום לבדיקה</span><span lang="en">Become a tester</span></a></li>
+      <li><b><span lang="he">מתקינים, ומשאירים 14 יום</span><span lang="en">Install, and keep it for 14 days</span></b>
+        <span lang="he">מתקינים את פוקי מ-Google Play, ומשאירים אותו מותקן 14 יום ברצף. Google בודקת שהבדיקה אמיתית, אז כדאי לפתוח אותו מדי פעם, ואם יש לכם פעוט, לתת לו לשחק.</span>
+        <span lang="en">Install Puki from Google Play and keep it installed for 14 days in a row. Google checks the testing is real, so open it now and then, and if you have a toddler, let them play.</span><br>
+        <a class="btn" href="https://play.google.com/store/apps/details?id=io.github.tomsadeh.puki"><span lang="he">לפוקי ב-Google Play</span><span lang="en">Puki on Google Play</span></a></li>
+    </ol>
+
+    <div class="note"><span lang="he">אם הקישורים בשלבים 2 ו-3 עוד לא עובדים, הבדיקה עדיין מחכה לאישור של Google. נסו שוב בעוד יום-יומיים.</span><span lang="en">If the links in steps 2 and 3 don't work yet, the test is still waiting for Google's approval. Try again in a day or two.</span></div>
+
+    <h2><span lang="he">למי זה מתאים</span><span lang="en">Who it's for</span></h2>
+    <ul lang="he">
+      <li>טלפונים וטאבלטים עם אנדרואיד 8 ומעלה (טאבלט הכי כיף). לא ל-iPhone או ל-iPad.</li>
+      <li>פעוטות בגילים 2–4, בעברית ובאנגלית. גם בלי פעוט אפשר לעזור: מספיק להתקין ולפתוח מדי פעם.</li>
+      <li>פוקי מדבר באמת עם מוח משלו שרץ במכשיר, בינתיים בעברית, במכשירים של 64 ביט עם כ-3GB זיכרון ומעלה (הורדה של כחצי GB מההגדרות של ההורים). בלעדיו כל המשחקים עובדים, עם הקול המוקלט של פוקי.</li>
+    </ul>
+    <ul lang="en">
+      <li>Phones and tablets with Android 8 or newer (a tablet is the most fun). Not for iPhone or iPad.</li>
+      <li>Toddlers aged 2–4, in Hebrew and English. No toddler? You can still help: install it and open it now and then.</li>
+      <li>Puki really talks with a brain of his own that runs on the device, for now in Hebrew, on 64-bit devices with about 3 GB of memory or more (a download of about half a GB from the parent settings). Without it every game works, with Puki's recorded voice.</li>
+    </ul>
+
+    <h2><span lang="he">משהו לא עבד?</span><span lang="en">Something didn't work?</span></h2>
+    <p><span lang="he">כתבו ל-<a href="mailto:hello@pukiparrot.com">hello@pukiparrot.com</a>. כל הערה עוזרת. ומה פוקי שומר ומה לא: <a href="privacy.html">מדיניות הפרטיות</a>.</span>
+      <span lang="en">Write to <a href="mailto:hello@pukiparrot.com">hello@pukiparrot.com</a>. Every note helps. What Puki keeps and what he doesn't: <a href="privacy.html">privacy policy</a>.</span></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap"><a href="./"><span lang="he">לאתר של פוקי</span><span lang="en">Puki's website</span></a></div>
+</footer>
+
+<script>
+  const root = document.documentElement;
+  function setLang(lang) {
+    root.dataset.lang = lang;
+    root.lang = lang;
+    root.dir = lang === "he" ? "rtl" : "ltr";
+    try { localStorage.setItem("puki-lang", lang); } catch (e) {}
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("puki-lang"); } catch (e) {}
+  setLang(saved || ((navigator.language || "").toLowerCase().startsWith("he") ? "he" : "en"));
+  document.getElementById("lang").addEventListener("click", () => setLang(root.dataset.lang === "he" ? "en" : "he"));
+</script>
+</body>
+</html>
