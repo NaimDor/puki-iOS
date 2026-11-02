@@ -85,17 +85,46 @@ def rows(path):
                 yield row[0], i
 
 
-def parquet_rows(folder):
-    """FineWeb-2's shards: the "text" column, in file order."""
+def parquet_part(task):
+    """One slice of a FineWeb-2 shard (50 row groups, 50k documents), cleaned in a worker and written to
+    its own file, so nothing big passes between processes. FineWeb-2 is MinHash-deduplicated already."""
+    import pyarrow.parquet as pq
+    f, n, first, last, out = task
+    why, written = collections.Counter(), 0
+    pf = pq.ParquetFile(f)
+    with gzip.open(out + ".tmp", "wt", encoding="utf-8") as fh:
+        for rg in range(first, last):
+            for k, t in enumerate(pf.read_row_group(rg, columns=["text"]).column("text").to_pylist()):
+                text, reason = clean((t or "", n * 10 ** 8 + rg * 10 ** 4 + k))
+                why[reason] += 1
+                if text:
+                    fh.write(json.dumps({"text": text}, ensure_ascii=False) + "\n")
+                    written += len(text.encode("utf-8"))
+    os.replace(out + ".tmp", out)
+    return why, written
+
+
+def clean_parquet(a):
+    """Every 50 row groups of every shard as one task; a rerun skips the slices already written."""
     import pathlib
     import pyarrow.parquet as pq
-    i = 0
-    for f in sorted(pathlib.Path(folder).rglob("*.parquet")):
-        for batch in pq.ParquetFile(f).iter_batches(columns=["text"], batch_size=4096):
-            for t in batch.column("text").to_pylist():
-                if t:
-                    yield t, i
-                i += 1
+    tasks = []
+    for n, f in enumerate(sorted(pathlib.Path(a.parquet).rglob("*.parquet"))):
+        groups = pq.ParquetFile(f).metadata.num_row_groups
+        for first in range(0, groups, 50):
+            out = os.path.join(a.out, f"hebrew-{n:03d}-{first:05d}.json.gz")
+            if not os.path.exists(out):
+                tasks.append((str(f), n, first, min(groups, first + 50), out))
+    why, written = collections.Counter(), 0
+    with multiprocessing.Pool(a.workers, init, (a.keep,)) as pool:
+        for i, (w, size) in enumerate(pool.imap_unordered(parquet_part, tasks)):
+            why.update(w)
+            written += size
+            print(f"{i + 1}/{len(tasks)}", f"{written / 1e9:.2f} GB", dict(why), flush=True)
+            if written > a.max_gb * 1e9:
+                pool.terminate()
+                break
+    print(f"done: {written / 1e9:.2f} GB", dict(why), flush=True)
 
 
 def main():
@@ -109,11 +138,13 @@ def main():
     ap.add_argument("--workers", type=int, default=max(2, (os.cpu_count() or 4) - 4))
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
+    if a.parquet:
+        return clean_parquet(a)
     why, seen = collections.Counter(), set()
     written = shard = in_shard = 0
     out = gzip.open(os.path.join(a.out, "hebrew-0000.json.gz"), "wt", encoding="utf-8")
     with multiprocessing.Pool(a.workers, init, (a.keep,)) as pool:
-        for n, (text, reason) in enumerate(pool.imap(clean, rows(a.csv) if a.csv else parquet_rows(a.parquet), chunksize=256)):
+        for n, (text, reason) in enumerate(pool.imap(clean, rows(a.csv), chunksize=256)):
             if text:
                 key = zlib.crc32(text[:400].encode("utf-8", "ignore"))
                 if key in seen:
