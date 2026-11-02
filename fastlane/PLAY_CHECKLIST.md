@@ -117,7 +117,9 @@ understood by the brain on the device and not kept, and the name and drawings st
 - What does go out, none of it user data: the model download from Hugging Face and GitHub (only
   when a parent taps it), and in the GitHub flavor only, the daily update check (the play
   flavor has none). A report to the developer goes from the parent's own email app, written and
-  sent by them; Play treats that as the user's own action, not collection.
+  sent by them, and holds Puki's line and the game moment, not the child's words (ReportCard's
+  share text); Play treats that as the user's own action, not collection. The child's words are
+  kept in memory only, for the parent's list, and never written to a file.
 - With "No", the form skips the data types, encryption and deletion questions. If it still asks
   about deletion: nothing is held by the developer; uninstalling deletes everything.
 

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Puki code signing · חתימת הקוד של פוקי</title>
-<meta name="description" content="How Puki's files are signed: the Android app and the PC brain's updates with Puki's own keys; Puki.exe is built from this repository and isn't code-signed yet.">
+<meta name="description" content="How Puki's files are signed and checked: the Android app with Puki's own key, and the device brain's model files pinned by SHA-256.">
 <link rel="icon" href="puki.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,24 +41,24 @@
       <button class="lang" id="lang" type="button"><span lang="he">English</span><span lang="en">עברית</span></button>
     </div>
     <h1><span lang="he">מדיניות חתימת קוד</span><span lang="en">Code signing policy</span></h1>
-    <p class="date"><span lang="he">עודכן ב-17 באוקטובר 2026</span><span lang="en">Updated 17 October 2026</span></p>
+    <p class="date"><span lang="he">עודכן ב-2 בנובמבר 2026</span><span lang="en">Updated 2 November 2026</span></p>
   </div>
 </header>
 
 <main>
   <div class="wrap">
     <div class="short">
-      <p lang="he"><b>מצב:</b> Puki.exe עדיין לא חתום בחתימת קוד של Windows, ולכן Windows עשוי להציג אזהרה בהפעלה הראשונה ("Windows הגן על המחשב": "מידע נוסף" ואז "הפעל בכל זאת"). האפליקציה ועדכוני המוח כן חתומים, כמתואר כאן.</p>
-      <p lang="en"><b>Status:</b> Puki.exe isn't code-signed for Windows yet, so Windows may warn the first time it runs ("Windows protected your PC": "More info", then "Run anyway"). The app and the brain's updates are signed, as described here.</p>
+      <p lang="he"><b>בקצרה:</b> האפליקציה חתומה במפתח של פוקי, וכל קובץ של המוח שבמכשיר נבדק מול טביעת SHA-256 קבועה כשהוא יורד. תוכנת המחשב (Puki.exe) יצאה משימוש בגרסה 0.9.0.</p>
+      <p lang="en"><b>In short:</b> the app is signed with Puki's key, and every file of the device brain is checked against a fixed SHA-256 fingerprint when it downloads. The PC program (Puki.exe) was retired in 0.9.0.</p>
     </div>
 
-    <h2><span lang="he">מה נחתם</span><span lang="en">What is signed</span></h2>
-    <p lang="he"><b>האפליקציה לאנדרואיד</b> נחתמת במפתח של פוקי עצמו, ועדכון של האפליקציה מותקן רק אם הוא חתום באותו מפתח.</p>
-    <p lang="en"><b>The Android app</b> is signed with Puki's own key, and an update to the app installs only if it's signed with that same key.</p>
-    <p lang="he"><b>עדכוני המוח במחשב</b> (<code>install.py --update</code>) נחתמים במפתח העדכונים של פוקי, והחתימה והגרסה נבדקות לפני שמשהו מותקן.</p>
-    <p lang="en"><b>The PC brain's updates</b> (<code>install.py --update</code>) are signed with Puki's update key, and the signature and version are checked before anything is installed.</p>
-    <p lang="he"><b>Puki.exe</b>, המוח של פוקי למחשב עם Windows, נבנה מהקוד במאגר <a href="https://github.com/TomSadeh/puki">TomSadeh/puki</a>, וגם GitHub Actions בונה אותו מתג הגרסה (<a href="https://github.com/TomSadeh/puki/blob/main/.github/workflows/puki-exe.yml">תהליך הבנייה</a>), כך שאפשר לבדוק שהוא נבנה מהקוד הזה. ה-SHA-256 שלו מופיע בכל גרסה ב-<a href="https://github.com/TomSadeh/puki/releases">GitHub Releases</a>.</p>
-    <p lang="en"><b>Puki.exe</b>, Puki's brain for Windows PCs, is built from the source in <a href="https://github.com/TomSadeh/puki">TomSadeh/puki</a>, and GitHub Actions builds it from the release's tag too (<a href="https://github.com/TomSadeh/puki/blob/main/.github/workflows/puki-exe.yml">the build workflow</a>), so anyone can check it comes from this code. Its SHA-256 is listed with each release on <a href="https://github.com/TomSadeh/puki/releases">GitHub Releases</a>.</p>
+    <h2><span lang="he">מה נחתם ומה נבדק</span><span lang="en">What is signed and checked</span></h2>
+    <p lang="he"><b>האפליקציה לאנדרואיד</b> נחתמת במפתח של פוקי עצמו, ועדכון של האפליקציה מותקן רק אם הוא חתום באותו מפתח. טביעת התעודה (SHA-256): <code>a799cab5bcf83c20c754490f8d0eb271cf844e2b7e69518760789f2a96eb3c3d</code></p>
+    <p lang="en"><b>The Android app</b> is signed with Puki's own key, and an update to the app installs only if it's signed with that same key. The certificate's SHA-256: <code>a799cab5bcf83c20c754490f8d0eb271cf844e2b7e69518760789f2a96eb3c3d</code></p>
+    <p lang="he"><b>המוח שבמכשיר</b> (Brains, ‏Beak, הקול והאוזניים) יורד מ-Hugging Face ומ-GitHub, וכל קובץ נבדק מול הגודל וטביעת ה-SHA-256 שקבועים בתוך האפליקציה (<code>DeviceModels.kt</code>). קובץ שלא מתאים נמחק ולא נטען.</p>
+    <p lang="en"><b>The device brain</b> (Brains, Beak, the voice and the ears) downloads from Hugging Face and GitHub, and every file is checked against the size and SHA-256 fixed inside the app (<code>DeviceModels.kt</code>). A file that doesn't match is deleted and never loaded.</p>
+    <p lang="he"><b>Puki.exe</b> והמוח למחשב יצאו משימוש בגרסה 0.9.0, ולא נבנים יותר. גרסאות ישנות שלהם נשארות בדף הגרסאות ב-GitHub.</p>
+    <p lang="en"><b>Puki.exe</b> and the PC brain were retired in 0.9.0 and are no longer built. Their old versions remain on the GitHub releases page.</p>
 
     <h2><span lang="he">תפקידים</span><span lang="en">Team roles</span></h2>
     <ul lang="he">
@@ -73,8 +73,8 @@
     <h2><span lang="he">פרטיות</span><span lang="en">Privacy policy</span></h2>
     <p lang="he">התוכנה הזו לא מעבירה שום מידע למערכות אחרות ברשת, אלא אם המשתמש או מי שמתקין או מפעיל אותה ביקש זאת במפורש.</p>
     <p lang="en">This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.</p>
-    <p lang="he">בפועל: ההתקנה מורידה את המודלים והכלים (כל קובץ נבדק מול SHA-256 קבוע מראש) מ-GitHub ומ-Hugging Face; עדכון בודק את GitHub Releases רק כשמבקשים אותו; והמוח מדבר רק עם הטאבלט של המשפחה ברשת הביתית. הפרטים ב<a href="privacy.html">מדיניות הפרטיות</a>.</p>
-    <p lang="en">In practice: setup downloads the models and tools (every file checked against a SHA-256 fixed in advance) from GitHub and Hugging Face; an update checks GitHub Releases only when asked to; and the brain talks only to the family's tablet on the home network. The details are in the <a href="privacy.html">privacy policy</a>.</p>
+    <p lang="he">בפועל: האפליקציה בודקת ב-GitHub אם יש גרסה חדשה (רק בגרסה מ-GitHub), ומורידה את המוח מ-Hugging Face ומ-GitHub רק כשההורים לוחצים על ההורדה. שום מידע על הילדים לא יוצא מהמכשיר. <a href="privacy.html">מדיניות הפרטיות</a></p>
+    <p lang="en">In practice: the app checks GitHub for a new version (in the GitHub build only), and downloads the brain from Hugging Face and GitHub only when the parents tap the download. Nothing about the child leaves the device. <a href="privacy.html">Privacy policy</a></p>
   </div>
 </main>
 
