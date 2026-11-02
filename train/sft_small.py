@@ -137,7 +137,8 @@ def main():
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--run", required=True)
     ap.add_argument("--tok", default=r"C:\data\pretrain\puki-tok")
-    ap.add_argument("--data", default=str(HERE / "data" / "final.jsonl"))
+    ap.add_argument("--data", nargs="+", default=[str(HERE / "data" / "final.jsonl")],
+                    help="training files (build.py's top-ups too; final.py's known text errors are left out)")
     ap.add_argument("--heldout", default=str(HERE / "data" / "final_heldout.jsonl"))
     ap.add_argument("--out", default=r"C:\data\pretrain\puki-sft")
     ap.add_argument("--epochs", type=int, default=3)
@@ -145,7 +146,10 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--seq", type=int, default=256)
     ap.add_argument("--samples", type=int, default=200)
+    ap.add_argument("--truth-samples", type=int, default=400,
+                    help="also this many held-out silly, silly_fix and recap inputs (every round's), for the truth checks")
     ap.add_argument("--steps", type=int, default=0, help="stop after this many steps (a quick try)")
+    ap.add_argument("--eval-only", action="store_true", help="score --ckpt (a fine-tuned best.pt too) and stop")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args()
     from tokenizers import Tokenizer
@@ -154,11 +158,15 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tok = Tokenizer.from_file(str(Path(a.tok) / "tokenizer.json"))
     eot = tok.token_to_id("<|endoftext|>")
-    rows = [json.loads(l) for l in open(a.data, encoding="utf-8")]
+    from final import BAD_TEXT
+    rows = [r for name in a.data for r in map(json.loads, open(name, encoding="utf-8")) if not BAD_TEXT.search(r.get("line", ""))]
     held_rows = [json.loads(l) for l in open(a.heldout, encoding="utf-8")]
     # The pretrain's held-out half (pt_corpus.references): the same inputs it was scored on
     held_rows = [r for r in held_rows if int(hashlib.sha1(r["input"].encode()).hexdigest()[:8], 16) % 2]
     refs = json.loads((Path(a.tok) / "reference-heldout.json").read_text(encoding="utf-8"))
+    # (train_heldout is final_heldout before final.py; the pilots and old versions aren't held-out sets of their own)
+    truth_rows = [r for name in sorted((HERE / "data").glob("*_heldout.jsonl")) if not name.name.startswith(("pilot", "train_", "look_pilot"))
+                  for r in map(json.loads, open(name, encoding="utf-8")) if r["task"] in ("silly", "silly_fix", "recap")]
     train = examples(tok, rows, eot, a.seq)
     model = load_model(a.ckpt, device)
     print(f"{a.run}: {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M params, {len(train)} examples, "
@@ -175,7 +183,9 @@ def main():
     def evaluate(step):
         loss = reference_loss(model, refs, device)
         made = samples(model, tok, held_rows, eot, device, a.samples, a.seed)
-        rate, by_task, gate, gate_n, truths = judge_samples(made)
+        rate, by_task, gate, gate_n, _ = judge_samples(made)
+        # The truth checks on many more inputs: a few dozen can't show a change of a few points
+        _, _, _, _, truths = judge_samples(made + samples(model, tok, truth_rows, eot, device, a.truth_samples, a.seed + 1))
         row = {"step": step, "epoch": round(step / per_epoch, 2), "ref_heldout": loss, "filter_pass": rate,
                "by_task": by_task, "gate": gate, "gate_n": gate_n, "truth": truths, "time": time.strftime("%H:%M")}
         log.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -188,6 +198,8 @@ def main():
         return loss
 
     best = evaluate(0)
+    if a.eval_only:
+        return
     torch.save({"model": model.state_dict(), "config": model.config.to_dict()}, out / "best.pt")
     order, pos, t0 = list(range(len(train))), len(train), time.time()
     for step in range(1, total + 1):

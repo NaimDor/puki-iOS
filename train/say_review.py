@@ -50,6 +50,8 @@ def review(item):
         answer = teacher.ask_json(teacher.JUDGE, SYSTEM, user, temperature=0.2)
     except Exception as e:
         return item, [], f"failed: {type(e).__name__}"
+    if not isinstance(answer, dict):  # (no answer after the retries: the line stays as it was, marked unreviewed)
+        return item, [], "failed: no answer"
     words, parts = item["line"].split(), item["say"].split()
     kept = []
     for fix in answer.get("fixes", []):
