@@ -118,7 +118,9 @@ private class IdleBreathNode(var periodMillis: Int) : IdleNode() {
 private abstract class IdleNode : Modifier.Node(), LayoutModifierNode, CompositionLocalConsumerModifierNode {
     abstract fun GraphicsLayerScope.pose(clock: AmbientClock)
 
-    private val layer: GraphicsLayerScope.() -> Unit = { pose(currentValueOf(LocalAmbientClock)) }
+    // Compose may re-run the layer during a measure pass while the node is leaving, when locals can't be
+    // read (it crashed between questions in Counting); a detached node isn't drawn, so it skips the pose
+    private val layer: GraphicsLayerScope.() -> Unit = { if (isAttached) pose(currentValueOf(LocalAmbientClock)) }
 
     override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult {
         val placeable = measurable.measure(constraints)
