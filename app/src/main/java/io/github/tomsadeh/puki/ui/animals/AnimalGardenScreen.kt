@@ -155,6 +155,7 @@ fun AnimalGardenScreen(
                 // on a phone's short screen, where under it would leave the animal tiny
                 BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     val compact = maxHeight < 440.dp
+                    val stage = if (compact) minOf(maxHeight - 64.dp, 320.dp) else 320.dp  // (room under it for its name)
                     val animal: @Composable (Modifier) -> Unit = { m ->
                         Box(modifier = m, contentAlignment = Alignment.Center) {
                     if (shadowRound) DropZone(zoneId = SHADOW_ZONE, highlightColor = GrassGreen) {
@@ -163,7 +164,7 @@ fun AnimalGardenScreen(
                         zoneId = state.currentAnimal.id,
                         highlightColor = GrassGreen
                     ) {
-                        AnimalDisplay(animal = state.currentAnimal, reaction = animalReaction)
+                        AnimalDisplay(animal = state.currentAnimal, reaction = animalReaction, stage = stage)
                     }
                 }
                     }

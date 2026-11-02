@@ -206,7 +206,9 @@ fun PukiApp(
             if (++ticks % 6 == 0) saveClock()
         }
     }
-    LaunchedEffect(showTimeLimit) { companion.paused = showTimeLimit }
+    // The games hold still under the goodbye, and while the game is off screen
+    val gamePaused = showTimeLimit || !onScreen
+    LaunchedEffect(gamePaused) { companion.paused = gamePaused }
 
     val ambientClock = remember { AmbientClock() }
     LaunchedEffect(ambientClock) { ambientClock.run() }
@@ -221,7 +223,7 @@ fun PukiApp(
             LocalMusicPlayer provides musicPlayer,
             LocalVoicePlayer provides voicePlayer,
             LocalCompanion provides companion,
-            LocalGamePaused provides showTimeLimit,
+            LocalGamePaused provides gamePaused,
             LocalLayoutDirection provides layoutDirection
         ) {
             Box(modifier = Modifier.fillMaxSize()) {

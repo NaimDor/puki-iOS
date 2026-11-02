@@ -46,6 +46,9 @@ class VoicePlayer(private val context: Context) {
     /** The line playing now's caller, told when it ends, or when stop() cuts it short. */
     private var playingDone: (() -> Unit)? = null
 
+    /** The game is on screen (MainActivity); away, lines are dropped rather than spoken to an empty room. */
+    var foreground = true
+
     /** While held (the microphone listening), new lines wait their turn instead of playing. */
     private var held = false
 
@@ -70,7 +73,7 @@ class VoicePlayer(private val context: Context) {
     }
 
     fun play(voiceKey: String, language: Language, onComplete: (() -> Unit)? = null) {
-        if (!enabled) {
+        if (!enabled || !foreground) {  // (away from the screen: dropped, but its caller still hears it's done)
             onComplete?.invoke()
             return
         }
@@ -129,7 +132,7 @@ class VoicePlayer(private val context: Context) {
 
     /** Plays an audio file (e.g. a companion line from the brain server). */
     fun playFile(file: java.io.File, onComplete: (() -> Unit)? = null) {
-        if (!enabled) {
+        if (!enabled || !foreground) {  // (away from the screen: dropped, but its caller still hears it's done)
             onComplete?.invoke()
             return
         }

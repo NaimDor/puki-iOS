@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -111,12 +112,15 @@ fun TimeLimitOverlay(
         0f, 1f, infiniteRepeatable(tween(2400), RepeatMode.Reverse), label = "twinkle"
     )
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures { } },  // the game underneath can't be played
         contentAlignment = Alignment.Center
     ) {
+        // On a phone's short screen: a smaller Puki and one line, clear of the grown-up's pill below
+        val compact = maxHeight < 480.dp
+        val parrot = minOf(200.dp, maxHeight * 0.4f)
         // The evening sky comes in over the game, with a moon and stars
         Canvas(modifier = Modifier.fillMaxSize()) {
             val e = evening.value
@@ -132,13 +136,13 @@ fun TimeLimitOverlay(
                 drawCircle(Color.White.copy(alpha = e * (0.4f + 0.6f * glow)), size.height * 0.006f, Offset(size.width * fx, size.height * fy))
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 16.dp, bottom = 72.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Image(
                     painter = painterResource(if (mouthOpen) R.drawable.ic_companion_parrot_talk else R.drawable.ic_companion_parrot),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(200.dp)
+                        .size(parrot)
                         .graphicsLayer {
                             transformOrigin = TransformOrigin(0.5f, 1f)
                             scaleY = 1f + 0.14f * yawn.value
@@ -150,7 +154,7 @@ fun TimeLimitOverlay(
                     painter = painterResource(R.drawable.ic_ui_wave),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(90.dp)
+                        .size(parrot * 0.45f)
                         .graphicsLayer {
                             transformOrigin = TransformOrigin(0.5f, 1f)
                             rotationZ = wave.value * 28f
@@ -158,18 +162,20 @@ fun TimeLimitOverlay(
                         }
                 )
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(if (compact) 8.dp else 20.dp))
             Text(
                 text = BilingualText("הגיע הזמן להפסקה!", "Time for a break!").resolve(language),
                 style = MaterialTheme.typography.headlineLarge,
                 color = CloudWhite.copy(alpha = evening.value)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = BilingualText("נתראה בקרוב!", "See you soon!").resolve(language),
-                style = MaterialTheme.typography.headlineMedium,
-                color = CloudWhite.copy(alpha = evening.value)
-            )
+            if (!compact) {  // (Puki says it anyway)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = BilingualText("נתראה בקרוב!", "See you soon!").resolve(language),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = CloudWhite.copy(alpha = evening.value)
+                )
+            }
         }
         // For the grown-up: a long press closes it (small and out of the way)
         LongPressGate(onUnlocked = onDismiss, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)) {

@@ -53,7 +53,7 @@ class MusicPlayer(val context: Context) {
             player.setOnPreparedListener {
                 if (mediaPlayer !== it) return@setOnPreparedListener  // another track was picked meanwhile
                 prepared = true
-                if (enabled && !held) it.start()
+                if (enabled && !held && foreground) it.start()
                 fadeTo(it, target())
             }
             player.prepareAsync()  // (not on the main thread: a long track would stall the screen opening)
@@ -98,8 +98,11 @@ class MusicPlayer(val context: Context) {
         mediaPlayer?.takeIf { it.isPlaying }?.pause()
     }
 
+    /** The game is on screen (MainActivity); away, nothing starts the music. */
+    var foreground = true
+
     fun resume() {
-        if (!enabled || !prepared || held) return
+        if (!enabled || !prepared || held || !foreground) return
         mediaPlayer?.takeIf { !it.isPlaying }?.start()
     }
 

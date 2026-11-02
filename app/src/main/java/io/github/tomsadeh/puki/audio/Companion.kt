@@ -98,6 +98,13 @@ class Companion(
     /** The time limit's goodbye is up: the game underneath may not listen (or start talking). */
     var paused = false
 
+    /** The game is off screen (MainActivity): no waking the brain, and a reply that comes late isn't played. */
+    var backgrounded = false
+        set(value) {
+            field = value
+            if (value) wakeJob?.cancel()
+        }
+
     /** What's on screen right now, so the parrot has something to talk about when tapped. */
     private var scene = ""
 
@@ -214,7 +221,7 @@ class Companion(
     /** Checks for the server and wakes the brain if needed. Cheap to call on every game screen. */
     fun wake() {
         if (isReady && enabled) syncPack()  // lines a parent approved while the brain stayed awake
-        if (!enabled || wakeJob?.isActive == true || isReady) return
+        if (!enabled || backgrounded || wakeJob?.isActive == true || isReady) return
         if (address.isBlank() && !isEmulator() && !onDevice) return  // not set up yet
         wakeJob = scope.launch(Dispatchers.IO) {
             val state = health() ?: run { _status.value = CompanionStatus.OFF; return@launch }
@@ -481,6 +488,7 @@ class Companion(
             return false
         }
         if (audio.isEmpty()) return false  // no safe line this time
+        if (backgrounded) return false  // (it came after she left: nobody to hear it)
         // The PC sends OGG; the device brain makes WAV
         val ext = if (audio.size > 4 && String(audio, 0, 4, Charsets.US_ASCII) == "RIFF") "wav" else "ogg"
         // A line cut off by another voice never reaches the delete below: clear those first (they

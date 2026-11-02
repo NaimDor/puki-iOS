@@ -63,6 +63,23 @@ class MainActivity : ComponentActivity() {
         musicPlayer.resume()
     }
 
+    // Away from the screen, Puki is silent: no music coming back, no lines, no late replies
+    // (the games themselves wait too: PukiApp pauses them while off screen)
+    override fun onStart() {
+        super.onStart()
+        musicPlayer.foreground = true
+        voicePlayer.foreground = true
+        companion.backgrounded = false
+    }
+
+    override fun onStop() {
+        super.onStop()
+        musicPlayer.foreground = false
+        voicePlayer.foreground = false
+        voicePlayer.stop()
+        companion.backgrounded = true
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         sfxPlayer.release()

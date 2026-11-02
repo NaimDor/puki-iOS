@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.tomsadeh.puki.ui.components.popIn
 import androidx.compose.ui.unit.sp
@@ -48,7 +49,8 @@ import kotlinx.coroutines.launch
 fun AnimalDisplay(
     animal: AnimalDef,
     modifier: Modifier = Modifier,
-    reaction: ReactionState = rememberReactionState(animal.id)
+    reaction: ReactionState = rememberReactionState(animal.id),
+    stage: Dp = 320.dp  // the animal's stage; its name sits under it, so a short screen passes less
 ) {
     val language = LocalLanguage.current
     val voicePlayer = LocalVoicePlayer.current
@@ -74,7 +76,7 @@ fun AnimalDisplay(
         ) {
             Box(
                 modifier = Modifier
-                    .size(320.dp)
+                    .size(stage)
                     .clickable(interactionSource = interactionSource, indication = null) {
                         scope.launch {
                             isBouncing = true
@@ -98,7 +100,7 @@ fun AnimalDisplay(
                     painter = painterResource(id = animal.drawableRes),
                     contentDescription = animal.name.en,
                     modifier = Modifier
-                        .size(280.dp)
+                        .size(stage * 0.875f)
                         .reaction(reaction)
                         .idleBreathing()
                 )
