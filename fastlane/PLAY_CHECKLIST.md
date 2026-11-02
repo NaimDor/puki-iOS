@@ -8,7 +8,7 @@ expect the labels to differ a little.
 
 - [ ] Brains is on Hugging Face (`dtsj89/puki-brains`), with Beak and Syrinx, and
       `DeviceModels.OFFERED` is `true`, so settings offer the device brain the listing describes.
-- [ ] `Contact.REPORT_EMAIL` is set. Play's AI-generated content policy wants a way to flag
+- [x] `Contact.REPORT_EMAIL` is set (`hello+report@pukiparrot.com`, 0.9.1). Play's AI-generated content policy wants a way to flag
       offensive output to the developer from inside the app; that's the 🚩 in "What Puki said",
       and it only reaches you through this address.
 - [ ] `pukiVersion` is 0.9.0, and the baseline profile is regenerated (it still names the PC
@@ -19,7 +19,7 @@ expect the labels to differ a little.
 
 - [ ] Sign up at https://play.google.com/console as a **personal** account: a one-time **$25** fee,
       plus identity verification with a government ID.
-- [ ] Pick the developer name shown on the store, and a contact email. The email is shown
+- [ ] Pick the developer name shown on the store, and a contact email: `hello@pukiparrot.com`. The email is shown
       publicly, so a separate address is a good idea.
 
 ## 2. Create the app

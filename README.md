@@ -280,6 +280,7 @@ and memory on the device, and Google Play. See [ROADMAP.md](ROADMAP.md).
 Pull requests are welcome. The rules come from the audience: no failure states, nothing the
 child has to read, big targets, both languages, and nothing about the child leaves the device.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for what gets accepted and what a PR needs to show.
+Questions, or something Puki said that wasn't right: [hello@pukiparrot.com](mailto:hello@pukiparrot.com).
 
 ## License
 
