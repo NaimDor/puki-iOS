@@ -316,7 +316,7 @@
 </footer>
 
 <script>
-  // Language: what the visitor picked last time, else the browser's language
+  // Language: what the visitor picked last time, else Hebrew (the button switches)
   const root = document.documentElement;
   function setLang(lang) {
     root.dataset.lang = lang;
@@ -327,7 +327,7 @@
   }
   let saved = null;
   try { saved = localStorage.getItem("puki-lang"); } catch (e) {}
-  setLang(saved || ((navigator.language || "").toLowerCase().startsWith("he") ? "he" : "en"));
+  setLang(saved || "he");
   document.getElementById("lang").addEventListener("click", () => setLang(root.dataset.lang === "he" ? "en" : "he"));
 
   // Download links: the newest release's APK (all releases are pre-releases, which GitHub's

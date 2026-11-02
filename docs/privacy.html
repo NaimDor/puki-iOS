@@ -139,7 +139,7 @@
   }
   let saved = null;
   try { saved = localStorage.getItem("puki-lang"); } catch (e) {}
-  setLang(saved || ((navigator.language || "").toLowerCase().startsWith("he") ? "he" : "en"));
+  setLang(saved || "he");
   document.getElementById("lang").addEventListener("click", () => setLang(root.dataset.lang === "he" ? "en" : "he"));
 </script>
 </body>
