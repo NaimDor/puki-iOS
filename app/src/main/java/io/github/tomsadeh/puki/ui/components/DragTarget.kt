@@ -104,8 +104,13 @@ fun DragTarget(
             // The touch handling sits before the movement: measured on the part that stays put,
             // finger movement is exact (inside the moving part, each move would count for less)
             .pointerInput(itemId) {
+                // One piece at a time: a second finger on another piece while one is being dragged
+                // does nothing (the drag state is shared, so it would move and drop both)
+                var mine = false
                 detectDragGestures(
                     onDragStart = {
+                        mine = !(dragDropState.isDragging && dragDropState.draggedItemId != itemId)
+                        if (!mine) return@detectDragGestures
                         started()
                         isDragging = true
                         dragDropState.draggedItemId = itemId
@@ -114,12 +119,15 @@ fun DragTarget(
                         scope.launch { offsetAnim.stop() }  // grabbed while flying home: stay put
                     },
                     onDrag = { change, dragAmount ->
+                        if (!mine) return@detectDragGestures
                         change.consume()
                         dragDelta += dragAmount
                         dragDropState.dragPosition = rootPosition + offsetAnim.value + dragDelta +
                             Offset(size.width / 2f, size.height / 2f)
                     },
                     onDragEnd = {
+                        if (!mine) return@detectDragGestures
+                        mine = false
                         isDragging = false
                         val dropTarget = dragDropState.findDropTarget()
                         dragDropState.reset()
@@ -127,6 +135,8 @@ fun DragTarget(
                         finish(dropTarget)
                     },
                     onDragCancel = {
+                        if (!mine) return@detectDragGestures
+                        mine = false
                         isDragging = false
                         dragDropState.reset()
                         finish(null)

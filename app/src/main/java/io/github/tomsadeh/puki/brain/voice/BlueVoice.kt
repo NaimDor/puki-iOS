@@ -109,6 +109,7 @@ class BlueVoice(
 
     /** [phonemes] (IPA, as Renikud writes them) spoken: chunked, voiced, peak-limited. */
     fun voice(phonemes: String, speed: Float = 0.92f, totalStep: Int = 8): FloatArray? {
+        lastTimings.fill(0)
         var out = FloatArray(0)
         for (chunk in VoiceText.chunkText(phonemes)) out += infer(chunk, speed, totalStep)
         if (out.isEmpty()) return null
@@ -119,6 +120,12 @@ class BlueVoice(
     }
 
     fun idsFor(phonemeChunk: String): IntArray = VoiceText.encode(phonemeChunk, charToId, padId)
+
+    /** How many of the flow steps use classifier-free guidance; the rest run once, unguided (all, as BlueTTS does). */
+    var guidedSteps = Int.MAX_VALUE
+
+    /** Where the last [voice] call's time went, in ms: duration, text encoder, flow steps, vocoder (SquawkBench reads it). */
+    val lastTimings = LongArray(4)
 
     /** TextToSpeech._infer for one chunk, with classifier-free guidance (scale 4). */
     private fun infer(phonemeChunk: String, speed: Float, totalStep: Int): FloatArray {
@@ -132,12 +139,16 @@ class BlueVoice(
             val sTtl = f(styleTtl, *ttlShape)
             val sDp = f(styleDp, *dpShape)
 
+            var t0 = System.nanoTime()
+            fun lap(i: Int) { val now = System.nanoTime(); lastTimings[i] += (now - t0) / 1_000_000; t0 = now }
             val duration = dp.run(mapOf("text_ids" to textIds, "style_dp" to sDp, "text_mask" to textMask)).use {
                 (it.get(0).value as FloatArray)[0]
             } / max(speed, 1e-6f)
+            lap(0)
             val textEmb = textEnc.run(mapOf("text_ids" to textIds, "style_ttl" to sTtl, "text_mask" to textMask)).use {
                 flatten3(it.get(0).value)
             }
+            lap(1)
             val tEmb = f(textEmb, 1, 256, nTxt)
 
             // sample_noisy_latent
@@ -157,10 +168,15 @@ class BlueVoice(
                 val cur = f(floatArrayOf(step.toFloat()), 1)
                 val vCond = vectorEst.run(mapOf("noisy_latent" to x, "text_emb" to tEmb, "style_ttl" to sTtl, "text_mask" to textMask,
                     "latent_mask" to latentMask, "current_step" to cur, "total_step" to total)).use { flatten3(it.get(0).value) }
+                if (step >= guidedSteps) {
+                    xt = vCond  // (the graph takes the step itself: unguided, its answer is the next latent)
+                    continue
+                }
                 val vUncond = vectorEst.run(mapOf("noisy_latent" to x, "text_emb" to uTxt, "style_ttl" to uRf, "text_mask" to uMask,
                     "latent_mask" to latentMask, "current_step" to cur, "total_step" to total)).use { flatten3(it.get(0).value) }
                 xt = FloatArray(xt.size) { vUncond[it] + CFG_SCALE * (vCond[it] - vUncond[it]) }
             }
+            lap(2)
 
             // _prepare_vocoder_latent: de-normalize, then (24*6, T) -> (24, T*6)
             val z = FloatArray(xt.size)
@@ -172,6 +188,7 @@ class BlueVoice(
             }
             val latent = f(z, 1, latentDim.toLong(), (latLen * compressFactor).toLong())
             var wav = vocoder.run(mapOf("latent" to latent)).use { flattenAny(it.get(0).value) }
+            lap(3)
             if (wav.size > 2 * frame) wav = wav.copyOfRange(frame, wav.size - frame)
             return wav
         } finally {
@@ -184,7 +201,7 @@ class BlueVoice(
         renikud?.close()  // 311 MB of its own
     }
 
-    private fun wav(samples: FloatArray): ByteArray {
+    fun wav(samples: FloatArray): ByteArray {
         val data = ByteBuffer.allocate(samples.size * 2).order(ByteOrder.LITTLE_ENDIAN)
         for (s in samples) data.putShort((s.coerceIn(-1f, 1f) * 32767).toInt().toShort())
         return io.github.tomsadeh.puki.audio.wavBytes(data.array(), sampleRate)

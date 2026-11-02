@@ -11,6 +11,12 @@ import java.nio.ByteOrder
 fun hasMicPermission(context: Context) =
     ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
+/**
+ * Whether the microphone was refused since the game opened. Android stops asking after two
+ * refusals, so asking again would do nothing at all: Puki answers the tap with a reaction instead.
+ */
+var micRefused = false
+
 /** 16-bit mono PCM ([pcm], little-endian) at [rate] Hz, wrapped as a WAV file. */
 fun wavBytes(pcm: ByteArray, rate: Int): ByteArray {
     val header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN).apply {

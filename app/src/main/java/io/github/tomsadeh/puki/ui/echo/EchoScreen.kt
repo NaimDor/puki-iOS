@@ -51,6 +51,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import android.app.Application
 import io.github.tomsadeh.puki.ui.components.TalkingParrotImage
 import io.github.tomsadeh.puki.audio.hasMicPermission
+import io.github.tomsadeh.puki.audio.micRefused
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -117,7 +118,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     DisposableEffect(Unit) { onDispose { recorder.stopInBackground() } }
 
     // The microphone is asked for once, the first time she talks to Puki
-    val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> micRefused = !granted }
     fun hasMic() = hasMicPermission(context)
 
     // "Say something to Puki!", and again (twice at most) if she goes quiet for a while
@@ -156,7 +157,8 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     /** Starts listening; with [untilQuiet] it stops by itself once she pauses (a tap), else on release. */
     suspend fun listen(untilQuiet: Boolean): Boolean {
         if (!hasMic()) {
-            askMic.launch(Manifest.permission.RECORD_AUDIO)
+            // Refused already: he tilts his head rather than a dialog that won't come
+            if (micRefused) scope.launch { puki.oops() } else askMic.launch(Manifest.permission.RECORD_AUDIO)
             return false
         }
         voicePlayer.stop()  // so the microphone doesn't hear the app

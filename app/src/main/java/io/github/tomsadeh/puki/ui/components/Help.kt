@@ -45,23 +45,24 @@ class Help internal constructor() {
     private var misses = 0
     internal var onMiss: () -> Unit = {}
     internal var onAssisted: () -> Unit = {}
+    internal var missesCounted = true
 
-    /** The answer's shown: once a round, that's the game helping. */
-    internal fun hint() {
+    /** The answer's shown: once a round, that's the game helping ([assisted]: it counts against the level). */
+    internal fun hint(assisted: Boolean = true) {
         if (showHint) return
         showHint = true
-        onAssisted()
+        if (assisted) onAssisted()
     }
 
     fun touched() {
         lastTouch = SystemClock.uptimeMillis()
     }
 
-    /** A wrong try: after two, show the answer. */
+    /** A wrong try: after two, show the answer (counted once: the game has counted the misses already, if it does). */
     fun missed() {
         touched()
         onMiss()
-        if (++misses >= 2) hint()
+        if (++misses >= 2) hint(assisted = !missesCounted)
     }
 }
 
@@ -69,16 +70,19 @@ class Help internal constructor() {
  * Help for this round ([key]): after a quiet moment, [onNudge] (repeat the question); after a
  * second one, or two misses, [Help.showHint]. It stops nudging after three, so it never nags.
  * [active] pauses it (e.g. while the round is being celebrated); [onAssisted] hears when the answer
- * is shown, which counts against the level like a wrong try.
+ * is shown, which counts against the level like a wrong try. A game whose wrong taps don't count
+ * against the level by themselves says [missesCounted] = false, and then a hint after two misses
+ * counts too (otherwise it would count them twice).
  */
 @Composable
-fun rememberHelp(key: Any?, active: Boolean = true, onAssisted: () -> Unit = {}, onNudge: () -> Unit): Help {
+fun rememberHelp(key: Any?, active: Boolean = true, onAssisted: () -> Unit = {}, missesCounted: Boolean = true, onNudge: () -> Unit): Help {
     val help = remember(key) { Help() }
     val nudge by rememberUpdatedState(onNudge)
     val mood = LocalPukiMood.current
     val scope = rememberCoroutineScope()
     help.onMiss = { scope.launch { mood?.oops() } }
     help.onAssisted = onAssisted
+    help.missesCounted = missesCounted
     val paused = LocalGamePaused.current  // (the time limit's goodbye is up: no "where's the red one?" over it)
     LaunchedEffect(key, active, paused) {
         if (!active || paused) return@LaunchedEffect

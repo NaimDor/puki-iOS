@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.github.tomsadeh.puki.audio.hasMicPermission
+import io.github.tomsadeh.puki.audio.micRefused
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -86,7 +87,7 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
     DisposableEffect(Unit) { onDispose { recorder.stopInBackground() } }
 
     // Asked once; a parent approves the microphone the first time someone holds the parrot
-    val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> micRefused = !granted }
     fun hasMic() = hasMicPermission(context)
 
     LaunchedEffect(Unit) { companion.wake() }
@@ -163,7 +164,8 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
                             val hold = scope.launch {
                                 delay(300)
                                 if (!hasMic()) {
-                                    askMic.launch(Manifest.permission.RECORD_AUDIO)
+                                    // Refused already: he tilts his head rather than a dialog that won't come
+                                    if (micRefused) mood?.oops() else askMic.launch(Manifest.permission.RECORD_AUDIO)
                                 } else {
                                     // So the mic doesn't hear the app: silence now, and the game's
                                     // next lines wait until she's done

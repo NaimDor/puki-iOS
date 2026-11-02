@@ -120,7 +120,7 @@ fun PeekabooScreen(
             peeking = false
         }
     }
-    val help = rememberHelp(state.roundIndex, active = !state.found, onAssisted = viewModel.session::slip) { peek() }
+    val help = rememberHelp(state.roundIndex, active = !state.found, onAssisted = viewModel.session::slip, missesCounted = false) { peek() }
     // At the first level the animal gives itself away without being asked
     LaunchedEffect(state.roundIndex) {
         if (level == 1) {

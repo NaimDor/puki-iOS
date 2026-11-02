@@ -108,6 +108,9 @@ fun RoundCompleteSheet(
     }
     var earned by remember { mutableStateOf<StickerDef?>(null) }
     var stickerUp by remember { mutableStateOf(false) }
+    // The buttons wake once her sticker is safe in the album (or a moment in, with none): an early
+    // tap can't leave before she sees what she earned, now that it's counted as given
+    var buttonsLive by remember { mutableStateOf(false) }
     val flight = remember { Animatable(0f) }
     val door = rememberReactionState()
     var screenCentre by remember { mutableStateOf(Offset.Zero) }
@@ -124,7 +127,11 @@ fun RoundCompleteSheet(
         showContent = true
         showConfetti = !calm
         voicePlayer.play(voicePlayer.personalKey("voice_round_done", language), language)
-        if (sticker == null) return@LaunchedEffect
+        if (sticker == null) {
+            delay(1500)
+            buttonsLive = true
+            return@LaunchedEffect
+        }
 
         // Once her stars have landed: the sticker, big, then away into the album
         delay(1300L + starsEarned.coerceAtLeast(1) * 380L)
@@ -145,6 +152,7 @@ fun RoundCompleteSheet(
         flight.animateTo(1f, tween(if (calm) 1100 else 700, easing = FastOutSlowInEasing))
         stickerUp = false
         if (!calm) sfxPlayer.play(Sfx.STAR_COLLECT, 0.8f)
+        buttonsLive = true
         door.celebrate()
     }
 
@@ -174,8 +182,7 @@ fun RoundCompleteSheet(
             Text(
                 text = BilingualText("כל הכבוד!", "Great job!").resolve(language),
                 style = MaterialTheme.typography.headlineLarge,
-                color = Color(0xFF5D4037),
-                modifier = Modifier.idleBob(amount = 0.6f)
+                color = Color(0xFF5D4037)
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -194,15 +201,15 @@ fun RoundCompleteSheet(
                     color = Color(0xFF66BB6A),
                     label = BilingualText("המשך", "Continue"),
                     index = 0,
-                    pulse = true,
-                    onClick = onContinue
+                    pulse = buttonsLive,
+                    onClick = { if (buttonsLive) onContinue() }
                 ) { NextArrow() }
                 RoundButton(
                     color = Color(0xFFFFCA28),
                     label = BilingualText("בית", "Home"),
                     index = 1,
                     pulse = false,
-                    onClick = onHome
+                    onClick = { if (buttonsLive) onHome() }
                 ) {
                     Image(painter = painterResource(R.drawable.ic_word_house), contentDescription = null, modifier = Modifier.size(72.dp))
                 }
@@ -212,7 +219,7 @@ fun RoundCompleteSheet(
                     label = BilingualText("אלבום", "Album"),
                     index = 2,
                     pulse = false,
-                    onClick = openAlbum,
+                    onClick = { if (buttonsLive) openAlbum() },
                     modifier = Modifier
                         .onGloballyPositioned { doorCentre = it.boundsInRoot().center }
                         .reaction(door, jumpHeight = 18.dp)
