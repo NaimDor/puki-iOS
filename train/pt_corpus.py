@@ -20,8 +20,8 @@ import numpy as np
 import pyarrow.parquet as pq
 
 HERE = Path(__file__).resolve().parent
-RAW_EN = Path(r"C:\data\pretrain\pilot")
-RAW_HE = Path(r"C:\models\pt\hebrew")
+RAW_EN = Path(os.environ.get("PUKI_RAW_EN", r"C:\data\pretrain\pilot"))
+RAW_HE = Path(os.environ.get("PUKI_RAW_HE", r"C:\models\pt\hebrew"))
 SPECIAL = ["<|endoftext|>", "<|im_start|>", "<|im_end|>"]
 CHUNK = 512
 MIN_CHUNK = 64

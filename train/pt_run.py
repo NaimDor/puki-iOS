@@ -9,7 +9,7 @@ import os
 import sys
 from pathlib import Path
 
-HARNESS = Path(r"C:\Users\user\Documents\Skyrim Follower Mod\harness")
+HARNESS = Path(os.environ.get("PUKI_HARNESS", r"C:\Users\user\Documents\Skyrim Follower Mod\harness"))
 os.environ.setdefault("SKYSLOP_RUNS", r"C:\data\pretrain\puki-runs")
 sys.path.insert(0, str(HARNESS))
 

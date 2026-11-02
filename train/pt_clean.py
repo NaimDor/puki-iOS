@@ -4,6 +4,7 @@ can be picky: whole documents go at the first sign of adult, gambling or drug si
 or machine-spun text.
 
     python pt_clean.py --csv C:/models/pt/hedc4/HeDC4.csv --out C:/models/pt/hebrew --keep 0.4 --max-gb 14
+    python pt_clean.py --parquet ~/data/puki-pt/fineweb2 --out ~/data/puki-pt/hebrew --keep 1 --max-gb 40
 
 Writes <out>/hebrew-NNNN.json.gz ({"text": ...} per line, what pretrain/corpus.py reads) and prints
 why documents went.
@@ -84,9 +85,24 @@ def rows(path):
                 yield row[0], i
 
 
+def parquet_rows(folder):
+    """FineWeb-2's shards: the "text" column, in file order."""
+    import pathlib
+    import pyarrow.parquet as pq
+    i = 0
+    for f in sorted(pathlib.Path(folder).rglob("*.parquet")):
+        for batch in pq.ParquetFile(f).iter_batches(columns=["text"], batch_size=4096):
+            for t in batch.column("text").to_pylist():
+                if t:
+                    yield t, i
+                i += 1
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", required=True)
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--csv", help="HeDC4's CSV")
+    src.add_argument("--parquet", help="a folder of parquet shards with a text column (FineWeb-2's heb_Hebr)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--keep", type=float, default=0.4, help="the share of documents even looked at, spread over the file")
     ap.add_argument("--max-gb", type=float, default=14)
@@ -97,7 +113,7 @@ def main():
     written = shard = in_shard = 0
     out = gzip.open(os.path.join(a.out, "hebrew-0000.json.gz"), "wt", encoding="utf-8")
     with multiprocessing.Pool(a.workers, init, (a.keep,)) as pool:
-        for n, (text, reason) in enumerate(pool.imap(clean, rows(a.csv), chunksize=256)):
+        for n, (text, reason) in enumerate(pool.imap(clean, rows(a.csv) if a.csv else parquet_rows(a.parquet), chunksize=256)):
             if text:
                 key = zlib.crc32(text[:400].encode("utf-8", "ignore"))
                 if key in seen:
