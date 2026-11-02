@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Nothing leaves the tablet: no cloud backup and no copying to a new device (the child's name,
-     the pairing code, Puki's reports). allowBackup="false" alone doesn't stop device transfer on
+     the lines Puki recorded with it). allowBackup="false" alone doesn't stop device transfer on
      Android 12 and up. -->
 <data-extraction-rules>
     <cloud-backup>

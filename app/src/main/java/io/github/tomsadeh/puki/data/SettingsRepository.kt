@@ -1,7 +1,6 @@
 package io.github.tomsadeh.puki.data
 
 import androidx.datastore.preferences.core.floatPreferencesKey
-import io.github.tomsadeh.puki.data.models.DEFAULT_COMPANION_ADDRESS
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -35,9 +34,6 @@ class SettingsRepository(private val context: Context) {
         val CHILD_NAME = stringPreferencesKey("child_name")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val COMPANION_ENABLED = booleanPreferencesKey("companion_enabled")
-        val COMPANION_ADDRESS = stringPreferencesKey("companion_address")
-        val COMPANION_CODE = stringPreferencesKey("companion_code")
-        val COMPANION_PIN = stringPreferencesKey("companion_pin")
         val BRAIN_ON_DEVICE = booleanPreferencesKey("brain_on_device")
         val ANSWERS_OUT_LOUD = booleanPreferencesKey("answers_out_loud")
         val PLAYED_MS = longPreferencesKey("played_ms")
@@ -60,9 +56,6 @@ class SettingsRepository(private val context: Context) {
             onboardingDone = prefs[Keys.ONBOARDING_DONE] ?: false,
             loaded = true,
             companionEnabled = prefs[Keys.COMPANION_ENABLED] ?: true,
-            companionAddress = prefs[Keys.COMPANION_ADDRESS] ?: DEFAULT_COMPANION_ADDRESS,
-            companionCode = prefs[Keys.COMPANION_CODE] ?: "",
-            companionPin = prefs[Keys.COMPANION_PIN] ?: "",
             brainOnDevice = prefs[Keys.BRAIN_ON_DEVICE] ?: false,
             answersOutLoud = prefs[Keys.ANSWERS_OUT_LOUD] ?: true,
             hiddenIslands = prefs[Keys.HIDDEN_ISLANDS] ?: emptySet()
@@ -103,32 +96,6 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun updateCompanionEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { it[Keys.COMPANION_ENABLED] = enabled }
-    }
-
-    suspend fun updateCompanionAddress(address: String) {
-        context.settingsDataStore.edit {
-            // Another address may be another PC: its certificate is learned again on first use
-            if (it[Keys.COMPANION_ADDRESS] != address.trim()) it.remove(Keys.COMPANION_PIN)
-            it[Keys.COMPANION_ADDRESS] = address.trim()
-        }
-    }
-
-    /** All three from the dashboard's QR code at once: address, pairing code and certificate. */
-    suspend fun updateCompanionPairing(address: String, code: String, pin: String?) {
-        context.settingsDataStore.edit {
-            it[Keys.COMPANION_ADDRESS] = address.trim()
-            it[Keys.COMPANION_CODE] = code.trim().uppercase().take(20)
-            if (pin.isNullOrEmpty()) it.remove(Keys.COMPANION_PIN) else it[Keys.COMPANION_PIN] = pin
-        }
-    }
-
-    /** A certificate learned on first use; only kept if none is pinned yet. */
-    suspend fun learnCompanionPin(pin: String) {
-        context.settingsDataStore.edit { if (it[Keys.COMPANION_PIN].isNullOrEmpty()) it[Keys.COMPANION_PIN] = pin }
-    }
-
-    suspend fun updateCompanionCode(code: String) {
-        context.settingsDataStore.edit { it[Keys.COMPANION_CODE] = code.trim().uppercase().take(20) }
     }
 
     suspend fun updateGender(gender: Gender) {

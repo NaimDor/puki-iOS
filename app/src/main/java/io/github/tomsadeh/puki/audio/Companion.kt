@@ -1,9 +1,7 @@
 package io.github.tomsadeh.puki.audio
 
 import android.content.Context
-import android.os.Build
 import io.github.tomsadeh.puki.brain.Brain
-import io.github.tomsadeh.puki.brain.HttpBrain
 import io.github.tomsadeh.puki.data.models.Language
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +14,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import java.io.File
-import io.github.tomsadeh.puki.brain.PinnedTls
 import java.net.URLEncoder
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -26,19 +23,15 @@ enum class CompanionStatus { OFF, WAKING, READY }
 
 /**
  * How a try at saying a word went (Say it with Puki): nothing heard, another word, a near miss,
- * the word itself, or SPOKE: the child talked but the word couldn't be checked (PC off).
+ * the word itself, or SPOKE: the child talked but the word couldn't be checked (no brain awake).
  */
 enum class WordTry { SILENT, TRIED, CLOSE, WORD, SPOKE }
 
-/** Result of checking the PC from parent settings. */
-/** WRONG_PC: something answered at the address, but not with the paired PC's certificate. */
-enum class Connection { OK, WRONG_CODE, LOCKED_OUT, NOT_FOUND, WRONG_PC }
-
 /**
- * פוקי the parrot, whose words come from the "brain" server on a PC at home
- * (brain/ in this repo): Gemma writes a short line about what just happened and
- * BlueTTS voices it. Only reachable on the home network; whenever it isn't
- * (PC off, away from home, slow reply) callers fall back to the recorded lines.
+ * פוקי the parrot, whose words come from his brain on this device ([brain], see LocalBrain):
+ * Brains writes a short line about what just happened and BlueTTS voices it. Whenever there's
+ * no brain (not downloaded, switched off, still waking, slow reply) callers fall back to the
+ * recorded lines.
  */
 class Companion(
     private val context: Context,
@@ -55,27 +48,6 @@ class Companion(
     /** A line is on its way from the brain: thinking dots, so a slow answer isn't a silent one. */
     val thinking: StateFlow<Boolean> = _thinking
 
-    /** Lines for the game's moments that a parent approved on the PC, kept here with their audio. */
-    private val pack = LinePack(context.filesDir) { path -> pcBrain.request("GET", path, null, 8000, "") }
-    private var packSynced = 0L
-    private val packRead = scope.launch(Dispatchers.IO) { pack.load() }
-
-    /** Brings the approved lines up to date, at most once an hour (the PC answers even asleep). */
-    @Volatile private var packSyncing = false
-
-    private fun syncPack() {
-        if (onDevice || packSyncing || System.currentTimeMillis() - packSynced < 60 * 60 * 1000L) return
-        packSyncing = true
-        scope.launch(Dispatchers.IO) {
-            try {
-                // Only a sync that worked waits the hour; a failed one is tried again at the next game
-                if (runCatching { pack.sync() }.getOrDefault(false)) packSynced = System.currentTimeMillis()
-            } finally {
-                packSyncing = false
-            }
-        }
-    }
-
     /** True while the parrot listens on its own (after asking a question). */
     private val _listening = MutableStateFlow(false)
     val listening: StateFlow<Boolean> = _listening
@@ -85,13 +57,6 @@ class Companion(
             field = value
             if (!value) _status.value = CompanionStatus.OFF
         }
-    var address = ""
-    /** The pairing code shown on the PC; sent with every request. */
-    var code = ""
-    /** The PC's certificate fingerprint (from the QR code, or learned on first use; see [PinnedTls]). */
-    var pin = ""
-    /** Saves a fingerprint learned on first use (set by the app, to keep it in the settings). */
-    var onPinLearned: (String) -> Unit = {}
     var language = Language.HEBREW
     /** The parent lets the games listen for answers said out loud (see [listenForAnswer]). */
     var answersOutLoud = true
@@ -125,21 +90,12 @@ class Companion(
     val recentLines: StateFlow<List<SaidLine>> = _recentLines
 
     /**
-     * A parent says [line] wasn't right. Sent to the PC when there is one (its dashboard keeps
-     * them): each becomes a case to fix Puki by. The tablet keeps nothing of it (what she said
-     * stays off the tablet); the parent can also mail it to Puki's makers ([shareText]).
+     * A parent says [line] wasn't right: it's marked, and they can mail it to Puki's makers
+     * ([shareText]). The tablet keeps nothing of it (what she said stays off the tablet).
      */
     fun report(line: SaidLine) {
         if (line.reported) return
         _recentLines.value = _recentLines.value.map { if (it.id == line.id) it.copy(reported = true) else it }
-        val json = JSONObject().put("said", line.said).put("heard", line.heard).put("situation", line.situation)
-            .put("game", line.game).put("lang", line.lang).put("source", "tablet")
-            .put("t", java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()))
-        scope.launch(Dispatchers.IO) {
-            if (code.isNotBlank()) {
-                runCatching { pcBrain.request("POST", "/report", json.toString().toByteArray(Charsets.UTF_8), 5000, "application/json; charset=utf-8") }
-            }
-        }
     }
 
     /**
@@ -169,7 +125,7 @@ class Companion(
     }
 
     private fun recordSaid(route: String, body: ByteArray?) {
-        val said = brain.lastSaid() ?: return
+        val said = brain?.lastSaid() ?: return
         val situation = when (route) {
             "/say" -> runCatching { JSONObject(String(body ?: ByteArray(0), Charsets.UTF_8)).optString("situation") }.getOrDefault("")
             "/look" -> pick("ציור", "a drawing")
@@ -192,8 +148,12 @@ class Companion(
     private val voiceDir = File(context.filesDir, "voice")
 
     init {
-        // Reports were kept on the tablet too, with what she said; no longer (see report())
-        scope.launch(Dispatchers.IO) { File(context.filesDir, "reports.jsonl").delete() }
+        // Left by older versions: reports kept with what she said (see report()), and the lines
+        // a parent approved on the PC
+        scope.launch(Dispatchers.IO) {
+            File(context.filesDir, "reports.jsonl").delete()
+            File(context.filesDir, "pack").deleteRecursively()
+        }
     }
 
     /** Who's playing, from the app's settings. Sent with every request. */
@@ -211,21 +171,18 @@ class Companion(
     private var wakeJob: Job? = null
     private val recorder = MicRecorder()
 
-    /** The brain changed (PC or device): forget the old status and look again. */
+    /** The brain was switched on or off: forget the old status and look again. */
     fun recheck() {
         wakeJob?.cancel()
         _status.value = CompanionStatus.OFF
         wake()
     }
 
-    /** Checks for the server and wakes the brain if needed. Cheap to call on every game screen. */
+    /** Checks on the brain and wakes it if needed. Cheap to call on every game screen. */
     fun wake() {
-        if (isReady && enabled) syncPack()  // lines a parent approved while the brain stayed awake
-        if (!enabled || backgrounded || wakeJob?.isActive == true || isReady) return
-        if (address.isBlank() && !isEmulator() && !onDevice) return  // not set up yet
+        if (!enabled || backgrounded || brain == null || wakeJob?.isActive == true || isReady) return
         wakeJob = scope.launch(Dispatchers.IO) {
             val state = health() ?: run { _status.value = CompanionStatus.OFF; return@launch }
-            syncPack()
             if (state == "ready") {
                 _status.value = CompanionStatus.READY
                 refreshNameLines()
@@ -252,42 +209,16 @@ class Companion(
 
     private fun react(situation: String, fallback: () -> Unit) {
         remember(situation)
-        // A line the parent approved for this moment plays at once, with no wait for the brain;
-        // when the brain is awake, half the time it writes a fresh one instead
-        val approved = pack.pick(situation, lang(), childGirl)
-        if (!isReady) {
-            if (approved != null) playApproved(situation, approved) else fallback()
-            return
-        }
-        if (approved != null && kotlin.random.Random.nextBoolean()) {
-            playApproved(situation, approved)
-            return
-        }
         // Already writing a line: no second request behind it (taps would pile up, each answered late);
         // a moment that has its own recorded line plays that instead
-        if (_thinking.value) {
-            if (approved != null) playApproved(situation, approved) else fallback()
+        if (!isReady || _thinking.value) {
+            fallback()
             return
         }
         scope.launch {
             _thinking.value = true
             val said = try { say(situation) } finally { _thinking.value = false }
-            if (!said) {
-                if (approved != null) playApproved(situation, approved) else fallback()
-            }
-        }
-    }
-
-    /** Plays an approved pack line, and lists it on the report card like any other. */
-    private fun playApproved(situation: String, approved: Pair<LinePack.Line, File>) {
-        val (line, file) = approved
-        _recentLines.value = (_recentLines.value + SaidLine(System.nanoTime(), line.text, "", situation, game, lang())).takeLast(20)
-        _speaking.value = true
-        voicePlayer.playFile(file)
-        scope.launch {
-            delay(200)
-            while (voicePlayer.isPlaying()) delay(120)
-            _speaking.value = false
+            if (!said) fallback()
         }
     }
 
@@ -297,7 +228,7 @@ class Companion(
         "The child tapped you so you'd talk. $scene Say something short and cute about it."
     )
 
-    /** The child held the parrot and talked; [wav] is the recording. Whisper on the PC listens. */
+    /** The child held the parrot and talked; [wav] is the recording, for the brain's ears. */
     fun listen(wav: ByteArray, context: String = "") {
         if (!isReady || wav.size < 16000) return  // under half a second: nothing to send
         scope.launch {
@@ -380,8 +311,8 @@ class Companion(
 
     /**
      * Say it with Puki: listens for a few seconds while the child says [word]. Whether they
-     * spoke is decided here on the tablet, so tries count even with the PC off; when the PC is
-     * there, it also says whether the word was heard ([alsoCounts]: related words, like the
+     * spoke is decided here, so tries count even with no brain; when the brain is awake, it
+     * also says whether the word was heard ([alsoCounts]: related words, like the
      * animal's sound). Returns null if there's no microphone permission.
      */
     suspend fun listenForWord(word: String, alsoCounts: List<String>): WordTry? {
@@ -404,7 +335,7 @@ class Companion(
     /**
      * A game asked a question: listens a few seconds for the answer said out loud, and returns
      * what was heard ("" for silence or nothing clear), for [io.github.tomsadeh.puki.brain.SpokenAnswer]
-     * to match against the answers on screen ([hints], which Whisper then expects). Null when it
+     * to match against the answers on screen ([hints]). Null when it
      * can't listen: no microphone, the parent's setting off, or no brain awake to hear it.
      */
     suspend fun listenForAnswer(hints: List<String>): String? {
@@ -489,13 +420,11 @@ class Companion(
         }
         if (audio.isEmpty()) return false  // no safe line this time
         if (backgrounded) return false  // (it came after she left: nobody to hear it)
-        // The PC sends OGG; the device brain makes WAV
-        val ext = if (audio.size > 4 && String(audio, 0, 4, Charsets.US_ASCII) == "RIFF") "wav" else "ogg"
         // A line cut off by another voice never reaches the delete below: clear those first (they
         // may say the child's name, and nothing Puki said is kept)
         val file = withContext(Dispatchers.IO) {
             context.cacheDir.listFiles { f -> f.name.startsWith("companion_") }?.forEach { it.delete() }
-            File(context.cacheDir, "companion_${System.nanoTime()}.$ext").apply { writeBytes(audio) }
+            File(context.cacheDir, "companion_${System.nanoTime()}.wav").apply { writeBytes(audio) }
         }
         _speaking.value = true
         voicePlayer.playFile(file) { file.delete() }
@@ -515,7 +444,7 @@ class Companion(
 
     /**
      * Has the parrot record the lines that say the child's name ("כל הכבוד, ___!") and keeps
-     * them on the tablet, so they also play when the PC isn't reachable. Redone when the
+     * them on the tablet, so they play at once, and also with the brain off. Redone when the
      * name or gender changes; removed when the name is cleared.
      */
     private fun refreshNameLines() {
@@ -569,52 +498,15 @@ class Companion(
 
     private fun pick(he: String, en: String) = if (language == Language.ENGLISH) en else he
 
-    private fun baseUrl(address: String = this.address): String {
-        // The Android emulator reaches the PC it runs on at 10.0.2.2
-        val host = if (isEmulator()) "10.0.2.2:8790" else address.trim()
-        return "https://$host"
-    }
-
-    /** For parent settings: can the PC at [address] be reached with [code] (and is it the one in [pin])? */
-    suspend fun checkConnection(address: String, code: String, pin: String): Connection = withContext(Dispatchers.IO) {
-        var seen = ""
-        val result = runCatching {
-            val conn = PinnedTls.open(baseUrl(address) + "/health", pin) { seen = it }
-            conn.connectTimeout = 2000
-            conn.readTimeout = 4000  // a wrong code is answered after a deliberate 1 s delay
-            conn.setRequestProperty("X-Puki-Code", code.trim())
-            try {
-                when (conn.responseCode) {
-                    200 -> Connection.OK
-                    401 -> Connection.WRONG_CODE
-                    429 -> Connection.LOCKED_OUT
-                    else -> Connection.NOT_FOUND
-                }
-            } finally {
-                conn.disconnect()
-            }
-        }.getOrElse { e ->
-            if (generateSequence(e) { it.cause }.any { it is PinnedTls.WrongPc }) Connection.WRONG_PC else Connection.NOT_FOUND
-        }
-        if (result == Connection.OK && pin.isEmpty() && seen.isNotEmpty()) onPinLearned(seen)
-        result
-    }
-
-    private fun isEmulator() = Build.FINGERPRINT.contains("generic") || Build.MODEL.contains("sdk_gphone")
-
     private fun health(): String? {
         val bytes = request("GET", "/health", timeoutMs = 1500) ?: return null
         return runCatching { JSONObject(String(bytes)).getString("brain") }.getOrNull()
     }
 
-    /** The PC's brain over the home network, or this device's own (see [Brain]). */
-    private val pcBrain = HttpBrain({ baseUrl() }, { code }, { pin }, { onPinLearned(it) })
-    var deviceBrain: Brain? = null
-    /** Think on this device instead of the PC (parent settings; needs [deviceBrain]). */
-    var onDevice = false
-    private val brain: Brain get() = deviceBrain?.takeIf { onDevice } ?: pcBrain
+    /** This device's brain while it's switched on (parent settings, models downloaded); null: recorded lines only. */
+    @Volatile var brain: Brain? = null
 
-    /** Returns the response body (empty for 204), or null on any failure. */
+    /** Returns the response body (empty for "nothing to say"), or null on any failure or with no brain. */
     private fun request(
         method: String,
         path: String,
@@ -626,7 +518,7 @@ class Companion(
             val sep = if ("?" in path) "&" else "?"
             path + sep + "name=" + URLEncoder.encode(childName, "UTF-8") + "&gender=" + (if (childGirl) "girl" else "boy")
         } else path
-        val result = brain.request(method, full, body, timeoutMs, contentType)
+        val result = brain?.request(method, full, body, timeoutMs, contentType)
         val route = path.substringBefore('?')
         if (result != null && result.isNotEmpty() && route in setOf("/say", "/listen", "/look")) recordSaid(route, body)
         return result

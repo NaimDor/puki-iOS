@@ -2,14 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- No Android backups: they'd copy the child's name and the pairing code to the cloud -->
-    <!-- Reaches the companion "brain" on the family PC over the home network, and asks GitHub
-         whether there's a newer game (nothing about the child is sent anywhere else) -->
+    <!-- No Android backups: they'd copy the child's name to the cloud -->
+    <!-- Asks GitHub whether there's a newer game, and downloads the device brain's models
+         (nothing about the child is sent anywhere) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Installing a game update; Android asks the parent to confirm each one (not in the
          Play build, src/play/AndroidManifest.xml) -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <!-- Hold the parrot to talk to it; the recording goes to the family PC only -->
+    <!-- Hold the parrot to talk to it; the recording stays on the device -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application

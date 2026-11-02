@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
  * one of [options] (each: the words that count for it), [onAnswer] gets its index, just as if
  * she'd tapped it; after a wrong one Puki listens once more. Silence or other words end it, and
  * tapping works all along (a tap that ends the round turns the microphone off at once).
- * Needs the microphone, a brain awake to hear (PC or device) and the parent's setting.
+ * Needs the microphone, the device brain awake to hear and the parent's setting.
  */
 @Composable
 fun AnswerOutLoud(

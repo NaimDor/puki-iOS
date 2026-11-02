@@ -77,7 +77,7 @@ private enum class EchoMode { IDLE, LISTENING, ECHOING }
 
 /**
  * Echo parrot: she says anything and Puki says it back in a silly parrot voice. Holding Puki
- * records until she lets go; a tap records until she stops talking. Works with no PC at all
+ * records until she lets go; a tap records until she stops talking. Works with no brain at all
  * (the recording only goes to the speaker, a moment later, and is never kept).
  */
 class EchoViewModel(application: Application) : AndroidViewModel(application) {

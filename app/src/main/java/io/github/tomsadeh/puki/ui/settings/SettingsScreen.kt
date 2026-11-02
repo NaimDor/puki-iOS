@@ -13,14 +13,11 @@ import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
 import io.github.tomsadeh.puki.ui.common.LocalMusicPlayer
 import io.github.tomsadeh.puki.ui.common.LocalCompanion
-import io.github.tomsadeh.puki.audio.Connection
 import io.github.tomsadeh.puki.audio.hasMicPermission
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import io.github.tomsadeh.puki.ui.components.BackButton
 import androidx.compose.ui.zIndex
 import androidx.compose.foundation.shape.CircleShape
@@ -32,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -232,106 +228,11 @@ fun SettingsScreen(
                     )
                     Text(
                         BilingualText(
-                            "אחרי שאלה במשחק (\"איזה צבע?\", \"כמה?\", \"מי מתחבא?\") פוקי מקשיב כמה שניות, ואפשר לענות בקול במקום ללחוץ. ההקלטה הולכת רק למחשב בבית, או נשארת במכשיר.",
-                            "After a question in a game (\"which color?\", \"how many?\", \"who's hiding?\") Puki listens for a few seconds, so the answer can be said instead of tapped. The recording only goes to the PC at home, or stays on this device."
+                            "אחרי שאלה במשחק (\"איזה צבע?\", \"כמה?\", \"מי מתחבא?\") פוקי מקשיב כמה שניות, ואפשר לענות בקול במקום ללחוץ. ההקלטה נשארת במכשיר.",
+                            "After a question in a game (\"which color?\", \"how many?\", \"who's hiding?\") Puki listens for a few seconds, so the answer can be said instead of tapped. The recording stays on this device."
                         ).resolve(language),
                         style = MaterialTheme.typography.bodyMedium,
                         color = EarthBrown
-                    )
-                    // Scan the QR code on the brain's dashboard instead of typing address and code
-                    var scanFailed by remember { mutableStateOf(false) }
-                    val scan = rememberPairingScanner(
-                        BilingualText("כוונו אל קוד ה-QR שבמחשב", "Point at the QR code on the PC").resolve(language)
-                    ) { link ->
-                        scanFailed = link == null
-                        if (link != null) {
-                            settingsViewModel.setCompanionPairing(link)
-                        }
-                    }
-                    OutlinedButton(onClick = scan, modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            BilingualText("📷 סריקת קוד ה-QR שבמחשב", "📷 Scan the QR code on the PC").resolve(language),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = EarthBrown
-                        )
-                    }
-                    if (scanFailed) {
-                        Text(
-                            BilingualText("זה לא קוד ה-QR של פוקי, נסו שוב", "That isn't Puki's QR code, try again").resolve(language),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = EarthBrown
-                        )
-                    }
-                    // Address of the PC running brain/doorbell.py (saved when editing finishes)
-                    var address by remember(settings.companionAddress) { mutableStateOf(settings.companionAddress) }
-                    OutlinedTextField(
-                        value = address,
-                        onValueChange = { address = it },
-                        label = { Text(BilingualText("כתובת המחשב", "PC address").resolve(language)) },
-                        placeholder = { Text("192.168.1.20:8790") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { settingsViewModel.setCompanionAddress(address) }),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) settingsViewModel.setCompanionAddress(address) }
-                    )
-                    // Pairing code, shown on the PC when the companion server starts
-                    var code by remember(settings.companionCode) { mutableStateOf(settings.companionCode) }
-                    OutlinedTextField(
-                        value = code,
-                        onValueChange = {
-                            code = it.uppercase()
-                            // Saved (and checked) as soon as the whole code is in
-                            if (code.count { c -> c.isLetterOrDigit() } == 8) settingsViewModel.setCompanionCode(code)
-                        },
-                        label = { Text(BilingualText("קוד צימוד (מופיע במחשב)", "Pairing code (shown on the PC)").resolve(language)) },
-                        placeholder = { Text("ABCD-EFGH") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Characters,
-                            autoCorrect = false,
-                            keyboardType = KeyboardType.Ascii,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(onDone = { settingsViewModel.setCompanionCode(code) }),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) settingsViewModel.setCompanionCode(code) }
-                    )
-                    // Whether the PC answers with this address and code (tap to check again)
-                    val companion = LocalCompanion.current
-                    var connection by remember { mutableStateOf<Connection?>(null) }
-                    var recheck by remember { mutableStateOf(0) }
-                    LaunchedEffect(settings.companionAddress, settings.companionCode, settings.companionPin, recheck) {
-                        connection = null
-                        connection = companion?.checkConnection(settings.companionAddress, settings.companionCode, settings.companionPin)
-                            ?: Connection.NOT_FOUND
-                    }
-                    Text(
-                        text = when (connection) {
-                            null -> BilingualText("בודק את החיבור…", "Checking the connection…")
-                            Connection.OK -> BilingualText("✓ פוקי מחובר", "✓ Puki is connected")
-                            Connection.WRONG_CODE -> BilingualText("✗ קוד הצימוד שגוי", "✗ Wrong pairing code")
-                            Connection.LOCKED_OUT -> BilingualText(
-                                "✗ יותר מדי ניסיונות שגויים, נסו שוב בעוד רבע שעה",
-                                "✗ Too many wrong codes, try again in 15 minutes"
-                            )
-                            Connection.WRONG_PC -> BilingualText(
-                                "✗ זה לא המחשב שצומד. סרקו שוב את קוד ה-QR שבמחשב",
-                                "✗ That isn't the paired PC. Scan the QR code on the PC again"
-                            )
-                            Connection.NOT_FOUND -> BilingualText(
-                                "✗ המחשב לא נמצא (דלוק? באותה רשת?) · לחצו לבדיקה חוזרת",
-                                "✗ PC not found (is it on, on the same Wi-Fi?) · tap to check again"
-                            )
-                        }.resolve(language),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (connection == Connection.OK) GrassGreen else EarthBrown,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { recheck++ }
-                            .padding(vertical = 4.dp)
                     )
                 }
 
@@ -537,8 +438,8 @@ private fun AboutCard() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             BilingualText(
-                "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-BlueTTS, ל-RenikudPlus, ל-kol-stream, ל-Gemma של Google ול-ivrit.ai (במחשב), ל-ONNX Runtime ול-ZXing.",
-                "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to BlueTTS, RenikudPlus, kol-stream, Google's Gemma and ivrit.ai (on the PC), ONNX Runtime and ZXing."
+                "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-BlueTTS, ל-RenikudPlus, ל-kol-stream, ל-ivrit.ai ול-ONNX Runtime.",
+                "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to BlueTTS, RenikudPlus, kol-stream, ivrit.ai and ONNX Runtime."
             ).resolve(language),
             style = MaterialTheme.typography.bodyMedium,
             color = EarthBrown,

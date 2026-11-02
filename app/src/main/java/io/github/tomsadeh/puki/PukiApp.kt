@@ -87,35 +87,28 @@ fun PukiApp(
         voicePlayer.enabled = settings.soundEnabled
     }
 
-    val pukiApp = LocalContext.current.applicationContext as PukiApplication
-    LaunchedEffect(settings.companionEnabled, settings.companionAddress, settings.companionCode, settings.companionPin, language) {
+    LaunchedEffect(settings.companionEnabled, language) {
         companion.enabled = settings.companionEnabled
-        companion.address = settings.companionAddress
-        companion.code = settings.companionCode
-        companion.pin = settings.companionPin
-        companion.onPinLearned = { pin -> pukiApp.appScope.launch { pukiApp.settingsRepository.learnCompanionPin(pin) } }
         companion.language = language
     }
     LaunchedEffect(settings.answersOutLoud) { companion.answersOutLoud = settings.answersOutLoud }
 
-    // Where Puki thinks: the PC, or this device once its models are downloaded
+    // Whether Puki thinks: on this device once its models are downloaded, else his recorded lines
     val context = LocalContext.current
     LaunchedEffect(settings.brainOnDevice) {
         val app = context.applicationContext as PukiApplication
         // Only touched when switched on, and never allowed to stop the game from opening:
-        // if anything about it fails, Puki simply stays on the PC
+        // if anything about it fails, Puki simply plays his recorded lines
         val brain = if (settings.brainOnDevice) runCatching {
             // About two dozen file checks: off the main thread
             app.localBrain.takeIf { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.deviceModels.ready() } }
         }.onFailure { android.util.Log.e("PukiBrain", "device brain unavailable", it) }.getOrNull() else null
-        val onDevice = brain != null
-        if (onDevice) companion.deviceBrain = brain
-        if (onDevice != companion.onDevice) {
-            companion.onDevice = onDevice
-            if (!onDevice && companion.deviceBrain != null) {
+        if (brain !== companion.brain) {
+            if (brain == null) {
                 // Gives the memory back; off the main thread, as it waits for an answer in progress
                 app.appScope.launch(kotlinx.coroutines.Dispatchers.IO) { runCatching { app.localBrain.close() } }
             }
+            companion.brain = brain
             companion.recheck()
         }
     }
@@ -170,7 +163,7 @@ fun PukiApp(
             }
             return@LaunchedEffect
         }
-        if (!companion.onDevice) return@LaunchedEffect
+        if (companion.brain == null) return@LaunchedEffect
         delay(BRAIN_REST_MS)
         clockApp.sleepBrain()
     }

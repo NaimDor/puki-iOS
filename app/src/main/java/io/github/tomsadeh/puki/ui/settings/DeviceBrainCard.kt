@@ -27,7 +27,7 @@ import io.github.tomsadeh.puki.theme.GrassGreen
 import io.github.tomsadeh.puki.ui.common.LocalAppSettings
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 
-/** "Puki on this device": download the models once, then think here instead of on the PC. */
+/** "Puki on this device": download the models once, then think here. */
 @Composable
 fun DeviceBrainCard(viewModel: SettingsViewModel) {
     val language = LocalLanguage.current
@@ -49,9 +49,9 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
             style = MaterialTheme.typography.titleLarge, color = EarthBrown)
         Text(
             BilingualText(
-                "פוקי יכול לחשוב, לדבר ולהקשיב כאן במכשיר, בלי מחשב ובלי אינטרנט: גם מחוץ לבית. צריך להוריד פעם אחת $gb GB " +
+                "פוקי יכול לחשוב, לדבר ולהקשיב כאן במכשיר, בלי אינטרנט: גם מחוץ לבית. צריך להוריד פעם אחת $gb GB " +
                     "(עדיף ב-Wi-Fi). בינתיים כאן הוא מדבר רק עברית.",
-                "Puki can think, talk and listen right here on this device, with no PC and no internet: even away from home. " +
+                "Puki can think, talk and listen right here on this device, with no internet: even away from home. " +
                     "It's a one-time $gb GB download (Wi-Fi is best). For now he speaks only Hebrew here."
             ).resolve(language),
             style = MaterialTheme.typography.bodyMedium, color = EarthBrown

@@ -151,10 +151,10 @@ private const val LINE_TIMEOUT_MS = 15_000L
 
 /**
  * Say it with Puki: a picture appears, Puki says the word, and the child says it back.
- * With the PC listening, the word itself moves the game on: another word or a near miss gets
+ * With the brain listening, the word itself moves the game on: another word or a near miss gets
  * the word again ("listen well" / "almost") and another go, up to three tries. A near miss
  * still earns the star in the end; Puki always closes by saying the word the right way (a
- * recast, as speech therapists do). Without the PC, the tablet can only hear that the child
+ * recast, as speech therapists do). Without it, the tablet can only hear that the child
  * spoke, so any try counts.
  */
 @Composable

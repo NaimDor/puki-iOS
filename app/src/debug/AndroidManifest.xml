@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Debug builds only: a self-test for the device brain's text code, run over adb:
-     adb shell am broadcast -n io.github.tomsadeh.puki/.SelfTestReceiver ; adb logcat -s PukiSelfTest
-     Add  -e host <ip:port> -e code <CODE> -e pin <fingerprint>  to also check the HTTPS
-     connection to that PC (tls.fingerprint() on the PC gives the fingerprint) -->
+     adb shell am broadcast -n io.github.tomsadeh.puki/.SelfTestReceiver ; adb logcat -s PukiSelfTest -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <!-- Only adb's shell holds DUMP, so other apps on the tablet can't send it anything -->

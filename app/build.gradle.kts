@@ -154,9 +154,6 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // QR scanner for pairing with the PC (ZXing: no Play services, no network)
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-
     // Puki's brain on the device itself (optional, for high-end phones): Gemma through
     // LiteRT-LM, the voice and Hebrew pronunciation through ONNX Runtime
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")

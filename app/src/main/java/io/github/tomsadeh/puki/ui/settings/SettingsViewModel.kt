@@ -67,21 +67,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { settingsRepository.updateCompanionEnabled(!enabled) }
     }
 
-    fun setCompanionAddress(address: String) {
-        viewModelScope.launch { settingsRepository.updateCompanionAddress(address) }
-    }
-
     fun setVolumes(music: Float? = null, voice: Float? = null, sfx: Float? = null) {
         viewModelScope.launch { settingsRepository.updateVolumes(music, voice, sfx) }
-    }
-
-    fun setCompanionCode(code: String) {
-        viewModelScope.launch { settingsRepository.updateCompanionCode(code) }
-    }
-
-    /** From a scanned QR code: the PC's address, the pairing code and its certificate. */
-    fun setCompanionPairing(link: PairingLink) {
-        viewModelScope.launch { settingsRepository.updateCompanionPairing(link.host, link.code, link.pin) }
     }
 
     // ---- Puki's brain on this device ----

@@ -46,7 +46,7 @@ import io.github.tomsadeh.puki.ui.common.LocalLanguage
 /**
  * מלשין לרנינג: what Puki said this session, newest first, each with a flag for a parent who
  * heard something that wasn't right, and three short steps saying what the list is, what to flag
- * and where a report goes (at home; to Puki's makers only by the parent's own email).
+ * and where a report goes (to Puki's makers, and only by the parent's own email).
  */
 @Composable
 fun ReportCard(companion: Companion) {
@@ -82,11 +82,11 @@ fun ReportCard(companion: Companion) {
                 "Something not right? Scary, untrue, a promise, or just odd: tap 🚩 next to the line."
             ),
             if (canSend) BilingualText(
-                "הדיווח נשמר במחשב שבבית, אם יש (בטאבלט עצמו הוא לא נשמר), ואז מופיע ✉️: שולחים לנו אותו מהמייל שלכם, ורואים בדיוק מה יישלח, עם השם מוחלף. ככה נתקן את פוקי לכל המשפחות. שום דבר לא נשלח בלי שתבחרו.",
-                "The report is kept on your home PC, if there is one (not on this tablet), and ✉️ appears: send it to Puki's makers from your own email, seeing exactly what goes, with your child's name replaced. That's how Puki gets fixed for every family. Nothing is sent unless you choose to."
+                "אז מופיע ✉️: שולחים לנו את הדיווח מהמייל שלכם, ורואים בדיוק מה יישלח, עם השם מוחלף. ככה נתקן את פוקי לכל המשפחות. בטאבלט עצמו הוא לא נשמר, ושום דבר לא נשלח בלי שתבחרו.",
+                "Then ✉️ appears: send the report to Puki's makers from your own email, seeing exactly what goes, with your child's name replaced. That's how Puki gets fixed for every family. It isn't kept on this tablet, and nothing is sent unless you choose to."
             ) else BilingualText(
-                "הדיווח נשמר במחשב שבבית, אם יש (בטאבלט עצמו הוא לא נשמר), כדי שאפשר יהיה לתקן את פוקי שלא יחזור על זה. שום דבר לא יוצא מהבית אלא אם אתם רוצים.",
-                "The report is kept on your home PC, if there is one (not on this tablet), so Puki can be fixed not to say it again. Nothing leaves your home unless you want it to."
+                "הדיווח לא נשמר בטאבלט ולא יוצא ממנו.",
+                "The report isn't kept on this tablet, and nothing leaves it."
             )
         )
         steps.forEachIndexed { i, step ->

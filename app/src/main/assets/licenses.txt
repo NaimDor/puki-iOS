@@ -4,7 +4,6 @@ Free and open source, MIT license (below). Made by Tom Sadeh.
 Puki uses these, with thanks:
 
 - AndroidX and Jetpack Compose, by Google: Apache License 2.0
-- ZXing Android Embedded (QR codes), by JourneyApps, and ZXing: Apache License 2.0
 - ONNX Runtime, by Microsoft: MIT License (Copyright (c) Microsoft Corporation)
 - BlueTTS, by Max Melichov: Puki's voice, downloaded separately; MIT License
 - Puki's own models, made for this project and downloaded separately: Brains (writes his lines) and Beak
@@ -15,8 +14,6 @@ Puki uses these, with thanks:
   Exactly what entered it: train/pt_manifest.json in the source.
 - kol-stream, by MaorB, on Google's EmbeddingGemma 2 (trained on ivrit.ai's Hebrew speech): downloaded
   separately, for listening on the device; Apache License 2.0
-- Gemma, by Google: used by the PC brain (its installer downloads it), under the Gemma Terms of Use
-  (ai.google.dev/gemma/terms)
 - Music: by the project's author (piano, produced with Suno)
 
 

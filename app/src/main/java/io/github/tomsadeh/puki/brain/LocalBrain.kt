@@ -13,8 +13,8 @@ import kotlin.concurrent.withLock
 import kotlin.concurrent.thread
 
 /**
- * Puki's brain on this device, all of it Puki's own models but the voice: answers the same requests
- * as the PC brain (see [Brain]) with Brains (the small model that writes his lines, [Brains]), Beak
+ * Puki's brain on this device, all of it Puki's own models but the voice: answers the game's requests
+ * (see [Brain]) with Brains (the small model that writes his lines, [Brains]), Beak
  * (which reads them, [Beak]), the BlueTTS voice ([BlueVoice]) and the same filter ([Persona], [Safety]).
  * It hears with kol-stream ([KolEars], loaded in the background once the rest is ready). It speaks
  * Hebrew only for now: English lines fall back to the recorded ones. Drawings and bedtime stories aren't

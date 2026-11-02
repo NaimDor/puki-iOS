@@ -1,6 +1,5 @@
 package io.github.tomsadeh.puki.ui.onboarding
 
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -24,7 +23,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,7 +41,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.R
@@ -52,7 +49,6 @@ import io.github.tomsadeh.puki.data.models.BilingualText
 import io.github.tomsadeh.puki.data.models.Gender
 import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.ui.settings.SettingsViewModel
-import io.github.tomsadeh.puki.ui.settings.rememberPairingScanner
 
 private val Ink = Color(0xFF5D4037)
 private val Cream = Color(0xFFFFF8E1)
@@ -68,8 +64,6 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
     val lang = settings.language
     fun t(he: String, en: String) = BilingualText(he, en).resolve(lang)
     var name by remember { mutableStateOf(settings.childName) }
-    var address by remember { mutableStateOf(settings.companionAddress) }
-    var code by remember { mutableStateOf(settings.companionCode) }
 
     Box(
         modifier = Modifier
@@ -130,59 +124,12 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
             // The parrot companion
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    t("התוכי פוקי (מחשב בבית)", "Puki the parrot (a PC at home)"),
+                    t("התוכי פוקי", "Puki the parrot"),
                     style = MaterialTheme.typography.titleLarge.copy(shadow = null),
                     color = Ink
                 )
                 Spacer(Modifier.width(12.dp))
                 Switch(checked = settings.companionEnabled, onCheckedChange = { viewModel.setCompanionEnabled(it) })
-            }
-            if (settings.companionEnabled) {
-                // Scan the QR code on the brain's dashboard instead of typing address and code
-                var scanned by remember { mutableStateOf<Boolean?>(null) }  // null until a scan
-                val scan = rememberPairingScanner(t("כוונו אל קוד ה-QR שבמחשב", "Point at the QR code on the PC")) { link ->
-                    scanned = link != null
-                    if (link != null) {
-                        address = link.host
-                        code = link.code
-                        viewModel.setCompanionPairing(link)
-                    }
-                }
-                OutlinedButton(onClick = scan, modifier = Modifier.widthIn(min = 320.dp)) {
-                    Text(t("📷 סריקת קוד ה-QR שבמחשב", "📷 Scan the QR code on the PC"), style = MaterialTheme.typography.titleMedium, color = Ink)
-                }
-                if (scanned == false) {
-                    Text(t("זה לא קוד ה-QR של פוקי, נסו שוב", "That isn't Puki's QR code, try again"), color = Ink)
-                } else if (scanned == true) {
-                    Text(t("✓ המחשב נקלט", "✓ Got the PC"), color = Color(0xFF2E7D32))
-                }
-                OutlinedTextField(
-                    value = address,
-                    onValueChange = { address = it },
-                    label = { Text(t("כתובת המחשב (אפשר גם אחר כך)", "PC address (can be set later)")) },
-                    placeholder = { Text("192.168.1.20:8790") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Ink, unfocusedTextColor = Ink),
-                    modifier = Modifier.widthIn(min = 320.dp)
-                )
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = { code = it.uppercase() },
-                    label = { Text(t("קוד צימוד (מופיע במחשב)", "Pairing code (shown on the PC)")) },
-                    placeholder = { Text("ABCD-EFGH") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Characters,
-                        autoCorrect = false,
-                        keyboardType = KeyboardType.Ascii,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Ink, unfocusedTextColor = Ink),
-                    modifier = Modifier.widthIn(min = 320.dp)
-                )
             }
 
             Box(
@@ -192,8 +139,6 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
                     .background(Color(0xFF66BB6A))
                     .clickable {
                         viewModel.setChildName(name)
-                        viewModel.setCompanionAddress(address)
-                        viewModel.setCompanionCode(code)
                         viewModel.finishOnboarding()
                     }
                     .padding(horizontal = 40.dp, vertical = 14.dp)
