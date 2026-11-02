@@ -1,0 +1,15 @@
+# Brains as shipped in 0.9 (dtsj89/puki-brains): HeDC4 Hebrew + English, 12k BPE, AdamW and a cosine to 1.6B.
+#   pretrain.py --recipe recipes/brains-v1.toml --run puki-48m --until 1.6e9
+# (pt_manifest.json records the exact chunks it read.) Pass --tok <pt_corpus.py output>.
+vocab = 12288
+seq = 1024
+optimizer = "adamw"
+lr = 2e-3
+beta2 = 0.95
+wd = 0.1
+schedule = "cosine"
+total = 1.6e9
+micro = 16
+accum = 8
+pack = "v1"
+ce = "full"

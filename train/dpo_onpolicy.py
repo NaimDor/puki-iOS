@@ -3,7 +3,7 @@ of the tasks a check can judge (Silly Puki and its correction, the recap), and e
 filter or the truth check (sft_small.judge_samples' checks) becomes the turned-down side, against the line
 the builder kept. Its mistakes, not the teacher's, are what preference tuning should push away.
 
-    <harness train venv python> dpo_onpolicy.py --sft C:/data/pretrain/puki-sft/sft-46k/best.pt \
+    python dpo_onpolicy.py --sft C:/data/pretrain/puki-sft/sft-46k/best.pt \
         --data data/final.jsonl data/more1.jsonl data/more2.jsonl --out data/dpo_onpolicy.jsonl
 
 Writes the layout of dpo_pairs.py (kind "own"), for dpo_small.py --pairs.

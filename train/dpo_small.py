@@ -2,7 +2,7 @@
 the line the builder kept over the one it turned down (dpo_pairs.py), against a frozen copy of itself, with
 a little of the plain fine-tuning loss on the kept line so the language holds.
 
-    <harness train venv python> dpo_small.py --sft C:/data/pretrain/puki-sft/sft-10k/best.pt --run dpo-1
+    python dpo_small.py --sft C:/data/pretrain/puki-sft/sft-10k/best.pt --run dpo-1
 
 Scored as sft_small.py scores (held-out answer loss, Puki's filter, the gate, the truth checks), before
 and after, plus how often it prefers the kept line on pairs it never trained on.

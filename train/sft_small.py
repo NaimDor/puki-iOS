@@ -1,7 +1,7 @@
 """Fine-tunes Puki's own small model (the pretrain, pt_run.py) on Puki's lines: the answer tokens only,
 from data/final.jsonl without the phonemes (the reading model writes those).
 
-    <harness train venv python> sft_small.py --ckpt C:/data/pretrain/puki-runs/puki-48m/ckpt.pt --run sft-1
+    python sft_small.py --ckpt C:/data/pretrain/puki-runs/puki-48m/ckpt.pt --run sft-1
 
 Every epoch: the answer-token loss on reference-heldout (the same set and numbers the pretrain logged),
 then samples for held-out inputs: how many pass Puki's own filter (persona.clean, safety.reply_ok), the

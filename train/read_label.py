@@ -7,8 +7,8 @@ Writes shard-NNNN.npz: chars (uint8 ids into ALPHABET, sentences end to end), st
 begins, and the end), girl, and tags (uint8, letters x 9): consonant id, how sure of it, the six
 vowel probabilities and the stress probability, the last eight out of 255. Stops and carries on: a shard
 on disk is kept. The model takes one sentence at a time, about 8 a second on two threads, so it runs
-in several processes, each with its own 1.2 GB copy. --gpu-workers needs an onnxruntime-gpu python (the
-harness's tts venv) with the harness train venv's torch/lib on PATH for CUDA 13.
+in several processes, each with its own 1.2 GB copy. --gpu-workers needs a python with onnxruntime-gpu,
+with a CUDA 13 build of torch's lib folder on PATH for its CUDA libraries.
 """
 import argparse
 import glob

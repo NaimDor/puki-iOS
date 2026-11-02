@@ -1,8 +1,8 @@
 """What went into the small model's pretraining, exactly: writes pt_manifest.json, which goes in the repo, so
 anyone with the same public data can check it. The text itself isn't published here.
 
-    <harness train venv python> pt_manifest.py
-    <harness train venv python> pt_manifest.py --chunks used.npy    # also saves the chunk ids trained on
+    python pt_manifest.py
+    python pt_manifest.py --chunks used.npy    # also saves the chunk ids trained on
 
 The trainer keeps no list of what it read, but its order comes only from the seed, so replay() walks the
 same draws from the chunk lengths alone. A chunk is (source, token offset, length), and the document it

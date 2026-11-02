@@ -1,0 +1,22 @@
+# English Brains (v2): FineWeb-Edu, Cosmopedia, Gutenberg and YouTube (pt_corpus.py with PUKI_LANG=en), an 8k
+# English BPE, 512 context; the same recipe as brains-he.toml over 1.6B tokens:
+#   pretrain.py --recipe recipes/brains-en.toml --run en-stable --until 1.28e9 --allowed <tok>/stable.npy
+#   pretrain.py --recipe recipes/brains-en.toml --run en-plain --branch-from en-stable --until 1.6e9 --allowed <tok>/stable.npy
+#   pretrain.py --recipe recipes/brains-en.toml --run en-mid --branch-from en-stable --until 1.6e9 --allowed <tok>/mid.npy
+vocab = 8192
+seq = 512
+optimizer = "muon"
+lr = 2e-3
+wd = 0.3
+adam-lr = 2e-3
+adam-wd = 0.1
+beta2 = 0.99
+eps = 1e-10
+decay-norms = 0
+schedule = "wsd"
+decay-start = 1.28e9
+total = 1.6e9
+micro = 32
+accum = 8
+pack = "v2"
+ce = "chunked"

@@ -1,0 +1,22 @@
+# Hebrew Brains (v2): FineWeb-2 Hebrew only (pt_corpus.py with PUKI_LANG=he), an 8k Hebrew BPE, 512 context;
+# Muon and WSD (the recipe that won the author's 50M optimizer sweep). One stable phase, then two cooldowns:
+#   pretrain.py --recipe recipes/brains-he.toml --run he-stable --until 2.56e9 --allowed <tok>/stable.npy
+#   pretrain.py --recipe recipes/brains-he.toml --run he-plain --branch-from he-stable --until 3.2e9 --allowed <tok>/stable.npy
+#   pretrain.py --recipe recipes/brains-he.toml --run he-mid --branch-from he-stable --until 3.2e9 --allowed <tok>/mid.npy
+vocab = 8192
+seq = 512
+optimizer = "muon"
+lr = 2e-3
+wd = 0.3
+adam-lr = 2e-3
+adam-wd = 0.1
+beta2 = 0.99
+eps = 1e-10
+decay-norms = 0
+schedule = "wsd"
+decay-start = 2.56e9
+total = 3.2e9
+micro = 32
+accum = 8
+pack = "v2"
+ce = "chunked"

@@ -1,9 +1,9 @@
-"""The small model's corpus, in the format of the Skyrim harness's pretrain/corpus.py, so its trainer runs
-on it unchanged: a byte-level BPE trained on the Hebrew-heavy mix plus Puki's own lines, every document as uint16 tokens in one file per source, a chunk index, and reference sets of
+"""The small model's corpus, in the format pretrain.py reads: a byte-level BPE trained on the Hebrew-heavy mix plus
+Puki's own lines, every document as uint16 tokens in one file per source, a chunk index, and reference sets of
 Puki's prompts and answers.
 
-    <harness train venv python> pt_corpus.py compare --out C:/data/pretrain/puki-tok
-    <harness train venv python> pt_corpus.py build --vocab 12288 --out C:/data/pretrain/puki-tok
+    python pt_corpus.py compare --out C:/data/pretrain/puki-tok
+    python pt_corpus.py build --vocab 12288 --out C:/data/pretrain/puki-tok
 
 "compare" trains the BPE at several sizes and prints what each costs per Puki line. English sources
 leave out raw FineWeb: unfiltered web text has no place in a model that talks to a toddler.

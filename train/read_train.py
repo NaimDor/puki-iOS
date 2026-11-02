@@ -3,8 +3,8 @@ gives each Hebrew letter a consonant, a vowel and stress, as RenikudPlus does (r
 child's gender as the first token. Pretraining learns RenikudPlus's opinion over the clean Hebrew
 (read_label.py); --finetune learns the reviewed lines.
 
-    <harness train venv python> read_train.py --run read-1 --epochs 12
-    <harness train venv python> read_train.py --run read-1 --steps 200    # a quick try
+    python read_train.py --run read-1 --epochs 12
+    python read_train.py --run read-1 --steps 200    # a quick try
 
 Every epoch it scores the reviewed lines (data/say_final.jsonl) the way they're judged: each word's
 IPA, spelled from the predicted tags, against the reviewed IPA. RenikudPlus told the gender scores

@@ -11,8 +11,9 @@ other people's, made ready for phones here.
 | **Syrinx** | [dtsj89/puki-syrinx](https://huggingface.co/dtsj89/puki-syrinx) | Puki's voice: BlueTTS with the Noa voice | No: BlueTTS (MIT, Max Melichov), quantized here |
 | **Ears** | [dtsj89/puki-ears](https://huggingface.co/dtsj89/puki-ears) | Hears the child, in Hebrew and English | No: kol-stream (Apache 2.0, MaorB), exported here |
 
-`data/` and `out/` are git-ignored. Most scripts say at the top which Python environment they
-need and how to run them.
+`data/` and `out/` are git-ignored. Most scripts say at the top how to run them. The Python
+environment for training is in [`requirements.txt`](requirements.txt) (PyTorch with CUDA; the
+ONNX exports and Beak's labelling say at the top what else they need).
 
 ## Brains: Puki's lines
 
@@ -26,9 +27,13 @@ A 46M-parameter language model, trained from scratch for Puki.
 - `pt_corpus.py`: the corpus and the tokenizer (a byte-level BPE trained on the Hebrew-heavy
   mix plus Puki's own lines). The English side is FineWeb-Edu (ODC-By), Cosmopedia (Apache 2.0)
   and the Common Pile's Gutenberg and YouTube sets; raw web text is left out.
-- `pt_run.py`: runs the pretrainer on that corpus. The pretrainer itself is an external
-  harness that is **not public yet**, so this step can't be reproduced from this repo alone
-  for now. `pt_run.py` finds it through `PUKI_HARNESS`.
+- `pretrain.py`: the pretrainer (a Llama-style decoder: tied embeddings, GQA, SwiGLU, RoPE),
+  with the recipes in [`recipes/`](recipes): `brains-v1.toml` for the shipped model (AdamW, a
+  cosine to 1.6B), `brains-he.toml` and `brains-en.toml` for the per-language v2 models (Muon,
+  WSD with a stable phase and two cooldowns, one with Puki's own lines mixed in).
+  `pt_corpus.py` with `PUKI_LANG=he` or `en` builds a one-language corpus for them.
+- `pt_run.py`: how the first runs called the pretrainer (from the research harness it was taken
+  from); kept until the runs in progress finish.
 - `pt_manifest.py` writes [`pt_manifest.json`](pt_manifest.json): exactly which documents went
   in, so anyone with the same public data can check it. The text itself isn't published here.
 
