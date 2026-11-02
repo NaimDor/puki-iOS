@@ -17,9 +17,12 @@ MADE FOR TODDLERS
 No reading needed, big tap targets, and no failing: a wrong answer gets a gentle shake and "let's try again". Hebrew instructions match the child (girl or boy). When the time limit the parents set is up, there's no countdown: evening falls, Puki yawns, waves goodbye, and the music fades.
 
 PUKI CAN TALK (OPTIONAL)
-With a free program on the family's own PC, Puki comments on what the child does, listens when the child talks to him, lets the child answer a game's question out loud ("blue!") instead of tapping, looks at drawings and tells a short bedtime story. He also remembers: after playing he writes a short diary, so tomorrow he can say "the elephant again!". Everything runs and stays on that PC at home; nothing goes to the cloud, and recordings are never kept. Some high-end phones can run Puki's brain on the phone itself. Without either, Puki uses his recorded voice and every game works.
+Turn on Puki's brain in the parent settings and he comes alive: he says something new about what the child just did, listens when the child talks to him, and lets the child answer a game's question out loud ("blue!") instead of tapping. His brain is his own: small models trained just for him, running on the tablet itself, with no internet and no cloud. It's a one-time download of about half a GB, and it runs on ordinary tablets with 3 GB of memory. For now the brain speaks Hebrew. Without it, Puki uses his recorded voice and every game works.
+
+KEPT ON A SHORT LEASH
+Puki's lines are short and written for a toddler. If the child mentions hurt, fear or a big question, Puki gives a fixed, gentle answer that points to mommy or daddy. Every line he writes is checked, and a line that fails is replaced by a recorded one. Parents can see everything Puki said and flag anything that isn't right.
 
 PRIVATE BY DESIGN
-No accounts, no ads, no analytics, no tracking. The child's voice and drawings go only to the family's own PC or stay on the device. Settings sit behind a parent gate.
+No accounts, no ads, no analytics, no tracking. The child's voice, drawings and name never leave the device, and recordings are never kept. Settings sit behind a parent gate.
 
-Source code and the PC program: https://github.com/TomSadeh/puki
+Source code and Puki's models: https://github.com/TomSadeh/puki

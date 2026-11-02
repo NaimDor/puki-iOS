@@ -4,6 +4,17 @@ Everything Play asks for, in order. The texts and images are in `metadata/androi
 file: `en-US` and `iw-IL` (Play's code for Hebrew). Play's own forms change now and then, so
 expect the labels to differ a little.
 
+## 0. Before the first upload (0.9.0)
+
+- [ ] Brains is on Hugging Face (`dtsj89/puki-brains`), with Beak and Syrinx, and
+      `DeviceModels.OFFERED` is `true`, so settings offer the device brain the listing describes.
+- [ ] `Contact.REPORT_EMAIL` is set. Play's AI-generated content policy wants a way to flag
+      offensive output to the developer from inside the app; that's the 🚩 in "What Puki said",
+      and it only reaches you through this address.
+- [ ] `pukiVersion` is 0.9.0, and the baseline profile is regenerated (it still names the PC
+      pairing classes).
+- [ ] The website commit is pushed, so the listing's privacy policy link shows the new policy.
+
 ## 1. The developer account (only the account owner can do this)
 
 - [ ] Sign up at https://play.google.com/console as a **personal** account: a one-time **$25** fee,
@@ -21,7 +32,7 @@ expect the labels to differ a little.
 
 Play re-signs what it delivers. If Play makes a new key, the Play version and the GitHub APK
 won't install over each other, and switching between them means uninstalling, which loses the
-child's progress and voice lines. To avoid that, give Play the existing release key:
+child's progress and Puki's downloaded brain. To avoid that, give Play the existing release key:
 
 - [ ] At the first upload, under **App integrity → App signing**, choose to use your own key
       ("Export and upload a key from Java keystore") and follow Play's PEPK steps with
@@ -73,52 +84,49 @@ From `metadata/android/<language>/`:
 **Ads:** No, the app contains no ads.
 
 **App access:** All functionality is available without special access. Note for reviewers:
-"Every game works on its own. Puki's talking companion is optional: it needs a free program
-on the family's own PC (https://github.com/TomSadeh/puki), and without it the parrot uses
-recorded lines. Parent settings open by holding the gear button for 2 seconds, then tapping the
-number shown in words (e.g. 'seventeen' among six numbers)."
+"Every game works on its own. Puki's talking brain is optional: in the parent settings, the
+'Puki on this device' card downloads it once (about 0.5 GB, from Hugging Face), and it then runs
+entirely on the device, offline. Without it the parrot uses recorded lines. Parent settings open
+by holding the gear button for 2 seconds, then tapping the number shown in words (e.g.
+'seventeen' among six numbers). The device brain needs a 64-bit device with about 3 GB of
+memory; on smaller devices the card isn't shown."
 
 **Target audience and content:** ages **5 and under** (add 6–8 if wanted). This puts the app in
 the **Families program**: the Families policy applies (no ads, no data-collecting SDKs, a parent
-gate before settings). Puki has no ad or analytics SDKs; its libraries are ZXing (QR codes),
-LiteRT-LM and ONNX Runtime (the on-phone brain), and AndroidX.
+gate before settings). Puki has no ad or analytics SDKs; its libraries are ONNX Runtime (Puki's
+brain on the device) and AndroidX.
 - Appeal to children: yes.
 - Teacher Approved: optional, can be requested later.
+
+**AI-generated content:** Puki's lines are written by a small language model of his own,
+on the device. If the console asks about generative AI, say yes and describe it: a 46M-parameter
+model trained only to write a toddler's playmate's short lines; word lists and a safety check
+before it answers, a filter on every line after, recorded lines when a line fails; parents see
+every line in settings and can flag one to the developer (🚩, which opens their email).
 
 **Content rating (IARC questionnaire):** category **Game**. Answer no to violence, fear, sexual
 content, gambling, drugs, crude language and controlled substances. For user interaction:
 users can't communicate with each other or share content, there's no location sharing and no
 purchases. Expected rating: everyone / 3+.
 
-**Data safety:** what the form asks, and Puki's answers. Play counts data as "collected" when it
-leaves the device. The child's voice, drawings and name are sent to the family's own PC, not to
-the developer, but that PC is off the device, so declare them. Recordings are never kept
-(ephemeral); the PC's memory keeps the child's words as text and the name (not ephemeral).
+**Data safety:** what the form asks, and Puki's answers. Play counts data as "collected" only
+when it leaves the device. With the PC brain retired, nothing about the child does: the voice is
+understood by the brain on the device and not kept, and the name and drawings stay on it.
 
-- Does the app collect or share any of the required user data types? **Yes**
-- Is all user data encrypted in transit? **Yes** (HTTPS with a pinned certificate)
-- Do you provide a way for users to request that their data be deleted? Nothing is kept by the
-  developer. Answer per the form's options: uninstalling deletes everything on the device, and
-  the family deletes Puki's folder (or its `memory` folder) on their PC.
-- Data types, each: collected **yes**, shared **no**, **optional** (only with the companion
-  turned on), purpose **App functionality**:
-  - **Audio → Voice or sound recordings**: processed ephemerally **yes** (talking to Puki, Say it,
-    answering a game out loud, the echo game; no recording is kept)
-  - **Photos and videos → Photos**, if Play counts drawings here: ephemeral **yes** (the drawing
-    Puki looks at)
-  - **Personal info → Name**: ephemeral **no** (the child's name, so Puki can say it; the PC's
-    memory may keep it)
-  - **App activity → Other user-generated content**: ephemeral **no** (the words the child says,
-    as text, in Puki's memory on the family's PC: the log, diary and profile)
-- Not collected: location, contacts, identifiers, analytics, crash logs, financial info,
-  messages, health, calendar, web history, device IDs.
+- Does the app collect or share any of the required user data types? **No**
+- What does go out, none of it user data: the model download from Hugging Face and GitHub (only
+  when a parent taps it), and in the GitHub flavor only, the daily update check (the play
+  flavor has none). A report to the developer goes from the parent's own email app, written and
+  sent by them; Play treats that as the user's own action, not collection.
+- With "No", the form skips the data types, encryption and deletion questions. If it still asks
+  about deletion: nothing is held by the developer; uninstalling deletes everything.
 
 **News app:** No. **COVID-19:** No. **Government app:** No. **Financial features:** none.
 **Health:** none.
 
 **Permissions declarations:** RECORD_AUDIO (talking to Puki, the voice games, and answering a
-game's question out loud) and CAMERA
-(scanning the pairing QR code). No sensitive-permission forms are needed for the play flavor.
+game's question out loud), plus INTERNET for the model download. There's no camera anymore. No
+sensitive-permission forms are needed for the play flavor.
 
 ## 8. After it's public
 
