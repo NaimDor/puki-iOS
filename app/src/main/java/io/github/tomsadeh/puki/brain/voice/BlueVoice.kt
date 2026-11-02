@@ -94,13 +94,13 @@ class BlueVoice(
     }
 
     /** Hebrew [text] spoken, as a 16-bit mono WAV (with a short silence at the end), or null. */
-    fun speak(text: String, speed: Float = 0.92f, totalStep: Int = 8): ByteArray? {
+    fun speak(text: String, speed: Float = 0.92f, totalStep: Int = STEPS): ByteArray? {
         val samples = synthesize(text, speed, totalStep) ?: return null
         return wav(samples + FloatArray((sampleRate * 0.15).toInt()))
     }
 
     /** BlueTTS.synthesize(text, lang="he"): normalized, read, chunked, voiced, peak-limited. */
-    fun synthesize(text: String, speed: Float = 0.92f, totalStep: Int = 8): FloatArray? {
+    fun synthesize(text: String, speed: Float = 0.92f, totalStep: Int = STEPS): FloatArray? {
         val normalized = VoiceText.prepareTextForSynthesis(text)
         if (normalized.none { it in '֐'..'׿' }) return null  // nothing Hebrew to say
         val reader = renikud ?: return null
@@ -108,7 +108,7 @@ class BlueVoice(
     }
 
     /** [phonemes] (IPA, as Renikud writes them) spoken: chunked, voiced, peak-limited. */
-    fun voice(phonemes: String, speed: Float = 0.92f, totalStep: Int = 8): FloatArray? {
+    fun voice(phonemes: String, speed: Float = 0.92f, totalStep: Int = STEPS): FloatArray? {
         lastTimings.fill(0)
         var out = FloatArray(0)
         for (chunk in VoiceText.chunkText(phonemes)) out += infer(chunk, speed, totalStep)
@@ -121,8 +121,8 @@ class BlueVoice(
 
     fun idsFor(phonemeChunk: String): IntArray = VoiceText.encode(phonemeChunk, charToId, padId)
 
-    /** How many of the flow steps use classifier-free guidance; the rest run once, unguided (all, as BlueTTS does). */
-    var guidedSteps = Int.MAX_VALUE
+    /** How many of the flow steps use classifier-free guidance; the rest run once, unguided. */
+    var guidedSteps = GUIDED_STEPS
 
     /** Where the last [voice] call's time went, in ms: duration, text encoder, flow steps, vocoder (SquawkBench reads it). */
     val lastTimings = LongArray(4)
@@ -209,6 +209,12 @@ class BlueVoice(
 
     companion object {
         private const val CFG_SCALE = 4f
+
+        // Measured on a Tab A7 Lite (SquawkBench, 2026-11-02): BlueTTS's own default of 5 steps, the first
+        // 3 guided, sounds the same by ear as 8 guided steps and takes about 60% of the time (a 1.7 s
+        // line in 2.5 s instead of 4.3 s). With fewer guided steps the voice audibly suffers.
+        const val STEPS = 5
+        const val GUIDED_STEPS = 3
 
         @Suppress("UNCHECKED_CAST")
         private fun flatten3(v: Any): FloatArray {

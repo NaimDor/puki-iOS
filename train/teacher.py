@@ -20,7 +20,8 @@ URL = "https://api.deepseek.com/chat/completions"
 WRITER = os.environ.get("PUKI_TEACHER", "deepseek-v4-pro")
 JUDGE = os.environ.get("PUKI_JUDGE", "deepseek-v4-pro")
 HERE = os.path.dirname(os.path.abspath(__file__))
-CACHE = os.path.join(HERE, "data", "cache.jsonl")
+# (PUKI_CACHE: another file, for a second run alongside; two runs appending to one file tear its lines)
+CACHE = os.environ.get("PUKI_CACHE") or os.path.join(HERE, "data", "cache.jsonl")
 _lock = threading.Lock()
 _cache = None
 usage = {"calls": 0, "cached": 0, "in": 0, "in_cached": 0, "out": 0}
