@@ -213,6 +213,9 @@ class Companion(
         // Already writing a line: no second request behind it (taps would pile up, each answered late);
         // a moment that has its own recorded line plays that instead
         if (!isReady || _thinking.value) {
+            // Not ready: look again, as the first load on a weak tablet can outlast wake()'s wait,
+            // so the next moment needn't wait for another screen to ask
+            wake()
             fallback()
             return
         }
