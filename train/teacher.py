@@ -160,8 +160,9 @@ GAME_RULES = {
 }
 
 
-def write_lines(task, lang, girl, inp, earlier=None, n=6, note=None):
-    """[n] candidate lines for one input of a task (see build.py and games.py), or []."""
+def write_lines(task, lang, girl, inp, earlier=None, n=6, note=None, take=0):
+    """[n] candidate lines for one input of a task (see build.py and games.py), or []. Another take
+    is a new request, so it gets new lines rather than the cached ones."""
     language = "Hebrew" if lang == "he" else "English"
     if task == "talk":
         what = (f'The child just said to Puki (a toddler speaking, so it may be garbled or half a word): "{inp}".\n'
@@ -177,7 +178,7 @@ def write_lines(task, lang, girl, inp, earlier=None, n=6, note=None):
         what = f"What just happened in the game: {inp}"
     system = (RULES + GAME_RULES.get(task, "") + f"\n\nThe child is {_child(lang, girl)}. Write in {language} only.\n"
               f'Answer as JSON: {{"lines": [{n} different lines]}}, varied in wording and opening.')
-    out = ask_json(WRITER, system, what, temperature=1.0)
+    out = ask_json(WRITER, system, what + (f"\n(take #{take})" if take else ""), temperature=1.0)
     lines = out.get("lines", []) if isinstance(out, dict) else []
     return [str(l).strip() for l in lines if isinstance(l, (str, int, float)) and str(l).strip()][:n]
 

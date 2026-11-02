@@ -1,0 +1,191 @@
+{
+ "code_commit": "8e77eb40e02af5bc8967e4cf764d4c39d8ce98b5",
+ "cleaning": {
+  "command": "pt_clean.py --csv HeDC4.csv --out hebrew --keep 0.45 --max-gb 12",
+  "documents": {
+   "sampled out": 4679097,
+   "kept": 2166567,
+   "too short": 54510,
+   "not Hebrew enough": 394140,
+   "blocked subject": 745563,
+   "SEO filler": 382401,
+   "no sentences": 59563,
+   "repeats itself": 7637
+  },
+  "note": "the duplicates dropped weren't kept in the run's output"
+ },
+ "corpus": {
+  "commands": [
+   "pt_corpus.py compare --out puki-tok",
+   "pt_corpus.py build --vocab 12288 --out puki-tok"
+  ],
+  "hebrew_share": 0.75
+ },
+ "run": {
+  "name": "puki-48m",
+  "command": "pt_run.py --vocab 12288 --tok puki-tok --run puki-48m --until 1.6e9",
+  "seed": 0,
+  "micro": 16,
+  "accum": 8,
+  "seq": 1024,
+  "until": 1600000000.0,
+  "pack": "v1",
+  "resumed": false,
+  "optimizer": "adamw",
+  "lr": 0.002,
+  "beta2": 0.95,
+  "weight_decay": 0.1,
+  "size": "50m"
+ },
+ "tokenizer_sha256": "f00623972a58b663923fea399afae21fbc148bf3ee9725a6c505a86fc004fe45",
+ "chunk_index_sha256": "c485646864aad92a7c8029a677009fe14e3c9859f01e0c45d54c40bcf10fd946",
+ "chunks_trained_on": {
+  "count": 4405786,
+  "unique": 4405786,
+  "tokens": 1579310080,
+  "order_sha256": "1ae17ef39e55603ada5a2a3bc9d31e83201ef45b8f1c0dc3442a47a5eb4ef56f"
+ },
+ "references": {
+  "probe": "94482dd28bf27cfa33e80c4e5c980d647ff4df650e5f2aa12b66d337934a8a07",
+  "heldout": "40719d9c52f8d4610589720c444fae9cee34467e2e9add0e7f67e5767b8bdea0"
+ },
+ "sources": {
+  "hebrew": {
+   "repo": "HeNLP/HeDC4",
+   "files": "HeDC4.csv",
+   "commit": "84395a7af1fc1be19ad02df0af609069253a9f9e",
+   "licence": null,
+   "note": "cleaned by pt_clean.py, see \"cleaning\"",
+   "url": "https://huggingface.co/datasets/HeNLP/HeDC4",
+   "corpus": {
+    "docs": 2166567,
+    "tokens": 1645643105,
+    "sha256": "70830c9cc16f9eee2869943e8fe70a113efe82569ad0d7840113f6d6980da922"
+   },
+   "trained_on": {
+    "tokens": 1162262434,
+    "chunks": 3331842,
+    "docs": 1939730
+   },
+   "raw_files": {
+    "hebrew-0000.json.gz": "b8cba4dc18898bf56b42815ced3a36aba46894b7c7cb88bb89a92069a6f3699d",
+    "hebrew-0001.json.gz": "fe7931b45d68ad1ffa4a00930517c5dc1b849c0b63dec0d9fd1d0a3c488e1eb1",
+    "hebrew-0002.json.gz": "c709acc3391787f93b9e2050fcfa6409c36d8d7b91b8d52039ba8221ac869374",
+    "hebrew-0003.json.gz": "82d59ab1431e97d767ff57fa5a97fd9f81c15116baf69a07a610c07c540d4b88",
+    "hebrew-0004.json.gz": "cdbdff032a59563053d125a2c0213e1c07a76e2137120131659520f5494aff76",
+    "hebrew-0005.json.gz": "4507cb247471ceba7607d8bf8f504c2ba6b696ef7ca243ee14891233739fcd17",
+    "hebrew-0006.json.gz": "28fe14276634d279431378347e3ab7b946dc07c8404a3f009aab2e40cb1d04fc",
+    "hebrew-0007.json.gz": "f9dbcf0a79cdde76111dc0aa59c3ba7f1c7289604d45a27d6d22df4c7464256e",
+    "hebrew-0008.json.gz": "c662d233922a9766437d5c73baa334329120c84de79d02686584cfda8107f7c2",
+    "hebrew-0009.json.gz": "eb0b83155ffc753a6b89f8f8d8b22461539dacd03bd82357e18a1988ebfd38f1",
+    "hebrew-0010.json.gz": "e91fbef0b48d1859aa4dee4b35ba3bc927188c0576c39b6ad3c908fada80853e",
+    "hebrew-0011.json.gz": "27781a488225b0c1587c47549b30c938c3008124f8d8d8df0bc973d910ba3bdf",
+    "hebrew-0012.json.gz": "642403a8cf305d9a52e1ac734bd0c3d29852677b3a8ec6f496fb7fe43b382ae0",
+    "hebrew-0013.json.gz": "d5909a5f89e7a77a8bbbd76fe8c2d141afb1ec7839c675e15e0869cc78be56f0",
+    "hebrew-0014.json.gz": "aa0571e4197a46905f4729f2ab37a12dbe9b3f47a4136ecf412204cb0beaa266",
+    "hebrew-0015.json.gz": "84576a43f88053210316be66d7f839a2700010afa5d630eb9dcfc03c08c50ae1",
+    "hebrew-0016.json.gz": "8605b5e8885e2294471d67264516fa2f8a4536cbeff35ff593e946db9b4a2b05",
+    "hebrew-0017.json.gz": "7f5b2052eb341b3603d1ae554539ed3427f611a3d1903ab620c0433c1d723c6f",
+    "hebrew-0018.json.gz": "ebe03c8229825eec7646b48709a22888aacc2fb48f4596edbaf0b361f630579e"
+   },
+   "csv_sha256": "90b205f18a4563017db1bfdf98a629801738f3f549e482ff5d82da6e59737f57"
+  },
+  "fineweb-edu": {
+   "repo": "HuggingFaceFW/fineweb-edu",
+   "files": "sample/10BT/",
+   "licence": "ODC-By",
+   "url": "https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu",
+   "commit": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+   "corpus": {
+    "docs": 169984,
+    "tokens": 247123196,
+    "sha256": "7d0261bf57eb07e840e1860b556ab2828a0f9afaef7f8e4b955e0686d1f42412"
+   },
+   "trained_on": {
+    "tokens": 173146401,
+    "chunks": 449448,
+    "docs": 158618
+   },
+   "raw_files": {
+    "sample/10BT/000_00000.parquet": "b1ba7b2ce4cb5ea6ef42dca40263eabb85f37700d01693a68e9b30a31d78e871",
+    "sample/10BT/001_00000.parquet": "3fcf2dc69cd52503986276d3d2d26a8c356d0f2ea28a0de4fdbda8cf87755693",
+    "sample/10BT/002_00000.parquet": "547ae182d132c9f06b6ce63149567208ea9f57630bfd9b1a2938e504f0c9ebd7"
+   }
+  },
+  "cosmopedia": {
+   "repo": "HuggingFaceTB/cosmopedia",
+   "files": "data/stories/",
+   "licence": "Apache-2.0",
+   "url": "https://huggingface.co/datasets/HuggingFaceTB/cosmopedia",
+   "commit": "0ae6ec63f91742bd2d1eaef4f02232c55d719385",
+   "corpus": {
+    "docs": 184320,
+    "tokens": 137699550,
+    "sha256": "a53bb1ab5cf345ff12d026d0054b3e50f70b68a4cf6d341127d18b8a5bebbcea"
+   },
+   "trained_on": {
+    "tokens": 97047802,
+    "chunks": 279699,
+    "docs": 173172
+   },
+   "raw_files": {
+    "data/stories/train-00000-of-00043.parquet": "c0c658bbe65657c4e03f4dd593e224ecf763c0a64a6dbe468b3cc3deacfc7a3c",
+    "data/stories/train-00001-of-00043.parquet": "78e79f4de9300ce7b00e305665d065719a6688a263bf92d6d2e3256bdd4e98cf",
+    "data/stories/train-00002-of-00043.parquet": "8d513eb1c273ecda161a8a3f76c03b80a76cd455bc439e32040abf612f037f1e",
+    "data/stories/train-00003-of-00043.parquet": "33c85b5e9d23282c5805ae922613856ecc2aaafc376db9398811096995e13ede",
+    "data/stories/train-00004-of-00043.parquet": "839854ea3388163b70bc20b698efbd4778a0feb7e88fe7a1b83ed94507ea112e",
+    "data/stories/train-00005-of-00043.parquet": "6be05e303d68a62f85cc5dcd63435ad7f9d4399a119ff8826e52dff5fc308ed2",
+    "data/stories/train-00006-of-00043.parquet": "6d79e2397607353c747b19685fe4876e22d85f419587fb569c941d1cd0e1bec5",
+    "data/stories/train-00007-of-00043.parquet": "170f1240dfde89340c181667910a4dd82545665ebebfec661788c37a31158579",
+    "data/stories/train-00008-of-00043.parquet": "65b28c4e18f1ee9ede31d4685c891ddfb4e05a772963aa15688b104365ed9124",
+    "data/stories/train-00009-of-00043.parquet": "b183ab0ed22f5cbce61674d54f35969159172f5f43a07a07884053d0010c9cac",
+    "data/stories/train-00010-of-00043.parquet": "20be7ae24a42f2407709d41c34e8dfe8b08148dd5c9c2fb8adb0b394e3c02045",
+    "data/stories/train-00011-of-00043.parquet": "13f331448719877a9ab1efd75006bad6ca1b93a57177813e902cea2c90b2783e",
+    "data/stories/train-00012-of-00043.parquet": "9f0cdb5230b278c62e83f54108ceb847eeed3cb1b4f481af0fcab9988b517c94"
+   }
+  },
+  "gutenberg": {
+   "repo": "common-pile/project_gutenberg_filtered",
+   "files": "project_gutenberg-dolma-*",
+   "licence": "public domain",
+   "url": "https://huggingface.co/datasets/common-pile/project_gutenberg_filtered",
+   "commit": "3cdf6879c807f4e4e063f2ceb23bc268d8c29ab7",
+   "corpus": {
+    "docs": 1024,
+    "tokens": 125269828,
+    "sha256": "0fd3b7854784835e28fffed595d4039c2b95fd75af8318ff562dea1254145265"
+   },
+   "trained_on": {
+    "tokens": 87269128,
+    "chunks": 202000,
+    "docs": 1023
+   },
+   "raw_files": {
+    "project_gutenberg-dolma-0000.json.gz": "f7e3716e1e2be607a044920ffec69d1395598cca178d4ccbbd343f206b31effb",
+    "project_gutenberg-dolma-0001.json.gz": "a38ccf7cb3851664f1c3ab256deac7ebd5597fffd90e15afff3e5e5a252e411c"
+   }
+  },
+  "youtube": {
+   "repo": "common-pile/youtube_filtered",
+   "files": "youtube-commons-*",
+   "licence": "CC-BY (per channel)",
+   "url": "https://huggingface.co/datasets/common-pile/youtube_filtered",
+   "commit": "dff8c8a54e98bce64c2e7ce9a8466c144c1cddd6",
+   "corpus": {
+    "docs": 16384,
+    "tokens": 85555396,
+    "sha256": "7231c1a32d78116bf44662f36e58bff863a5978b69c45de7b74200cfe8a957f6"
+   },
+   "trained_on": {
+    "tokens": 59584315,
+    "chunks": 142797,
+    "docs": 15570
+   },
+   "raw_files": {
+    "youtube-commons-0000.json.gz": "c90b82cff8b9550184a063ab71e5e8bf46ac9bf6640c19f3a9647095c9112005",
+    "youtube-commons-0001.json.gz": "d2016ce3c1594de463e2cd5b13d848a4b0d762713d6425d21bfcf7f4989547c5",
+    "youtube-commons-0002.json.gz": "864e66b322bd869382095c8eafab8de2324161bd1e20704697bba7ce93866422"
+   }
+  }
+ }
+}

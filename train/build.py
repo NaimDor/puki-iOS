@@ -15,6 +15,8 @@ Tasks (add one for a new feature, make its data, retrain):
     python build.py --pilot 10              # a few inputs per task, to read before spending more
     python build.py                         # everything
     python build.py --tasks talk,careful    # just these
+    python build.py --scale 3 --take 1 --seed 8 --name more1    # a top-up: more inputs, new lines for
+                                                                # them all; train.jsonl is left alone
 """
 import argparse
 import hashlib
@@ -40,6 +42,7 @@ DATA = os.path.join(HERE, "data")
 STAND_IN = {"he": "נועה", "en": "Noa"}  # only for running Puki's filter on lines with @name
 CAREFUL = [c for c, _, _ in safety.RULES]
 KEEP_PER_INPUT = 2
+TAKE = 0  # (--take)
 
 
 def heldout(key, share=0.1):
@@ -60,9 +63,9 @@ def puki_filter(line, lang, girl):
 
 # ---------- Inputs for each task ----------
 
-def inputs(tasks, pilot, rng):
+def inputs(tasks, pilot, rng, scale=1, seed=7):
     jobs = []
-    ms = moments_mod.moments()
+    ms = moments_mod.moments(seed, 12 if scale == 1 else 40)
     for lang in ("he", "en"):
         for girl in (True, False):
             if "moment" in tasks or "tap" in tasks:
@@ -75,7 +78,7 @@ def inputs(tasks, pilot, rng):
                 # The earlier moment is from the same game (another animal, the same color...), as
                 # the brain's memory.related() would find, so the link is a real one
                 plain = [m for m in ms if not m["template"].startswith("tap: ")]
-                for m in rng.sample(plain, min(60, len(plain))):
+                for m in rng.sample(plain, min(60 * scale, len(plain))):
                     words = memory._content_words(m["he"])
                     game = m["he"].split(":")[0] + ":" if ":" in m["he"] else None
                     alike = [o for o in plain if o is not m and
@@ -88,7 +91,7 @@ def inputs(tasks, pilot, rng):
                                      "earlier": f"{when[0] if lang == 'en' else when[1]}: {o[lang]}", "group": m["template"]})
     if "talk" in tasks:
         for lang in ("he", "en"):
-            sets = 1 if pilot else (10 if lang == "he" else 4)  # (Hebrew needs more: the writer drifts to English)
+            sets = 1 if pilot else (10 if lang == "he" else 4) * scale  # (Hebrew needs more: the writer drifts to English)
             phrases = {p for s in range(sets) for p in teacher.toddler_phrases(lang, "play", 40, s)
                        # (the writer slips into English now and then: only phrases in the asked language)
                        if any("א" <= ch <= "ת" for ch in p) == (lang == "he")}
@@ -98,7 +101,7 @@ def inputs(tasks, pilot, rng):
     if "careful" in tasks:
         for lang in ("he", "en"):
             for cat in CAREFUL:
-                for p in teacher.toddler_phrases(lang, cat, 8 if pilot else 25):
+                for p in {p for s in range(scale) for p in teacher.toddler_phrases(lang, cat, 8 if pilot else 25, s)}:
                     # Only phrases in the right language that Puki's own word lists put in this
                     # category: the model learns exactly what the brain would answer
                     hebrew = any("א" <= ch <= "ת" for ch in p)
@@ -122,13 +125,13 @@ def inputs(tasks, pilot, rng):
                     jobs.append({"task": "care", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"],
                                  "note": x["who"] + "\n" + teacher.CARE_MOMENTS[x["outcome"]]})
     if "recap" in tasks:
-        for x in games.recap_inputs(rng, 150):
+        for x in games.recap_inputs(rng, 150 * scale):
             for lang in ("he", "en"):
                 for girl in (True, False):
                     jobs.append({"task": "recap", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"]})
     if "story_next" in tasks:
         # A whole story is one job (written at once, then cut into its steps), for a girl or a boy
-        for plan in games.story_plans(rng, 120):
+        for plan in games.story_plans(rng, 120 * scale):
             for lang in ("he", "en"):
                 jobs.append({"task": "story_next", "lang": lang, "girl": rng.random() < 0.5, "plan": plan,
                              "input": games.story_input(plan, lang, [], 0), "group": plan["group"]})
@@ -190,7 +193,7 @@ def run(job):
     if job["task"] == "careful":
         reply = safety.replies(lang, girl)[job["category"]]
         return [{**job, "kept": [reply], "rejected": [], "scores": []}]
-    lines = teacher.write_lines(job["task"], lang, girl, job["input"], job.get("earlier"), note=job.get("note"))
+    lines = teacher.write_lines(job["task"], lang, girl, job["input"], job.get("earlier"), note=job.get("note"), take=TAKE)
     passed, rejected = [], []
     # What only the earlier moment had (the horse, not "hiding", which both have)
     earlier_words = (memory._content_words(job["earlier"].split(":", 1)[-1]) - memory._content_words(job["input"])
@@ -226,11 +229,20 @@ def main():
     ap.add_argument("--pilot", type=int, default=0, help="only this many inputs per task and language")
     ap.add_argument("--tasks", default="moment,tap,talk,careful,reach_back,silly,silly_fix,care,story_next,recap")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--scale", type=int, default=1, help="this many times the inputs")
+    ap.add_argument("--take", type=int, default=0, help="a new take: the teacher writes new lines for every input")
+    ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--name", default="", help="what to call the output (default train, or pilot)")
+    ap.add_argument("--count", action="store_true", help="print the inputs per task and stop")
     args = ap.parse_args()
+    global TAKE
+    TAKE = args.take
     tasks = args.tasks.split(",")
-    rng = random.Random(7)
-    jobs = inputs(tasks, args.pilot, rng)
+    rng = random.Random(args.seed)
+    jobs = inputs(tasks, args.pilot, rng, args.scale, args.seed)
     print(f"{len(jobs)} inputs ({', '.join(f'{t} {sum(1 for j in jobs if j["task"] == t)}' for t in tasks)})")
+    if args.count:
+        return
     with ThreadPoolExecutor(args.workers) as ex:
         results = [r for rs in ex.map(run, jobs) for r in rs]
         if "silly_fix" in tasks:
@@ -246,7 +258,7 @@ def main():
             results += [r for rs in ex.map(run, fixes) for r in rs]
 
     os.makedirs(DATA, exist_ok=True)
-    name = "pilot" if args.pilot else "train"
+    name = args.name or ("pilot" if args.pilot else "train")
     n_train = n_held = 0
     with open(os.path.join(DATA, f"{name}.jsonl"), "w", encoding="utf-8") as tr, \
             open(os.path.join(DATA, f"{name}_heldout.jsonl"), "w", encoding="utf-8") as ho:
