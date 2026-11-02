@@ -36,6 +36,11 @@ SOURCES = {
     "gutenberg": (RAW_EN / "gutenberg", "jsonl.gz", 0.15),
     "youtube": (RAW_EN / "youtube", "jsonl.gz", 0.15),
 }
+# One language only (PUKI_LANG=he): no English sources, and only that language's lines of Puki's
+LANG = os.environ.get("PUKI_LANG", "")
+if LANG == "he":
+    SOURCES = {"hebrew": SOURCES["hebrew"]}
+    HEBREW_SHARE = 1.0
 # The mid-train: Puki's own training lines as a last source, MID_REPEAT times over, kept out of the stable
 # phase by an allowed-chunks list and mixed into one cooldown branch (PUKI_MID: the SFT jsonl files)
 MID = [Path(p) for p in os.environ.get("PUKI_MID", "").split(",") if p]
@@ -49,7 +54,7 @@ def docs(name):
     """The text of every document of one source, in file order."""
     folder, fmt, _ = SOURCES[name]
     if fmt == "puki":
-        rows = [strip(json.loads(l)["text"]) for f in MID for l in open(f, encoding="utf-8")]
+        rows = [strip(r["text"]) for f in MID for r in map(json.loads, open(f, encoding="utf-8")) if not LANG or r["lang"] == LANG]
         for _ in range(MID_REPEAT):
             yield from rows
         return
@@ -67,7 +72,7 @@ def docs(name):
 
 def puki_rows():
     with open(HERE / "data" / "final.jsonl", encoding="utf-8") as f:
-        return [json.loads(l) for l in f]
+        return [r for r in map(json.loads, f) if not LANG or r["lang"] == LANG]
 
 
 def strip(text):
@@ -132,7 +137,7 @@ def references(tok, out):
         return {"ids": (p + ans)[-SEQ:], "start": len(p)}
 
     with open(HERE / "data" / "final_heldout.jsonl", encoding="utf-8") as f:
-        rows = [json.loads(l) for l in f]
+        rows = [r for r in map(json.loads, f) if not LANG or r["lang"] == LANG]
     sets = {"probe": [], "heldout": []}
     for r in rows:
         side = "heldout" if int(hashlib.sha1(r["input"].encode()).hexdigest()[:8], 16) % 2 else "probe"
