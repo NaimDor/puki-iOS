@@ -17,7 +17,8 @@ Puki uses these, with thanks:
   and judged by DeepSeek's models (through the DeepSeek API).
 - kol-stream, by MaorB, on Google's EmbeddingGemma 2 (trained on ivrit.ai's Hebrew speech and on
   LibriSpeech, CC BY 4.0): downloaded separately, for listening on the device; Apache License 2.0
-- Music: by the project's author (piano, produced with Suno)
+- Music: by the project's author, Tom Sadeh (piano, produced with Suno): Creative Commons Attribution 4.0
+  (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/
 
 
 ========================================================================

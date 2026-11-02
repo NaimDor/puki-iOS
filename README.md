@@ -243,7 +243,7 @@ CLAUDE.md                  conventions for working on the code (also read by Cla
 ## Credits
 
 - Music ("Puki main theme", "Puki nights" and the Dance and Freeze track) by the project's
-  author: piano, produced with Suno
+  author, Tom Sadeh: piano, produced with Suno; [CC BY 4.0](LICENSE-music.md)
 - [AndroidX and Jetpack Compose](https://developer.android.com/jetpack) by Google (Apache-2.0)
 - [ONNX Runtime](https://onnxruntime.ai) by Microsoft (MIT) runs all four models
 - [BlueTTS](https://github.com/maxmelichov/BlueTTS) by Max Melichov (MIT): Puki's voice, with
@@ -284,4 +284,4 @@ Questions, or something Puki said that wasn't right: [hello@pukiparrot.com](mail
 
 ## License
 
-[MIT](LICENSE). Built with lots of help from [Claude Code](https://claude.com/claude-code).
+The code is [MIT](LICENSE). The music is [CC BY 4.0](LICENSE-music.md). Built with lots of help from [Claude Code](https://claude.com/claude-code).
