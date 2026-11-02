@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.BuildConfig
+import io.github.tomsadeh.puki.data.Contact
 import io.github.tomsadeh.puki.data.models.BilingualText
 import io.github.tomsadeh.puki.data.models.Gender
 import io.github.tomsadeh.puki.data.models.Language
@@ -441,6 +442,12 @@ private fun AboutCard() {
                 "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-BlueTTS, ל-RenikudPlus, ל-kol-stream, ל-ivrit.ai, ל-LibriSpeech, ל-HeDC4, ל-DeepSeek ול-ONNX Runtime.",
                 "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to BlueTTS, RenikudPlus, kol-stream, ivrit.ai, LibriSpeech, HeDC4, DeepSeek and ONNX Runtime."
             ).resolve(language),
+            style = MaterialTheme.typography.bodyMedium,
+            color = EarthBrown,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            BilingualText("שאלות? ${Contact.EMAIL}", "Questions? ${Contact.EMAIL}").resolve(language),
             style = MaterialTheme.typography.bodyMedium,
             color = EarthBrown,
             textAlign = TextAlign.Center
