@@ -36,11 +36,23 @@ SOURCES = {
     "gutenberg": (RAW_EN / "gutenberg", "jsonl.gz", 0.15),
     "youtube": (RAW_EN / "youtube", "jsonl.gz", 0.15),
 }
+# The mid-train: Puki's own training lines as a last source, MID_REPEAT times over, kept out of the stable
+# phase by an allowed-chunks list and mixed into one cooldown branch (PUKI_MID: the SFT jsonl files)
+MID = [Path(p) for p in os.environ.get("PUKI_MID", "").split(",") if p]
+MID_REPEAT = int(os.environ.get("PUKI_MID_REPEAT", "6"))
+MID_WEB = float(os.environ.get("PUKI_MID_WEB", "0.64e9"))  # web tokens beside them in the mid branch's list
+if MID:
+    SOURCES["puki"] = (None, "puki", None)
 
 
 def docs(name):
     """The text of every document of one source, in file order."""
     folder, fmt, _ = SOURCES[name]
+    if fmt == "puki":
+        rows = [strip(json.loads(l)["text"]) for f in MID for l in open(f, encoding="utf-8")]
+        for _ in range(MID_REPEAT):
+            yield from rows
+        return
     for f in sorted(folder.rglob("*.parquet" if fmt == "parquet" else "*.json.gz")):
         if fmt == "parquet":
             for batch in pq.ParquetFile(f).iter_batches(columns=["text"], batch_size=2048):
@@ -67,7 +79,9 @@ def sample(seed, sample_mb):
     """Text for the BPE: the mix by share, and Puki's lines, several times over so their words get merges."""
     rng = random.Random(seed)
     total = sample_mb * 1_000_000
-    for name, (_, _, share) in SOURCES.items():
+    for name, (_, fmt, share) in SOURCES.items():
+        if fmt == "puki":
+            continue  # (Puki's lines come in below, as before)
         want = total * (HEBREW_SHARE if share is None else (1 - HEBREW_SHARE) * share)
         got = 0
         for t in docs(name):
@@ -138,7 +152,7 @@ def build(a):
     eot = tok.token_to_id("<|endoftext|>")
     chunks, meta = [], {}
     hebrew_tokens = 0
-    for sid, (name, (_, _, share)) in enumerate(SOURCES.items()):
+    for sid, (name, (_, fmt, share)) in enumerate(SOURCES.items()):
         budget = 1e18 if share is None else hebrew_tokens * (1 - HEBREW_SHARE) / HEBREW_SHARE * share
         n_tok = n_doc = 0
         with (out / f"{name}.bin").open("wb") as fbin:
@@ -164,11 +178,23 @@ def build(a):
                         break
             if batch:
                 flush()
-        if share is None:
+        if name == "hebrew":
             hebrew_tokens = n_tok
         meta[name] = {"id": sid, "tokens": n_tok, "docs": n_doc}
         print(f"{name}: {n_doc} docs, {n_tok / 1e9:.3f}B tokens", flush=True)
     np.save(out / "chunks.npy", np.asarray(chunks, dtype=np.int64))
+    if MID:
+        # stable.npy: everything but Puki's lines. mid.npy: his lines and a random MID_WEB tokens of the rest, so
+        # the mid branch's cooldown (which samples its allowed chunks evenly) is a few percent Puki
+        mid = meta["puki"]["id"]
+        web = [i for i, c in enumerate(chunks) if c[0] != mid]
+        np.save(out / "stable.npy", np.asarray(web, dtype=np.int64))
+        random.Random(a.seed).shuffle(web)
+        sizes = np.asarray([chunks[i][2] for i in web])
+        take = web[:int(np.searchsorted(np.cumsum(sizes), MID_WEB))]
+        ours = [i for i, c in enumerate(chunks) if c[0] == mid]
+        np.save(out / "mid.npy", np.asarray(sorted(take + ours), dtype=np.int64))
+        print(f"mid branch: {meta['puki']['tokens'] / 1e6:.1f}M tokens of Puki's lines, {len(take)} web chunks")
     (out / "sources.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     references(tok, out)
     print(f"{len(chunks)} chunks -> {out}")
