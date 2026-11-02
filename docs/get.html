@@ -5,37 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Get Puki · הורדת פוקי</title>
 <link rel="icon" href="puki.svg" type="image/svg+xml">
-<style>
-  body { font-family: system-ui, "Segoe UI", Arial, sans-serif; background: #fff3e0; color: #3e2723;
-         margin: 0; display: grid; place-items: center; min-height: 100vh; text-align: center; padding: 16px; }
-  img { width: 96px; height: 96px; }
-  a.btn { display: inline-block; margin-top: 14px; background: #43a047; color: #fff; text-decoration: none;
-          padding: 14px 26px; border-radius: 999px; font-weight: 700; font-size: 18px; }
-  p { margin: 8px 0; }
-  .en { direction: ltr; color: #6d5d57; }
-</style>
+<!-- The QR code on the site points here, so this address never changes: it now leads to the Google Play test -->
+<meta http-equiv="refresh" content="0; url=test.html">
+<link rel="canonical" href="https://pukiparrot.com/test">
 </head>
 <body>
-<main>
-  <img src="puki.svg" alt="">
-  <p><b>ההורדה של פוקי מתחילה…</b></p>
-  <p class="en">Puki's download is starting…</p>
-  <a class="btn" id="apk" href="https://github.com/TomSadeh/puki/releases">הורדה · Download</a>
-  <p><a href="./#install">איך מתקינים · How to install</a></p>
-</main>
-<script>
-  // The newest release's APK (all releases are pre-releases, which GitHub's "latest" link skips).
-  // This page's address is what the QR code on the site points to, so it never has to change.
-  fetch("https://api.github.com/repos/TomSadeh/puki/releases?per_page=20")
-    .then(r => r.ok ? r.json() : [])
-    .then(releases => {
-      const rel = releases.find(r => !r.draft && r.assets.some(a => a.name.endsWith(".apk")));
-      if (!rel) return;
-      const apk = rel.assets.find(a => a.name.endsWith(".apk")).browser_download_url;
-      document.getElementById("apk").href = apk;
-      location.href = apk;
-    })
-    .catch(() => {});
-</script>
+<p><a href="test.html">פוקי ב-Google Play · Puki on Google Play</a></p>
 </body>
 </html>

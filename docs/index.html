@@ -95,12 +95,6 @@
   .getit { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; background: #fff; border-radius: 22px; padding: 18px 22px; box-shadow: var(--shadow); margin-bottom: 22px; }
   .getit img { width: 150px; height: 150px; image-rendering: pixelated; border-radius: 10px; }
   .getit p { margin: 4px 0; }
-  .guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-  .guide .card b.n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sun); margin-inline-end: 8px; font-size: 15px; }
-  .mock { margin-top: 12px; border: 2px solid #e0d6cc; border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; background: #faf6f1; font-size: 15px; direction: ltr; }
-  .mock .sw { width: 44px; height: 24px; border-radius: 12px; background: #43a047; position: relative; flex: none; }
-  .mock .sw::after { content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 2px; right: 2px; }
-  .note { background: #fff8e1; border: 2px solid #ffe082; border-radius: 16px; padding: 12px 16px; margin-top: 16px; }
   @media (max-width: 560px) { .getit { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
   .platform { margin: 10px 0 0; font-size: 15px; color: var(--muted); }
   details.tech { margin-top: 22px; background: #fff; border-radius: 18px; padding: 14px 20px; box-shadow: var(--shadow); }
@@ -137,9 +131,8 @@
           <span lang="en">A Hebrew/English Android game for ages 2–4. Turn on Puki's brain and the parrot really talks with your child: a small brain of his own, running on the tablet itself, with no PC and no internet. No ads, no tracking, and nothing about your child ever leaves the tablet.</span>
         </p>
         <div class="buttons">
-          <a class="btn primary" data-apk href="get.html">
-            <span lang="he">הורדה לאנדרואיד</span><span lang="en">Download for Android</span>
-            <small data-version-label></small>
+          <a class="btn primary" href="test.html">
+            <span lang="he">מצטרפים לבדיקה ב-Google Play</span><span lang="en">Join the test on Google Play</span>
           </a>
           <a class="btn ghost" href="https://github.com/TomSadeh/puki">
             <span lang="he">קוד פתוח ב-GitHub</span><span lang="en">Open source on GitHub</span>
@@ -147,7 +140,7 @@
         </div>
         <p class="free" lang="he"><span>חינם לתמיד</span><span>בלי רכישות</span><span>בלי פרסומות</span></p>
         <p class="free" lang="en"><span>Free forever</span><span>No purchases</span><span>No ads</span></p>
-        <p class="platform"><span lang="he">לטאבלטים וטלפונים עם אנדרואיד 8 ומעלה. לא ל-iPad או ל-iPhone.</span><span lang="en">For Android 8+ tablets and phones. Not for iPad or iPhone.</span></p>
+        <p class="platform"><span lang="he">לטאבלטים וטלפונים עם אנדרואיד 8 ומעלה. לא ל-iPad או ל-iPhone. פוקי בבדיקה סגורה ב-Google Play, ובקרוב יהיה פתוח לכולם.</span><span lang="en">For Android 8+ tablets and phones. Not for iPad or iPhone. Puki is in a closed test on Google Play, and opens to everyone soon.</span></p>
       </div>
       <img class="shot" src="screenshots/hub.png" data-alt-he="מסך הבית: איים בים, אי לכל משחק" data-alt-en="The hub: islands on a sea, one per game" alt="מסך הבית: איים בים, אי לכל משחק">
     </div>
@@ -266,46 +259,25 @@
     <div class="wrap">
       <h2><span lang="he">איך מתחילים</span><span lang="en">Getting started</span></h2>
       <div class="getit">
-        <img src="download-qr.svg" alt="קוד QR להורדת פוקי" data-alt-he="קוד QR להורדת פוקי" data-alt-en="QR code to download Puki">
+        <img src="download-qr.svg" alt="קוד QR לדף הבדיקה של פוקי" data-alt-he="קוד QR לדף הבדיקה של פוקי" data-alt-en="QR code for Puki's test page">
         <div>
           <p><b><span lang="he">על הטאבלט: סורקים עם המצלמה</span><span lang="en">On the tablet: scan with the camera</span></b></p>
-          <p><span lang="he">הקוד פותח את ההורדה של הגרסה החדשה ביותר. או פותחים בטאבלט את הכתובת</span><span lang="en">The code opens the newest version's download. Or open this address on the tablet:</span>
-            <a href="get.html">pukiparrot.com/get.html</a></p>
+          <p><span lang="he">הקוד פותח את דף הבדיקה. או פותחים בטאבלט את הכתובת</span><span lang="en">The code opens the test page. Or open this address on the tablet:</span>
+            <a href="test.html">pukiparrot.com/test</a></p>
         </div>
       </div>
       <ol class="steps">
-        <li><b><span lang="he">מתקינים את המשחק בטאבלט</span><span lang="en">Install the game on the tablet</span></b><br>
-          <span lang="he">מורידים את ה-<a data-apk href="get.html">APK</a> (אנדרואיד 8 ומעלה) ומאשרים התקנה; <a href="#install">כך זה נראה</a>. אחר כך המשחק מתעדכן לבד מההגדרות של ההורים.</span>
-          <span lang="en">Download the <a data-apk href="get.html">APK</a> (Android 8 or newer) and allow the install; <a href="#install">here's what you'll see</a>. After that the game updates itself from the parent settings.</span></li>
+        <li><b><span lang="he">מצטרפים לבדיקה ומתקינים מ-Google Play</span><span lang="en">Join the test and install from Google Play</span></b><br>
+          <span lang="he">שלושה צעדים קצרים ב<a href="test.html">דף הבדיקה</a>: מצטרפים לקבוצת הבודקים, נרשמים לבדיקה, ומתקינים. העדכונים מגיעים מ-Google Play כמו לכל אפליקציה.</span>
+          <span lang="en">Three short steps on the <a href="test.html">test page</a>: join the testers' group, become a tester, and install. Updates come from Google Play like any app's.</span></li>
         <li><b><span lang="he">מדליקים את המוח של פוקי (לא חובה)</span><span lang="en">Turn on Puki's brain (optional)</span></b><br>
-          <span lang="he">בהגדרות של ההורים (לחיצה ארוכה על גלגל השיניים, ואז לחיצה על המספרים שכתובים במילים), בכרטיס "פוקי במכשיר הזה", לוחצים "הורדה" (מסך הפתיחה מציע את זה גם). זה כחצי GB, פעם אחת, ועדיף ב-Wi-Fi. כשזה נגמר, פוקי מדבר. (הכרטיס מופיע בטאבלטים שיכולים להריץ את המוח: 64 ביט, וכ-3GB זיכרון.)</span>
-          <span lang="en">In the parent settings (long-press the gear, then tap the numbers shown in words), on the "Puki on this device" card, tap "Download" (the welcome screen offers it too). It's about half a GB, once, best on Wi-Fi. When it's done, Puki talks. (The card appears on tablets that can run the brain: 64-bit, with about 3 GB of memory.)</span></li>
+          <span lang="he">מסך הפתיחה מציע להוריד אותו, או אחר כך בהגדרות של ההורים (לחיצה ארוכה על גלגל השיניים, ואז לחיצה על המספרים שכתובים במילים), בכרטיס "פוקי במכשיר הזה". זה כחצי GB, פעם אחת, ועדיף ב-Wi-Fi. כשזה נגמר, פוקי מדבר. (הכרטיס מופיע בטאבלטים שיכולים להריץ את המוח: 64 ביט, וכ-3GB זיכרון.)</span>
+          <span lang="en">The welcome screen offers to download it, or later in the parent settings (long-press the gear, then tap the numbers shown in words), on the "Puki on this device" card. It's about half a GB, once, best on Wi-Fi. When it's done, Puki talks. (The card appears on tablets that can run the brain: 64-bit, with about 3 GB of memory.)</span></li>
       </ol>
+      <p class="platform"><span lang="he">אין Google Play בטאבלט (למשל Amazon Fire)? ה-APK של פוקי נמצא ב-<a href="https://github.com/TomSadeh/puki/releases">GitHub</a>, חתום במפתח של פוקי, ומתעדכן מתוך המשחק.</span><span lang="en">No Google Play on the tablet (an Amazon Fire, say)? Puki's APK is on <a href="https://github.com/TomSadeh/puki/releases">GitHub</a>, signed with Puki's key, and updates itself from inside the game.</span></p>
     </div>
   </section>
 
-  <section id="install">
-    <div class="wrap">
-      <h2><span lang="he">התקנה מחוץ לחנות, צעד אחר צעד</span><span lang="en">Installing from outside the store, step by step</span></h2>
-      <p class="sub"><span lang="he">פוקי בדרך ל-Google Play. עד אז, אנדרואיד שואל כמה שאלות בפעם הראשונה. זה נראה מפחיד, אבל זה רגיל לכל אפליקציה מחוץ לחנות.</span><span lang="en">Puki is on its way to Google Play. Until then, Android asks a few questions the first time. It looks alarming, but it's the same for any app from outside the store.</span></p>
-      <div class="guide">
-        <div class="card"><h3><b class="n">1</b><span lang="he">מורידים</span><span lang="en">Download</span></h3>
-          <p><span lang="he">בטאבלט: סורקים את הקוד למעלה או לוחצים "הורדה לאנדרואיד". אם Chrome אומר שהקובץ "עלול להזיק", לוחצים "להוריד בכל זאת".</span><span lang="en">On the tablet, scan the code above or tap "Download for Android". If Chrome says the file "may be harmful", tap "Download anyway".</span></p></div>
-        <div class="card"><h3><b class="n">2</b><span lang="he">מאשרים התקנה מהדפדפן</span><span lang="en">Allow the browser to install</span></h3>
-          <p><span lang="he">פותחים את הקובץ שהורד. אנדרואיד מבקש רשות: "הגדרות", ומדליקים את המתג (פעם אחת בלבד).</span><span lang="en">Open the downloaded file. Android asks for permission: tap "Settings" and turn on the switch (just once).</span></p>
-          <div class="mock"><span lang="en">Allow from this source</span><span lang="he">לאפשר מהמקור הזה</span><span class="sw"></span></div></div>
-        <div class="card"><h3><b class="n">3</b><span lang="he">מתקינים</span><span lang="en">Install</span></h3>
-          <p><span lang="he">חוזרים אחורה ולוחצים "התקנה". אם Play Protect אומר "אפליקציה לא מוכרת", לוחצים "פרטים נוספים" ואז "להתקין בכל זאת". כל APK חתום במפתח של פוקי.</span><span lang="en">Go back and tap "Install". If Play Protect says "unrecognized app", tap "More details", then "Install anyway". Every APK is signed with Puki's key.</span></p></div>
-        <div class="card"><h3><b class="n">4</b><span lang="he">משחקים</span><span lang="en">Play</span></h3>
-          <p><span lang="he">פותחים את פוקי: מסך פתיחה קצר שואל שפה, שם, ובת או בן. מכאן העדכונים מגיעים מתוך המשחק.</span><span lang="en">Open Puki: a short welcome asks for the language, a name, and girl or boy. From here on, updates come from inside the game.</span></p></div>
-      </div>
-      <div class="note">
-        <b><span lang="he">בטאבלט או בטלפון של Samsung?</span><span lang="en">On a Samsung tablet or phone?</span></b>
-        <span lang="he">ההגדרה "חוסם אוטומטי" (Auto Blocker) חוסמת בשקט כל התקנה מחוץ לחנויות. מכבים אותה לרגע בהגדרות &gt; אבטחה ופרטיות &gt; חוסם אוטומטי, מתקינים, ומדליקים שוב.</span>
-        <span lang="en">Its "Auto Blocker" setting quietly blocks every install from outside the stores. Turn it off for a moment in Settings &gt; Security and privacy &gt; Auto Blocker, install, then turn it back on.</span>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -329,20 +301,6 @@
   try { saved = localStorage.getItem("puki-lang"); } catch (e) {}
   setLang(saved || "he");
   document.getElementById("lang").addEventListener("click", () => setLang(root.dataset.lang === "he" ? "en" : "he"));
-
-  // Download links: the newest release's APK (all releases are pre-releases, which GitHub's
-  // "latest" link skips). Without an answer, the links stay on the releases page.
-  fetch("https://api.github.com/repos/TomSadeh/puki/releases?per_page=20")
-    .then(r => r.ok ? r.json() : [])
-    .then(releases => {
-      const apkRelease = releases.find(r => !r.draft && r.assets.some(a => a.name.endsWith(".apk")));
-      if (apkRelease) {
-        const apk = apkRelease.assets.find(a => a.name.endsWith(".apk"));
-        document.querySelectorAll("[data-apk]").forEach(el => { el.href = apk.browser_download_url; });
-        document.querySelectorAll("[data-version-label]").forEach(el => { el.textContent = apkRelease.tag_name.replace(/^v/, ""); });
-      }
-    })
-    .catch(() => {});
 </script>
 </body>
 </html>
