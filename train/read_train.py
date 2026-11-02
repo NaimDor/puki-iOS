@@ -235,6 +235,7 @@ def main():
     ap.add_argument("--finetune", help="a pretrained run's best.pt: learn the reviewed lines from it, half of each "
                                        "batch, the other half the labelled sentences (--steps sets the length)")
     ap.add_argument("--fit-share", type=float, default=1.0, help="fine-tune on this share of the reviewed lines")
+    ap.add_argument("--extra", help="more lines to fine-tune on beside the reviewed ones (read_more.py: unreviewed)")
     a = ap.parse_args()
     torch.manual_seed(a.seed)
     rng = np.random.default_rng(a.seed)
@@ -252,6 +253,10 @@ def main():
     if a.finetune:
         model.load_state_dict(ck["model"])
         fit_rows = [fit_rows[i] for i in sorted(rng.permutation(len(fit_rows))[:int(len(fit_rows) * a.fit_share)])]
+        if a.extra:
+            held = {r["line"] for r in test_rows}
+            with open(a.extra, encoding="utf-8") as f:
+                fit_rows += [r for r in map(json.loads, f) if r.get("say") and r["line"] not in held]
         lines = Lines(fit_rows, v, model, mask, device)
         rows = test_rows  # (what it learns from can't be what it's scored on)
     print(f"{a.run}: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M params, {len(data.train)} sentences, "

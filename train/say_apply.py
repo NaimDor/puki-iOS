@@ -76,13 +76,21 @@ def fix(line, girl, say, kind, table=False):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--input", default=os.path.join(DATA, "say_fixed.jsonl"))
+    ap.add_argument("--output", default=os.path.join(DATA, "say_final.jsonl"))
+    a = ap.parse_args()
     changed = 0
-    with open(os.path.join(DATA, "say_final.jsonl"), "w", encoding="utf-8") as out:
-        for raw in open(os.path.join(DATA, "say_fixed.jsonl"), encoding="utf-8"):
+    with open(a.output, "w", encoding="utf-8") as out:
+        for raw in open(a.input, encoding="utf-8"):
             r = json.loads(raw)
             say = fix(r["line"], r["girl"], r["say"], "train")
             changed += say != r["say"]
             out.write(json.dumps({"line": r["line"], "girl": r["girl"], "say": say}, ensure_ascii=False) + "\n")
+    if a.output != os.path.join(DATA, "say_final.jsonl"):  # (other lines: the recordings belong to the main set)
+        print(f"{changed} training labels changed -> {a.output}")
+        return
     voices = {}
     for r in rows("voice_audit.tsv"):
         stem = r["stem"]

@@ -71,8 +71,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pilot", type=int, default=0)
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--input", default=os.path.join(DATA, "say.jsonl"))
+    ap.add_argument("--output", default=os.path.join(DATA, "say_fixed.jsonl"))
+    ap.add_argument("--flags", default=os.path.join(DATA, "say_flags.tsv"))
     args = ap.parse_args()
-    items = [json.loads(l) for l in open(os.path.join(DATA, "say.jsonl"), encoding="utf-8")]
+    items = [json.loads(l) for l in open(args.input, encoding="utf-8")]
     items = [i for i in items if i["say"]]
     if args.pilot:
         random.seed(7)
@@ -88,8 +91,7 @@ def main():
         print(f"{len(results)} lines, {flagged} with fixes, {failed} failed")
         return
     applied = 0
-    with open(os.path.join(DATA, "say_fixed.jsonl"), "w", encoding="utf-8") as out, \
-            open(os.path.join(DATA, "say_flags.tsv"), "w", encoding="utf-8") as tsv:
+    with open(args.output, "w", encoding="utf-8") as out, open(args.flags, "w", encoding="utf-8") as tsv:
         tsv.write("girl\tapplied\tword\twas\tfixed\twhy\tline\n")
         for item, kept, err in results:
             parts = item["say"].split()

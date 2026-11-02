@@ -14,6 +14,7 @@ import json
 import math
 import os
 import random
+import re
 import sys
 import time
 from pathlib import Path
@@ -101,10 +102,17 @@ def samples(model, tok, rows, eot, device, n, seed):
     return out
 
 
+TRUTH = re.compile(r"\((?:באמת|really): ([^)]+)\)")
+
+
 def judge_samples(made):
-    """How many pass Puki's filter (by task), the gate's accuracy, and the raw list."""
+    """How many pass Puki's filter (by task), the gate's accuracy, and the truth checks the builder keeps
+    lines by: a Silly Puki correction says the real answer, the silly line itself doesn't, a recap names
+    two or more of the day's things."""
     import build
+    import games
     passed, total, gate_right, gate_n = collections.Counter(), collections.Counter(), 0, 0
+    true_, checked = collections.Counter(), collections.Counter()
     for r, line in made:
         if r["task"] == "gate":
             gate_n += 1
@@ -112,8 +120,16 @@ def judge_samples(made):
             continue
         total[r["task"]] += 1
         passed[r["task"]] += build.puki_filter(line, r["lang"], r["girl"]) is not None
+        truth = TRUTH.search(r["input"])
+        if r["task"] in ("silly", "silly_fix") and truth:
+            checked[r["task"]] += 1
+            true_[r["task"]] += build.said_truth(line, truth.group(1).strip()) == (r["task"] == "silly_fix")
+        elif r["task"] == "recap":
+            checked["recap"] += 1
+            true_["recap"] += games.events_named(line, r["input"]) >= 2
     rate = sum(passed.values()) / max(sum(total.values()), 1)
-    return rate, {t: f"{passed[t]}/{total[t]}" for t in total}, gate_right / max(gate_n, 1), gate_n
+    truths = {t: f"{true_[t]}/{checked[t]}" for t in checked}
+    return rate, {t: f"{passed[t]}/{total[t]}" for t in total}, gate_right / max(gate_n, 1), gate_n, truths
 
 
 def main():
@@ -159,13 +175,13 @@ def main():
     def evaluate(step):
         loss = reference_loss(model, refs, device)
         made = samples(model, tok, held_rows, eot, device, a.samples, a.seed)
-        rate, by_task, gate, gate_n = judge_samples(made)
+        rate, by_task, gate, gate_n, truths = judge_samples(made)
         row = {"step": step, "epoch": round(step / per_epoch, 2), "ref_heldout": loss, "filter_pass": rate,
-               "by_task": by_task, "gate": gate, "gate_n": gate_n, "time": time.strftime("%H:%M")}
+               "by_task": by_task, "gate": gate, "gate_n": gate_n, "truth": truths, "time": time.strftime("%H:%M")}
         log.write(json.dumps(row, ensure_ascii=False) + "\n")
         log.flush()
-        print(f"eval {row['epoch']} ep: held-out answer loss {loss:.3f} | filter pass {rate:.1%} {by_task} | "
-              f"gate {gate:.1%} of {gate_n}", flush=True)
+        print(f"eval {row['epoch']} ep: held-out answer loss {loss:.3f} | filter pass {rate:.1%} | "
+              f"gate {gate:.1%} of {gate_n} | truth {truths}", flush=True)
         with open(out / f"samples-{step}.txt", "w", encoding="utf-8") as f:
             for r, line in made:
                 f.write(f"[{r['task']} {r['lang']} {'girl' if r['girl'] else 'boy'}] {r['input']}\n   model  {line}\n   data   {r['line']}\n")
