@@ -74,12 +74,12 @@ From `metadata/android/<language>/`:
 - [ ] Screenshots: `en-US/images/phoneScreenshots/`. Upload the same files as phone, 7-inch and
       10-inch tablet screenshots, for both languages (they're tablet shots, 1340×800).
 - [ ] Category: **Games → Educational**. Tags: toddlers, educational, family.
-- [ ] Website: https://tomsadeh.github.io/puki/
-- [ ] Privacy policy: **https://tomsadeh.github.io/puki/privacy.html**
+- [ ] Website: https://pukiparrot.com/
+- [ ] Privacy policy: **https://pukiparrot.com/privacy.html**
 
 ## 7. App content forms (Policy → App content)
 
-**Privacy policy:** https://tomsadeh.github.io/puki/privacy.html
+**Privacy policy:** https://pukiparrot.com/privacy.html
 
 **Ads:** No, the app contains no ads.
 

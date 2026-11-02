@@ -4,7 +4,7 @@ A free Hebrew/English Android game for toddlers (ages 2–4), with **פוקי**,
 No cloud, no ads, no tracking, and nothing about your child ever leaves the device. Open
 source, under the MIT license.
 
-**Website:** [tomsadeh.github.io/puki](https://tomsadeh.github.io/puki/) (Hebrew and English, with the latest download)
+**Website:** [pukiparrot.com](https://pukiparrot.com/) (Hebrew and English, with the latest download)
 
 ![The hub: islands on a sea, one per game](docs/screenshots/hub.png)
 
@@ -133,7 +133,7 @@ refused. A parent can delete the models again from the same card.
 ## Installing
 
 - **APK:** download the latest `Puki-<version>.apk` from the
-  [releases](https://github.com/TomSadeh/puki/releases) (or the [website](https://tomsadeh.github.io/puki/))
+  [releases](https://github.com/TomSadeh/puki/releases) (or the [website](https://pukiparrot.com/))
   and open it on the tablet.
 - **Obtainium:** add `https://github.com/TomSadeh/puki` in
   [Obtainium](https://github.com/ImranR98/Obtainium) to get each new release.
