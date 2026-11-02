@@ -141,6 +141,11 @@ GAME_BRIEFS = {
     "recap": "It's bedtime, and Puki tells the child about her day. Retell it from this list: every line is a whole "
              "little recap by itself that names two or three of the things (any of them), in the past tense, calm and "
              "warm, adding nothing that isn't there.",
+    "look": "Puki looks at the child's drawing. The facts above are true and they are all he knows: he can't see what "
+            "the drawing shows. Write a short, warm line about it that names one or two of the facts (a color, a sticker, "
+            "the page, how much is colored, the lines), adding nothing else: never guess what it is (\"a dog!\"), never "
+            "name a color or sticker that isn't listed, never say what color a sticker or the lines are (that isn't "
+            "known), never judge it (\"beautiful\" is fine, \"better\" or \"messy\" is not).",
 }
 # The caring game's three moments, told apart (given all three, the writer mixed them up)
 CARE_MOMENTS = {
@@ -158,6 +163,7 @@ GAME_RULES = {
     "silly_fix": ALTERNATIVES,
     "care": ALTERNATIVES,
     "recap": "\n(The bedtime recap may be up to 14 words.)" + ALTERNATIVES,
+    "look": ALTERNATIVES,
     "story_next": "\n(A story sentence may be up to 12 words; it tells the story rather than talking to the child.)",
 }
 

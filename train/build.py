@@ -11,6 +11,7 @@ Tasks (add one for a new feature, make its data, retrain):
   reach_back  a moment, and a similar one from an earlier session -> a line linking them
   silly, silly_fix, care, story_next, recap
               the games built around the model; see games.py
+  look        what the app reads off her drawing (colors, stickers, page) -> a line naming only that
 
     python build.py --pilot 10              # a few inputs per task, to read before spending more
     python build.py                         # everything
@@ -129,6 +130,12 @@ def inputs(tasks, pilot, rng, scale=1, seed=7):
             for lang in ("he", "en"):
                 for girl in (True, False):
                     jobs.append({"task": "recap", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"]})
+    if "look" in tasks:
+        # Puki's eyes: what the app reads off a drawing (games.look_inputs), never what it might show
+        for x in games.look_inputs(rng, 150 * scale):
+            for lang in ("he", "en"):
+                for girl in (True, False):
+                    jobs.append({"task": "look", "lang": lang, "girl": girl, "input": x[lang], "group": x["group"], "look": x})
     if "story_next" in tasks:
         # A whole story is one job (written at once, then cut into its steps), for a girl or a boy
         for plan in games.story_plans(rng, 120 * scale):
@@ -208,6 +215,8 @@ def run(job):
             f = None  # Silly Puki never gives the real answer away
         if f and job["task"] == "recap" and games.events_named(f, job["input"]) < 2:
             f = None  # a recap names two or three things from the day
+        if f and job["task"] == "look" and not games.look_ok(f, job["look"], lang):
+            f = None  # a drawing line names what's there, and nothing that isn't
         if f and job["task"] == "silly_fix" and not said_truth(f, job["truth"]):
             f = None  # ...and puts it right afterwards
         (passed if f else rejected).append(f or l)
@@ -227,7 +236,7 @@ def run(job):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pilot", type=int, default=0, help="only this many inputs per task and language")
-    ap.add_argument("--tasks", default="moment,tap,talk,careful,reach_back,silly,silly_fix,care,story_next,recap")
+    ap.add_argument("--tasks", default="moment,tap,talk,careful,reach_back,silly,silly_fix,care,story_next,recap,look")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--scale", type=int, default=1, help="this many times the inputs")
     ap.add_argument("--take", type=int, default=0, help="a new take: the teacher writes new lines for every input")

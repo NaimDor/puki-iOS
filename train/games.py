@@ -297,6 +297,109 @@ def recap_inputs(rng, n):
     return out
 
 
+# ---------- Puki's eyes: what the app knows about a drawing ----------
+# The drawing studio's paints, stamps and pages (ui/canvas/FreeCanvasScreen.kt, ColoringPages.kt). The app
+# reads these facts off her strokes, so Puki never has to guess what a scribble shows.
+
+LOOK_COLORS = {  # id: (Hebrew forms, English)
+    "red": (["אדום", "אדומה", "אדומים", "אדומות"], "red"), "blue": (["כחול", "כחולה", "כחולים", "כחולות"], "blue"),
+    "yellow": (["צהוב", "צהובה", "צהובים", "צהובות"], "yellow"), "green": (["ירוק", "ירוקה", "ירוקים", "ירוקות"], "green"),
+    "purple": (["סגול", "סגולה", "סגולים", "סגולות"], "purple"), "orange": (["כתום", "כתומה", "כתומים", "כתומות"], "orange"),
+    "pink": (["ורוד", "ורודה", "ורודים", "ורודות"], "pink"), "brown": (["חום", "חומה", "חומים", "חומות"], "brown"),
+    "black": (["שחור", "שחורה", "שחורים", "שחורות"], "black"),
+}
+LOOK_STAMPS = {  # id: (Hebrew one, Hebrew many, feminine, English one, English many)
+    "star": ("כוכב", "כוכבים", False, "star", "stars"), "heart": ("לב", "לבבות", False, "heart", "hearts"),
+    "flower": ("פרח", "פרחים", False, "flower", "flowers"), "butterfly": ("פרפר", "פרפרים", False, "butterfly", "butterflies"),
+    "ladybug": ("פרת משה רבנו", "פרות משה רבנו", True, "ladybug", "ladybugs"), "apple": ("תפוח", "תפוחים", False, "apple", "apples"),
+    "rainbow": ("קשת", "קשתות", True, "rainbow", "rainbows"), "sun": ("שמש", "שמשות", True, "sun", "suns"),
+    "moon": ("ירח", "ירחים", False, "moon", "moons"), "unicorn": ("חד-קרן", "חדי-קרן", False, "unicorn", "unicorns"),
+    "bird": ("ציפור", "ציפורים", True, "bird", "birds"), "rocket": ("טיל", "טילים", False, "rocket", "rockets"),
+}
+LOOK_PAGES = {  # id: (Hebrew, English, the things on it a line may name)
+    "blank": ("דף ריק", "blank paper", []), "fish": ("דף צביעה של דג", "a coloring page with a fish", ["דג", "fish"]),
+    "flower": ("דף צביעה של פרח", "a coloring page with a flower", ["פרח", "flower"]),
+    "house": ("דף צביעה של בית", "a coloring page with a house", ["בית", "house"]),
+    "car": ("דף צביעה של מכונית", "a coloring page with a car", ["מכונית", "car"]),
+}
+LOOK_TRACE_LETTERS = [("א", "A"), ("ב", "B"), ("מ", "M"), ("ש", "S"), ("ד", "D")]
+# (fact in Hebrew, in English, the words that name it, Hebrew and English)
+LOOK_COVER = [("רק קצת מהדף צבוע", "just a little of the page is colored", ["פינה", "קצת", "corner", "a little", "little bit"]),
+              ("חצי מהדף צבוע", "half the page is colored", ["חצי", "half"]),
+              ("כמעט כל הדף צבוע", "almost the whole page is colored",
+               ["כל הדף", "הכל", "מלא", "whole", "full", "everywhere", "all over", "all the page"])]
+LOOK_STROKES = [("הרבה נקודות קטנות", "lots of little dots", ["נקודות", "נקודה", "dots", "dot"]),
+                ("קווים ארוכים", "long lines", ["קווים", "קו", "lines", "line"]),
+                ("הרבה קשקושים עגולים", "lots of round scribbles", ["קשקושים", "קשקוש", "scribbles", "scribble"]),
+                ("קווים קצרים", "short lines", ["קווים", "קו", "lines", "line"])]
+_HE_COUNT = {2: ("שני", "שתי"), 3: ("שלושה", "שלוש")}  # (masculine, feminine), as it agrees with the noun
+
+
+def look_inputs(rng, n):
+    """[{he, en, group, present_he, present_en, absent_he, absent_en}]: n drawings as the app would describe them,
+    with the words a line may use (present) and the stamps, colors and pictures that aren't there (absent)."""
+    out, seen = [], set()
+    while len(out) < n:
+        page = rng.choice(list(LOOK_PAGES) + ["trace"])
+        colors = rng.sample(list(LOOK_COLORS), rng.choice([1, 1, 2, 2, 3, 4]))
+        stamps = rng.sample(list(LOOK_STAMPS), rng.choice([0, 0, 1, 1, 2, 3]))
+        counts = {s: rng.choice([1, 1, 2, 3]) for s in stamps}
+        cover = rng.choice(LOOK_COVER)
+        strokes = rng.choice(LOOK_STROKES + [None])
+        key = (page, tuple(colors), tuple(sorted(counts.items())), cover[0], strokes and strokes[0])
+        if key in seen:
+            continue
+        seen.add(key)
+        if page == "trace":
+            he_letter, en_letter = rng.choice(LOOK_TRACE_LETTERS)
+            page_he, page_en, page_words = f"דף עם האות {he_letter} לצביעה", f"a page with the letter {en_letter} to trace", []
+        else:
+            page_he, page_en, page_words = LOOK_PAGES[page]
+        amount = lambda i: ("הרבה ", "lots of ") if i == 0 and len(colors) > 1 else (("קצת ", "a little ") if i > 0 else ("", ""))
+        colors_he = ", ".join(amount(i)[0] + LOOK_COLORS[c][0][0] for i, c in enumerate(colors))
+        colors_en = ", ".join(amount(i)[1] + LOOK_COLORS[c][1] for i, c in enumerate(colors))
+        def stamp_he(s):
+            one, many, fem, _, _ = LOOK_STAMPS[s]
+            k = counts[s]
+            return one if k == 1 else f"{_HE_COUNT[k][fem]} {many}"
+        def stamp_en(s):
+            _, _, _, one, many = LOOK_STAMPS[s]
+            k = counts[s]
+            return f"a {one}" if k == 1 else f"{NUMBER_WORDS[str(k)][-1] if str(k) in NUMBER_WORDS else k} {many}"
+        stamps_he = ", ".join(stamp_he(s) for s in stamps) or "אין"
+        stamps_en = ", ".join(stamp_en(s) for s in stamps) or "none"
+        he = f"הציור: {page_he}. צבעים: {colors_he}. מדבקות: {stamps_he}. {cover[0]}." + (f" {strokes[0]}." if strokes else "")
+        en = f"The drawing: {page_en}. Colors: {colors_en}. Stickers: {stamps_en}. {cover[1].capitalize()}." + (f" {strokes[1].capitalize()}." if strokes else "")
+        hebrew = lambda ws: [w for w in ws if re.search("[א-ת]", w)]
+        english = lambda ws: [w for w in ws if not re.search("[א-ת]", w)]
+        stroke_words = strokes[2] if strokes else []
+        other_strokes = [w for s in LOOK_STROKES if s is not strokes for w in s[2] if w not in stroke_words]
+        present_he = [f for c in colors for f in LOOK_COLORS[c][0]] + [w for s in stamps for w in LOOK_STAMPS[s][:2]] + \
+            page_words[:1] + hebrew(cover[2] + stroke_words)
+        present_en = [LOOK_COLORS[c][1] for c in colors] + [w for s in stamps for w in LOOK_STAMPS[s][3:]] + \
+            page_words[1:] + english(cover[2] + stroke_words)
+        absent_he = [f for c in LOOK_COLORS if c not in colors for f in LOOK_COLORS[c][0]] + \
+            [w for s in LOOK_STAMPS if s not in stamps for w in LOOK_STAMPS[s][:2]] + \
+            [p[2][0] for k, p in LOOK_PAGES.items() if p[2] and k != page] + hebrew(other_strokes)
+        absent_en = [LOOK_COLORS[c][1] for c in LOOK_COLORS if c not in colors] + \
+            [w for s in LOOK_STAMPS if s not in stamps for w in LOOK_STAMPS[s][3:]] + \
+            [p[2][1] for k, p in LOOK_PAGES.items() if p[2] and k != page] + english(other_strokes)
+        out.append({"group": f"look:{len(out)}", "he": he, "en": en, "present_he": present_he, "present_en": present_en,
+                    "absent_he": [w for w in absent_he if w not in present_he], "absent_en": [w for w in absent_en if w not in present_en]})
+    return out
+
+
+def look_ok(line, x, lang):
+    """Whether a line about a drawing names something that's there, and nothing that isn't (a color, a
+    sticker, a picture): Puki says only what the app knows."""
+    text = " " + line.lower() + " "
+    words = set().union(*(_forms(w) for w in re.findall(r"[\w'-]+", text)))
+    def has(w):
+        w = w.lower()
+        return w in words or (" " in w and w in text)  # (a phrase like פרת משה רבנו)
+    return any(has(w) for w in x["present_" + lang]) and not any(has(w) for w in x["absent_" + lang])
+
+
 # Words every event shares, which say nothing about which one a line names
 _COMMON = {"את", "היום", "מצאת", "found", "עם", "פוקי", "במקום", "מקום", "הצבע", "צבע", "מדבקה", "של", "you", "the", "some", "with",
            "puki", "its", "place", "color", "sticker", "today", "said", "got"}
