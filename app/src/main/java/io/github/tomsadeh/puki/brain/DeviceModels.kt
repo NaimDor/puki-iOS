@@ -152,7 +152,7 @@ class DeviceModels(context: Context) {
     companion object {
         /** The ears' folder in [dir]. */
         const val EARS = "ears"
-        private const val EARS_REPO = "TomSadeh/puki-ears"
+        private const val EARS_REPO = "dtsj89/puki-ears"
 
         /** Phones that can run it: 64-bit ARM with about 12 GB of memory (tested on a Galaxy S25). */
         fun capable(context: Context): Boolean {
