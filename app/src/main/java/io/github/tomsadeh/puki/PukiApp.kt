@@ -160,6 +160,20 @@ fun PukiApp(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+    // A couple of minutes away and the device brain gives its memory back (as Android may ask sooner,
+    // PukiApplication.onTrimMemory); back on screen, it's woken again
+    LaunchedEffect(onScreen) {
+        if (onScreen) {
+            if (clockApp.brainSlept) {
+                clockApp.brainSlept = false
+                companion.recheck()
+            }
+            return@LaunchedEffect
+        }
+        if (!companion.onDevice) return@LaunchedEffect
+        delay(BRAIN_REST_MS)
+        clockApp.sleepBrain()
+    }
     // A parent changing the limit starts a new allowance (not the settings being read at start)
     var limitSeen by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(settings.timeLimitMinutes, settings.loaded, clockLoaded) {
@@ -238,3 +252,6 @@ private const val REST_FOR_NEW_ALLOWANCE_MS = 60 * 60 * 1000L
 
 /** A parent closing the goodbye gives this much more play before the next one. */
 private const val EXTENSION_MS = 10 * 60 * 1000L
+
+/** How long the game can be away before the device brain gives its memory back. */
+private const val BRAIN_REST_MS = 2 * 60 * 1000L

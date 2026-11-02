@@ -25,7 +25,7 @@ interface Brain {
     /** The response body (audio or JSON), empty for "nothing to say", or null if it failed. */
     fun request(method: String, path: String, body: ByteArray?, timeoutMs: Int, contentType: String): ByteArray?
 
-    /** The line the last request had Puki say, or null if it said nothing (a parent may report it). */
+    /** The line this thread's last request had Puki say, or null if it said nothing (a parent may report it). */
     fun lastSaid(): Said? = null
 }
 
@@ -40,13 +40,14 @@ class HttpBrain(
     private val pin: () -> String,
     private val learnPin: (String) -> Unit
 ) : Brain {
-    @Volatile private var last: Said? = null
+    // Per thread: the caller reads it right after its own request, so another request can't swap it
+    private val last = ThreadLocal<Said?>()
 
-    override fun lastSaid(): Said? = last
+    override fun lastSaid(): Said? = last.get()
 
     override fun request(method: String, path: String, body: ByteArray?, timeoutMs: Int, contentType: String): ByteArray? =
         runCatching {
-            last = null
+            last.set(null)
             val pinned = pin()
             var seen = ""
             val conn = PinnedTls.open(baseUrl() + path, pinned) { seen = it }
@@ -69,7 +70,7 @@ class HttpBrain(
                         // The words of what Puki said (and what he heard), as the brain sends them
                         val text = conn.getHeaderField("X-Text")?.let { java.net.URLDecoder.decode(it, "UTF-8") } ?: ""
                         val heard = conn.getHeaderField("X-Heard")?.let { java.net.URLDecoder.decode(it, "UTF-8") } ?: ""
-                        if (text.isNotBlank()) last = Said(text, heard)
+                        if (text.isNotBlank()) last.set(Said(text, heard))
                     }
                     204 -> ByteArray(0)
                     else -> null

@@ -256,6 +256,12 @@ class Companion(
             playApproved(situation, approved)
             return
         }
+        // Already writing a line: no second request behind it (taps would pile up, each answered late);
+        // a moment that has its own recorded line plays that instead
+        if (_thinking.value) {
+            if (approved != null) playApproved(situation, approved) else fallback()
+            return
+        }
         scope.launch {
             _thinking.value = true
             val said = try { say(situation) } finally { _thinking.value = false }

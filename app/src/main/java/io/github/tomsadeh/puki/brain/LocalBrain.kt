@@ -7,6 +7,9 @@ import io.github.tomsadeh.puki.brain.voice.Renikud
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLDecoder
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.concurrent.thread
 
 /**
@@ -27,7 +30,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     // answer (slow), so switching Puki off never waits on the main thread for Gemma to finish.
     // [generation] tells a wake that finishes after a close to throw its models away.
     private val lifecycle = Any()
-    private val work = Any()
+    private val work = ReentrantLock()
     @Volatile private var generation = 0
 
     /** Loads the models (in the background; the game polls /health until "ready"). */
@@ -50,7 +53,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                 m = Mind(models.file("gemma.litertlm"), models.cacheDir).also { it.load() }
                 synchronized(lifecycle) {
                     if (gen != generation) error("switched off while loading")
-                    synchronized(work) { voice = v; mind = m }
+                    work.withLock { voice = v; mind = m }
                     state = "ready"
                 }
                 // The ears last (about 17 s on a slow tablet), so Puki is ready sooner; a listen
@@ -72,7 +75,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             generation++
             state = "asleep"
         }
-        synchronized(work) {
+        work.withLock {
             runCatching { mind?.close() }
             runCatching { voice?.close() }
             mind = null
@@ -84,20 +87,27 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         }
     }
 
-    @Volatile private var last: Said? = null
-    private var heardNow = ""  // what she said, for the line that answers it
+    // Per thread, so one request can't read or clear another's: what Puki said (the caller reads it
+    // right after its request), and what she said, for the line that answers it
+    private val last = ThreadLocal<Said?>()
+    private val heardNow = ThreadLocal<String>()
 
-    override fun lastSaid(): Said? = last
+    override fun lastSaid(): Said? = last.get()
 
     override fun request(method: String, path: String, body: ByteArray?, timeoutMs: Int, contentType: String): ByteArray? {
-        last = null
-        heardNow = ""
+        last.set(null)
+        heardNow.set("")
+        val deadline = System.nanoTime() + timeoutMs * 1_000_000L  // the game stops waiting then
         val route = path.substringBefore('?')
         val query = parseQuery(path.substringAfter('?', ""))
         if (method == "GET" && route == "/health") return JSONObject().put("brain", state).toString().toByteArray()
         if (route == "/wake") { wake(); return ByteArray(0) }
+        // Only the ears: no waiting behind a line being written (Say It's word check is quick)
+        if (route == "/repeat" || route == "/hear") return if (state == "ready") listenOnly(route, query, body) else null
         return try {
-            synchronized(work) {
+            // A line in progress holds the models; past the game's deadline, it has given up anyway
+            if (!work.tryLock(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) return null
+            try {
                 // Read inside the lock: close() may have just freed them
                 val mind = mind ?: return null
                 val voice = voice ?: return null
@@ -126,43 +136,50 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         reply(text, lang, voice)
                     }
                     "/story" -> story(mind, JSONObject(String(body ?: ByteArray(0))))
-                    "/repeat" -> {
-                        // Say it with Puki: did she say ?target= (or a related ?alt=)? Just listening, no Gemma
-                        val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
-                        val target = query["target"]?.firstOrNull()?.take(40) ?: ""
-                        val alts = (query["alt"] ?: emptyList()).filter { it.isNotEmpty() }.map { it.take(40) }.take(4)
-                        val heard = ears().transcribe(body ?: ByteArray(0))
-                        val match = persona.wordMatch(heard, target, alts)
-                        JSONObject().put("heard", heard).put("match", match).toString().toByteArray()
-                    }
-                    "/hear" -> {
-                        // She answered a game out loud: just the words (the game decides which answer, SpokenAnswer)
-                        // (?hint= is for the PC's Whisper; these ears don't take hints)
-                        val heard = ears().transcribe(body ?: ByteArray(0))
-                        JSONObject().put("heard", heard).toString().toByteArray()
-                    }
                     "/listen" -> {
                         // She talked to Puki (optionally answering ?context=, what he just asked)
                         val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
                         val heard = ears().transcribe(body ?: ByteArray(0))
-                        heardNow = heard
+                        heardNow.set(heard)
                         // Hurt, danger, big questions and the like get a fixed, kind reply (Safety)
-                        guardedReply(mind, heard, lang, query["game"]?.firstOrNull()?.take(40) ?: "")?.let { (cat, text) ->
-                            Log.i(TAG, "heard something careful: [$cat]")  // (not what she said)
-                            return@synchronized reply(text, lang, voice)
+                        val guarded = guardedReply(mind, heard, lang, query["game"]?.firstOrNull()?.take(40) ?: "")
+                        if (guarded != null) {
+                            Log.i(TAG, "heard something careful: [${guarded.first}]")  // (not what she said)
+                            reply(guarded.second, lang, voice)
+                        } else {
+                            var situation = persona.listenSituation(heard, lang)
+                            val context = query["context"]?.firstOrNull()?.take(200) ?: ""
+                            if (context.isNotEmpty()) situation = "$context $situation"
+                            reply(line(mind, situation, lang, listening = true), lang, voice)
                         }
-                        var situation = persona.listenSituation(heard, lang)
-                        val context = query["context"]?.firstOrNull()?.take(200) ?: ""
-                        if (context.isNotEmpty()) situation = "$context $situation"
-                        reply(line(mind, situation, lang, listening = true), lang, voice)
                     }
                     else -> null
                 }
+            } finally {
+                work.unlock()
             }
         } catch (e: Exception) {
             Log.e(TAG, "$route failed: ${e.javaClass.simpleName}")  // (not the message: it may quote her)
             null
         }
+    }
+
+    /** The requests that only need the ears: Say It's word check, and an answer said out loud. */
+    private fun listenOnly(route: String, query: Map<String, List<String>>, body: ByteArray?): ByteArray? = try {
+        val heard = ears().transcribe(body ?: ByteArray(0))
+        if (route == "/repeat") {
+            // Say it with Puki: did she say ?target= (or a related ?alt=)?
+            val target = query["target"]?.firstOrNull()?.take(40) ?: ""
+            val alts = (query["alt"] ?: emptyList()).filter { it.isNotEmpty() }.map { it.take(40) }.take(4)
+            JSONObject().put("heard", heard).put("match", persona.wordMatch(heard, target, alts)).toString().toByteArray()
+        } else {
+            // She answered a game out loud: just the words (the game decides which answer, SpokenAnswer)
+            // (?hint= is for the PC's Whisper; these ears don't take hints)
+            JSONObject().put("heard", heard).toString().toByteArray()
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "$route failed: ${e.javaClass.simpleName}")
+        null
     }
 
     /** The ears, loaded now if the background load in [wake] hasn't yet (or failed). */
@@ -192,7 +209,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     private fun reply(text: String?, lang: String, voice: BlueVoice, speed: Float = 0.92f): ByteArray? {
         if (text.isNullOrBlank()) return ByteArray(0)
         if (lang == "en") return ByteArray(0)  // no English voice here yet: the game uses its recorded line
-        last = Said(text, heardNow)
+        last.set(Said(text, heardNow.get() ?: ""))
         return voice.speak(persona.forVoice(text), speed)
     }
 
