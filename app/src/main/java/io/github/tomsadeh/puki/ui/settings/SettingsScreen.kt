@@ -410,7 +410,7 @@ fun SettingsScreen(
 
             // Puki's brain on this phone (only offered where it can run)
             val context = androidx.compose.ui.platform.LocalContext.current
-            if (remember { io.github.tomsadeh.puki.brain.DeviceModels.capable(context) }) {
+            if (io.github.tomsadeh.puki.brain.DeviceModels.OFFERED && remember { io.github.tomsadeh.puki.brain.DeviceModels.capable(context) }) {
                 Spacer(modifier = Modifier.height(24.dp))
                 DeviceBrainCard(settingsViewModel)
             }
@@ -537,8 +537,8 @@ private fun AboutCard() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             BilingualText(
-                "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-Gemma של Google, ל-BlueTTS, ל-ivrit.ai, ל-kol-stream, ל-ONNX Runtime, ל-LiteRT-LM ול-ZXing.",
-                "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to Google's Gemma, BlueTTS, ivrit.ai, kol-stream, ONNX Runtime, LiteRT-LM and ZXing."
+                "פוקי חינמי ובקוד פתוח (רישיון MIT), נוצר על ידי תום שדה. תודה ל-BlueTTS, ל-RenikudPlus, ל-kol-stream, ל-Gemma של Google ול-ivrit.ai (במחשב), ל-ONNX Runtime ול-ZXing.",
+                "Puki is free and open source (MIT license), made by Tom Sadeh. With thanks to BlueTTS, RenikudPlus, kol-stream, Google's Gemma and ivrit.ai (on the PC), ONNX Runtime and ZXing."
             ).resolve(language),
             style = MaterialTheme.typography.bodyMedium,
             color = EarthBrown,

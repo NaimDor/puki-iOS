@@ -159,7 +159,6 @@ dependencies {
 
     // Puki's brain on the device itself (optional, for high-end phones): Gemma through
     // LiteRT-LM, the voice and Hebrew pronunciation through ONNX Runtime
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     // Testing

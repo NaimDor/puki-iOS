@@ -27,7 +27,7 @@ import io.github.tomsadeh.puki.theme.GrassGreen
 import io.github.tomsadeh.puki.ui.common.LocalAppSettings
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 
-/** "Puki on this phone": download the models once, then think here instead of on the PC. */
+/** "Puki on this device": download the models once, then think here instead of on the PC. */
 @Composable
 fun DeviceBrainCard(viewModel: SettingsViewModel) {
     val language = LocalLanguage.current
@@ -45,14 +45,14 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
             .width(400.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(BilingualText("פוקי בטלפון הזה", "Puki on this phone").resolve(language),
+        Text(BilingualText("פוקי במכשיר הזה", "Puki on this device").resolve(language),
             style = MaterialTheme.typography.titleLarge, color = EarthBrown)
         Text(
             BilingualText(
-                "פוקי יכול לחשוב, לדבר ולהקשיב כאן בטלפון, בלי המחשב: גם מחוץ לבית. צריך להוריד פעם אחת $gb GB " +
-                    "(עדיף ב-Wi-Fi). בינתיים בטלפון הוא מדבר רק עברית.",
-                "Puki can think, talk and listen right here on the phone, no PC needed: even away from home. It's a " +
-                    "one-time $gb GB download (Wi-Fi is best). For now he speaks only Hebrew on the phone."
+                "פוקי יכול לחשוב, לדבר ולהקשיב כאן במכשיר, בלי מחשב ובלי אינטרנט: גם מחוץ לבית. צריך להוריד פעם אחת $gb GB " +
+                    "(עדיף ב-Wi-Fi). בינתיים כאן הוא מדבר רק עברית.",
+                "Puki can think, talk and listen right here on this device, with no PC and no internet: even away from home. " +
+                    "It's a one-time $gb GB download (Wi-Fi is best). For now he speaks only Hebrew here."
             ).resolve(language),
             style = MaterialTheme.typography.bodyMedium, color = EarthBrown
         )
@@ -78,7 +78,7 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
             else -> {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(BilingualText("לחשוב בטלפון", "Think on this phone").resolve(language),
+                    Text(BilingualText("לחשוב במכשיר הזה", "Think on this device").resolve(language),
                         style = MaterialTheme.typography.titleMedium, color = EarthBrown)
                     Switch(checked = settings.brainOnDevice, onCheckedChange = { viewModel.setBrainOnDevice(it) })
                 }

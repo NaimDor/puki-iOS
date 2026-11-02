@@ -107,6 +107,12 @@ class BlueVoice(
         return voice(VoiceText.stripLangTags(reader.phonemize(normalized)), speed, totalStep)
     }
 
+    /** [phonemes] (IPA, as Beak or Renikud write them) as a 16-bit mono WAV with a short silence at the end, or null. */
+    fun speakPhonemes(phonemes: String, speed: Float = 0.92f, totalStep: Int = STEPS): ByteArray? {
+        val samples = voice(phonemes, speed, totalStep) ?: return null
+        return wav(samples + FloatArray((sampleRate * 0.15).toInt()))
+    }
+
     /** [phonemes] (IPA, as Renikud writes them) spoken: chunked, voiced, peak-limited. */
     fun voice(phonemes: String, speed: Float = 0.92f, totalStep: Int = STEPS): FloatArray? {
         lastTimings.fill(0)

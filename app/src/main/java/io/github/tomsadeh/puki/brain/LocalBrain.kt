@@ -2,9 +2,9 @@ package io.github.tomsadeh.puki.brain
 
 import ai.onnxruntime.OrtEnvironment
 import android.util.Log
+import io.github.tomsadeh.puki.brain.voice.Beak
 import io.github.tomsadeh.puki.brain.voice.BlueVoice
-import io.github.tomsadeh.puki.brain.voice.Renikud
-import org.json.JSONArray
+import io.github.tomsadeh.puki.brain.voice.VoiceText
 import org.json.JSONObject
 import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
@@ -13,21 +13,24 @@ import kotlin.concurrent.withLock
 import kotlin.concurrent.thread
 
 /**
- * Puki's brain on this device: answers the same requests as the PC brain (see [Brain]) with
- * Gemma ([Mind]), the BlueTTS voice ([BlueVoice]) and the same personality ([Persona]).
- * It hears with kol-stream ([KolEars], loaded in the background once the rest is ready).
- * For now it speaks Hebrew only: English lines fall back to the recorded ones.
+ * Puki's brain on this device, all of it Puki's own models but the voice: answers the same requests
+ * as the PC brain (see [Brain]) with Brains (the small model that writes his lines, [Brains]), Beak
+ * (which reads them, [Beak]), the BlueTTS voice ([BlueVoice]) and the same filter ([Persona], [Safety]).
+ * It hears with kol-stream ([KolEars], loaded in the background once the rest is ready). It speaks
+ * Hebrew only for now: English lines fall back to the recorded ones. Drawings and bedtime stories aren't
+ * answered here yet (the game plays its own lines): drawings wait for Puki's eyes.
  */
 class LocalBrain(private val models: DeviceModels) : Brain {
     private val persona = Persona()
-    private var mind: Mind? = null
+    private var brains: Brains? = null
+    private var beak: Beak? = null
     private var voice: BlueVoice? = null
     private var ears: KolEars? = null
     private val earsLock = Any()  // around loading the ears (see ears())
     @Volatile private var state = "asleep"
 
     // Two locks: [lifecycle] for waking and closing (quick), [work] around the models while they
-    // answer (slow), so switching Puki off never waits on the main thread for Gemma to finish.
+    // answer (slow), so switching Puki off never waits on the main thread for a line to finish.
     // [generation] tells a wake that finishes after a close to throw its models away.
     private val lifecycle = Any()
     private val work = ReentrantLock()
@@ -44,16 +47,17 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         thread(name = "puki-brain") {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)  // (the game comes first)
             var v: BlueVoice? = null
-            var m: Mind? = null
+            var k: Beak? = null
+            var b: Brains? = null
             try {
                 val env = OrtEnvironment.getEnvironment()
-                v = BlueVoice(env, models.file("voice"), models.file("voice/noa.json"), Renikud(env, models.file("voice/renikud_int8.onnx")))
-                v.speak("שלום")  // warms up the voice before the first real line
-                models.cacheDir.mkdirs()
-                m = Mind(models.file("gemma.litertlm"), models.cacheDir).also { it.load() }
+                v = BlueVoice(env, models.file("voice"), models.file("voice/noa.json"), null, threads = 4)
+                k = Beak(env, models.file(DeviceModels.BEAK))
+                v.voice(k.phonemize("שלום", girl = true))  // warms up the voice before the first real line
+                b = Brains(env, models.file(DeviceModels.BRAINS))
                 synchronized(lifecycle) {
                     if (gen != generation) error("switched off while loading")
-                    work.withLock { voice = v; mind = m }
+                    work.withLock { voice = v; beak = k; brains = b }
                     state = "ready"
                 }
                 // The ears last (about 17 s on a slow tablet), so Puki is ready sooner; a listen
@@ -62,7 +66,8 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                     .onFailure { Log.e(TAG, "the ears didn't load: ${it.message}") }
             } catch (e: Throwable) {
                 Log.e(TAG, "the device brain didn't load: ${e.message}")
-                runCatching { m?.close() }
+                runCatching { b?.close() }
+                runCatching { k?.close() }
                 runCatching { v?.close() }
                 synchronized(lifecycle) { if (gen == generation) state = "asleep" }
             }
@@ -76,9 +81,11 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             state = "asleep"
         }
         work.withLock {
-            runCatching { mind?.close() }
+            runCatching { brains?.close() }
+            runCatching { beak?.close() }
             runCatching { voice?.close() }
-            mind = null
+            brains = null
+            beak = null
             voice = null
         }
         synchronized(earsLock) {
@@ -109,14 +116,18 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             if (!work.tryLock(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) return null
             try {
                 // Read inside the lock: close() may have just freed them
-                val mind = mind ?: return null
+                val brains = brains ?: return null
+                val beak = beak ?: return null
                 val voice = voice ?: return null
                 persona.setChild(query["name"]?.firstOrNull() ?: "", query["gender"]?.firstOrNull() ?: "")
                 when (route) {
                     "/say" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
                         val lang = if (req.optString("lang") == "en") "en" else "he"
-                        reply(line(mind, req.optString("situation").take(300), lang), lang, voice)
+                        val situation = req.optString("situation").take(300)
+                        // A tap on Puki comes as the scene with "say something short and cute" (Companion.chat)
+                        val task = if (situation.startsWith("לחצו על התוכי") || situation.startsWith("The child tapped")) "tap" else "moment"
+                        reply(line(brains, task, situation, lang), lang, beak, voice)
                     }
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
@@ -124,36 +135,24 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         val text = req.optString("text").take(200).trim()
                         // 0, NaN or a huge number would break the voice
                         val speed = req.optDouble("speed", 0.92).let { if (it.isFinite()) it.coerceIn(0.5, 1.5) else 0.92 }.toFloat()
-                        if (text.isEmpty()) ByteArray(0) else reply(text, lang, voice, speed)
+                        if (text.isEmpty()) ByteArray(0) else reply(text, lang, beak, voice, speed)
                     }
-                    "/look" -> {
-                        val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
-                        var text: String? = null
-                        repeat(3) {
-                            if (text == null) text = persona.clean(mind.look(persona.systemPrompt(lang), persona.lookPrompt(lang), body ?: ByteArray(0)), lang)
-                                ?.takeIf { Safety.replyOk(it) }
-                        }
-                        reply(text, lang, voice)
-                    }
-                    "/story" -> story(mind, JSONObject(String(body ?: ByteArray(0))))
                     "/listen" -> {
-                        // She talked to Puki (optionally answering ?context=, what he just asked)
+                        // She talked to Puki: the careful reply if it needs one (Safety), else his answer
                         val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
                         val heard = ears().transcribe(body ?: ByteArray(0))
                         heardNow.set(heard)
-                        // Hurt, danger, big questions and the like get a fixed, kind reply (Safety)
-                        val guarded = guardedReply(mind, heard, lang, query["game"]?.firstOrNull()?.take(40) ?: "")
+                        val guarded = Safety.guardedReply(heard, lang, persona.girl, query["game"]?.firstOrNull()?.take(40) ?: "",
+                            gate = { Safety.gateCategory(brains.gate(it, lang, persona.girl), Safety.THRESHOLD) },
+                            onError = { Log.e(TAG, "safety gate failed: ${it.javaClass.simpleName}; answering with the neutral line") })
                         if (guarded != null) {
                             Log.i(TAG, "heard something careful: [${guarded.first}]")  // (not what she said)
-                            reply(guarded.second, lang, voice)
+                            reply(guarded.second, lang, beak, voice)
                         } else {
-                            var situation = persona.listenSituation(heard, lang)
-                            val context = query["context"]?.firstOrNull()?.take(200) ?: ""
-                            if (context.isNotEmpty()) situation = "$context $situation"
-                            reply(line(mind, situation, lang, listening = true), lang, voice)
+                            reply(line(brains, "talk", heard.take(200), lang), lang, beak, voice)
                         }
                     }
-                    else -> null
+                    else -> null  // (/look and /story: not here yet; the game plays its own lines)
                 }
             } finally {
                 work.unlock()
@@ -174,7 +173,6 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             JSONObject().put("heard", heard).put("match", persona.wordMatch(heard, target, alts)).toString().toByteArray()
         } else {
             // She answered a game out loud: just the words (the game decides which answer, SpokenAnswer)
-            // (?hint= is for the PC's Whisper; these ears don't take hints)
             JSONObject().put("heard", heard).toString().toByteArray()
         }
     } catch (e: Exception) {
@@ -187,64 +185,30 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         ears ?: KolEars(OrtEnvironment.getEnvironment(), models.file(DeviceModels.EARS)).also { ears = it }
     }
 
-    /** A cleaned line from Gemma about [situation], or null (three tries, like the PC). */
-    private fun line(mind: Mind, situation: String, lang: String, listening: Boolean = false): String? {
+    /** A line from Brains for [input] that passes Puki's filter, or null (three tries, like the PC). */
+    private fun line(brains: Brains, task: String, input: String, lang: String): String? {
         repeat(3) {
-            val system = persona.systemPrompt(lang) + Safety.systemExtra(lang, persona.girl)
-            val raw = mind.chat(system, persona.examples(lang), persona.situationPrompt(situation, lang, listening))
-            persona.clean(raw, lang)?.takeIf { Safety.replyOk(it) }?.let { persona.said(it); return it }
+            val raw = brains.line(task, lang, persona.girl, input) ?: return@repeat
+            persona.clean(withName(raw), lang)?.takeIf { Safety.replyOk(it) }?.let { persona.said(it); return it }
             Log.i(TAG, "a line didn't pass the filter; trying again")  // (not what it said: it may be about her)
         }
         return null
     }
 
-    /** (category, fixed reply) when what the child said needs a careful answer, else null. */
-    private fun guardedReply(mind: Mind, heard: String, lang: String, game: String = ""): Pair<String, String>? {
-        return Safety.guardedReply(heard, lang, persona.girl, game,
-            gate = { Safety.gateCategory(mind.digit(Safety.classifyPrompt(it))) },
-            onError = { Log.e(TAG, "safety gate failed: ${it.javaClass.simpleName}; answering with the neutral line") })
+    /** Brains writes "@name" where the child's name goes (as it was trained); with no name, it goes. */
+    private fun withName(raw: String): String {
+        if (persona.name.isNotEmpty()) return raw.replace("@name", persona.name)
+        return raw.replace(Regex(",?\\s*@name\\s*,?"), " ").replace(Regex("\\s+([!?.,])"), "$1").replace(Regex("\\s+"), " ").trim()
     }
 
     /** [text] spoken (empty when there's nothing to say; null when it can't be voiced here). */
-    private fun reply(text: String?, lang: String, voice: BlueVoice, speed: Float = 0.92f): ByteArray? {
+    private fun reply(text: String?, lang: String, beak: Beak, voice: BlueVoice, speed: Float = 0.92f): ByteArray? {
         if (text.isNullOrBlank()) return ByteArray(0)
         if (lang == "en") return ByteArray(0)  // no English voice here yet: the game uses its recorded line
         last.set(Said(text, heardNow.get() ?: ""))
-        return voice.speak(persona.forVoice(text), speed)
-    }
-
-    private fun story(mind: Mind, req: JSONObject): ByteArray? {
-        val lang = if (req.optString("lang") == "en") "en" else "he"
-        val iconsJson = req.optJSONObject("icons") ?: return null
-        // The pictures the story may use (the app sends about 20); capped, it all goes into the prompt
-        val icons = iconsJson.keys().asSequence().take(40).associate { it.take(60) to iconsJson.getString(it).take(60) }
-        if (icons.isEmpty()) return null
-        val played = req.optString("played").take(300).ifEmpty { if (lang == "he") "משחקים" else "games" }
-        val schema = JSONObject().put("type", "object").put("required", JSONArray().put("sentences")).put("properties", JSONObject()
-            .put("sentences", JSONObject().put("type", "array").put("minItems", 4).put("maxItems", 7).put("items", JSONObject()
-                .put("type", "object").put("required", JSONArray().put("text").put("icon")).put("properties", JSONObject()
-                    .put("text", JSONObject().put("type", "string"))
-                    .put("icon", JSONObject().put("type", "string").put("enum", JSONArray(icons.keys.toList()))))))).toString()
-        repeat(2) {
-            val raw = mind.json(persona.systemPrompt(lang), persona.storyPrompt(played, icons, lang), schema)
-            val items = runCatching { JSONObject(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1)).getJSONArray("sentences") }.getOrNull()
-            if (items != null) {
-                val out = JSONArray()
-                for (i in 0 until items.length()) {
-                    val it = items.getJSONObject(i)
-                    val text = persona.clean(it.optString("text"), lang)?.takeIf { t -> Safety.replyOk(t) }
-                    val icon = it.optString("icon")
-                    if (text != null && icon in icons) out.put(JSONObject().put("text", text).put("icon", icon))
-                }
-                if (out.length() >= 3) {
-                    val last = out.getJSONObject(out.length() - 1).getString("icon")
-                    out.put(JSONObject().put("text", persona.storyClosing(lang)).put("icon", if ("ic_bedtime_moon" in icons) "ic_bedtime_moon" else last))
-                    return JSONObject().put("sentences", out).toString().toByteArray()
-                }
-            }
-            Log.i(TAG, "a story didn't come out right; trying again")
-        }
-        return ByteArray(0)
+        val prepared = VoiceText.prepareTextForSynthesis(persona.forVoice(text))
+        if (prepared.none { it in '֐'..'׿' }) return ByteArray(0)  // nothing Hebrew to say
+        return voice.speakPhonemes(beak.phonemize(prepared, persona.girl), speed)
     }
 
     private fun parseQuery(q: String): Map<String, List<String>> =

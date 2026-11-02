@@ -40,10 +40,12 @@ class DeviceModels(context: Context) {
         hf(bt, "tts.json", "voice/tts.json", 9260, "862d44194197de4873eccc8bfdab1835d15f98e469a90489df6da8f92a48c7ea"),
         Model("https://raw.githubusercontent.com/maxmelichov/BlueTTS/0e38dbf08ed53f85863d1eab092bd9572c53a503/voices/noa.json",
             "voice/noa.json", 288898, "c233f066a7d505306892509649bc80abeb7d0a565687f143e277ec93874a47c8"),
-        // Hebrew pronunciation: RenikudPlus (the int8 build, a quarter of the size)
-        hf("notmax123/RenikudPlus", "model_int8.onnx", "voice/renikud_int8.onnx", 311605741, "0337468fad56eadf5ecc7becfdf21648a4d668de41de5bc27e860141b5afcadd"),
-        // Puki's thinking: Gemma 4 E4B for LiteRT-LM
-        hf("litert-community/gemma-4-E4B-it-litert-lm", "gemma-4-E4B-it.litertlm", "gemma.litertlm", 3659530240, "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"),
+        // Puki's own models (train/): Brains writes his lines, Beak reads them aloud (int8, ONNX)
+        hf(BRAINS_REPO, "brains_int8.onnx", "$BRAINS/brains_int8.onnx", 71704455, "fb2c45325df821fff309c3785622061c0960f15a7925599f8e523cf36c6f20af"),
+        hf(BRAINS_REPO, "tokenizer.json", "$BRAINS/tokenizer.json", 1000032, "f00623972a58b663923fea399afae21fbc148bf3ee9725a6c505a86fc004fe45"),
+        hf(BRAINS_REPO, "brains.json", "$BRAINS/brains.json", 103, "e248f6a8a0d6ac8cfdfd3def0308e993085c84d2f852f9b2ae2664b520f2e92a"),
+        hf(BEAK_REPO, "beak_int8.onnx", "$BEAK/beak_int8.onnx", 2545483, "1d4f77719d21a5ec6cdd7710066ba9b081b39fdcc4052ca1eed2236996f0702d"),
+        hf(BEAK_REPO, "vocab.json", "$BEAK/vocab.json", 1346, "c432d47d12e89098b28c53b9666179dad04e0beb2755ed5632fddd29a757b00f"),
         // Puki's ears: kol-stream (Hebrew and English, Apache 2.0, on EmbeddingGemma 2), made
         // ready for phones by train/kolstream_export.py (int8, optimized) and kept on Hugging Face
         hf(EARS_REPO, "encoder.onnx", "$EARS/encoder.onnx", 357955315, "4193fc7e9a39bb33e3d1fbc645db39f9a917d6996aa0d4f9aba5080b0c77dd3d"),
@@ -72,6 +74,12 @@ class DeviceModels(context: Context) {
             _progress.value = downloadedBytes().toFloat() / totalBytes
             for (m in models) if (!done(m)) ensure(m)
             File(dir, "whisper").deleteRecursively()  // the ears before kol-stream (1.6 GB)
+            // Gemma and RenikudPlus, before Puki's own models (4 GB)
+            for (old in listOf("gemma.litertlm", "voice/renikud_int8.onnx")) {
+                File(dir, old).delete()
+                File(dir, "$old.ok").delete()
+            }
+            cacheDir.deleteRecursively()  // (LiteRT's compiled programs)
         } finally {
             _progress.value = null
         }
@@ -153,11 +161,25 @@ class DeviceModels(context: Context) {
         /** The ears' folder in [dir]. */
         const val EARS = "ears"
         private const val EARS_REPO = "dtsj89/puki-ears"
+        /** Brains' and Beak's folders in [dir]. */
+        const val BRAINS = "brains"
+        const val BEAK = "beak"
+        private const val BRAINS_REPO = "dtsj89/puki-brains"
+        private const val BEAK_REPO = "dtsj89/puki-beak"
 
-        /** Phones that can run it: 64-bit ARM with about 12 GB of memory (tested on a Galaxy S25). */
+        /**
+         * Whether settings offer the download. Off until Brains is published (its Hebrew pretraining
+         * data's terms are being settled); a device that already has the models still uses them.
+         */
+        const val OFFERED = false
+
+        /**
+         * Devices that can run it: 64-bit ARM with about 3 GB of memory or more. Measured on a Galaxy
+         * Tab A7 Lite (3 GB, MT8768): a line written, read and spoken in about 3 seconds.
+         */
         fun capable(context: Context): Boolean {
             val mem = ActivityManager.MemoryInfo().also { (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(it) }
-            return "arm64-v8a" in Build.SUPPORTED_ABIS && mem.totalMem >= 10L * 1024 * 1024 * 1024 && Build.VERSION.SDK_INT >= 31
+            return "arm64-v8a" in Build.SUPPORTED_ABIS && mem.totalMem >= 2_500_000_000L
         }
     }
 }

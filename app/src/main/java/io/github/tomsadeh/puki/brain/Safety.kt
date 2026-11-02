@@ -7,11 +7,10 @@ package io.github.tomsadeh.puki.brain
  * Two nets before the model writes anything (see [LocalBrain]'s /listen):
  * - [guard]: word lists in Hebrew and English. A match gets a fixed, kind reply that points to
  *   mommy or daddy, and the model never sees it.
- * - The gate: the model reads what the child said ([classifyPrompt]) and picks one digit. On the
- *   PC, P(ordinary) from the first token's probabilities is compared with a threshold. LiteRT-LM
- *   (0.18.0) doesn't expose token probabilities, so here it's one greedy digit ([Mind.digit]):
- *   anything but "0" is caught, and anything that isn't a digit is "unclear". That's the PC gate's
- *   decision at an even split, so it catches less than the PC's threshold (0.8).
+ * - The gate: the model reads what the child said and picks one digit. On the PC that's Gemma
+ *   answering [classifyPrompt]; here it's Puki's own model, trained on the gate as a task of its own
+ *   ([Brains.gate]). Either way P(ordinary) from the first token's probabilities is compared with a
+ *   threshold ([gateCategory]), failing closed when the answer isn't mostly a digit.
  * Round two (from a review of false alarms in the games): whole-word stems, stacked Hebrew
  * prefixes, parents only as phrases, and [ALLOWED_IN_GAME] (the kitchen may say "knife").
  * After the model writes, [replyOk] drops lines that promise or bond in ways a playmate shouldn't.
