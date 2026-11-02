@@ -2,7 +2,7 @@
 
 ## What This Project Is
 
-An Android tablet game for toddlers (ages 2–4), bilingual in Hebrew and English. A hub world with ten islands: animals, colors, shapes, counting, music, letters, Peekaboo barn, Echo Puki, Say it with Puki, and daily routines (brushing teeth, tidying up, getting dressed, etc.). No ads, no tracking, no cloud. An optional talking parrot companion runs on a PC at home (`brain/`) or on a high-end phone itself.
+An Android tablet game for toddlers (ages 2–4), bilingual in Hebrew and English. A hub world with ten islands: animals, colors, shapes, counting, music, letters, Peekaboo barn, Echo Puki, Say it with Puki, and daily routines (brushing teeth, tidying up, getting dressed, etc.). No ads, no tracking, no cloud. An optional talking parrot companion, Puki's brain, runs on the device itself (four small ONNX models, downloaded once at a parent's request). Without it, the game uses recorded lines. The PC brain (`brain/`) is retired since 0.9.0.
 
 See `olam-katan-claude-code-prompt.md` for the full game design document.
 
@@ -47,17 +47,18 @@ app/src/main/java/io/github/tomsadeh/puki/
 │   └── SettingsRepository.kt    # Language, gender, sound, time limit, companion
 ├── audio/                       # VoicePlayer, SfxPlayer, MusicPlayer, MicRecorder, EchoVoice,
 │                                #   Companion (talks to a brain)
-├── brain/                       # Brain, HttpBrain + PinnedTls (the PC, over pinned HTTPS); the brain on a
-│                                #   high-end phone: LocalBrain, Persona, Mind (Gemma), KolEars (kol-stream,
-│                                #   ONNX), voice/ (BlueTTS port), DeviceModels
-├── update/Updater.kt            # In-app updates from GitHub releases
+├── brain/                       # The device brain. Brain.kt (the interface), LocalBrain.kt (routes the game's
+│                                #   requests), Brains.kt (writes lines, rates what she said) + Bpe.kt, Persona.kt
+│                                #   (prompt format, line filter), Safety.kt (word lists, the gate, replyOk),
+│                                #   KolEars.kt (kol-stream ears), SpokenAnswer.kt, DeviceModels.kt (pinned downloads),
+│                                #   voice/ (Beak.kt reads Hebrew into phonemes, BlueVoice.kt speaks, VoiceText.kt)
+├── update/Updater.kt            # In-app updates from GitHub releases (github flavor only)
 └── theme/
-brain/                           # The PC brain (Python): doorbell.py (HTTPS), brain.py, persona.py, safety.py, tls.py,
-                                 #   common.py (pairing, private files), memory.py (log, diary, profile), packs.py (night-written lines a parent
-                                 #   approves), install.py + pins.json (make_pins.py),
-                                 #   update_signers, bundle.py, tray.py / build_exe.py (Puki.exe)
+train/                           # How Puki's models are made (Brains, Beak, Syrinx's int8, the ears' export); see train/README.md
+brain/                           # RETIRED PC brain (Python). Kept only because safety.py, persona.py and pronunciation.tsv
+                                 #   are the source for Safety.kt (via sync_safety_kt.py) and train/. No new features.
 scripts/                         # Voices (generate/check), release.py, safety_eval.py (the stress test),
-                                 #   sync_safety_kt.py (safety.py's word lists -> Safety.kt)
+                                 #   sync_safety_kt.py (safety.py's word lists -> Safety.kt), sister_diff.py
 ```
 
 ---
@@ -158,44 +159,45 @@ key, so it can't reach the real game, its progress or the release key.
 
 ### Testing Considerations
 
-- JVM unit tests in `app/src/test` (`./gradlew testGithubDebugUnitTest`): the phone brain's Persona,
-  Safety and voice text, the level rule, pairing links, `PinnedTlsTest`, `UpdaterTest` (which version
-  is newer), and `RegexPortabilityTest` (no Java-only regex flags: Android's ICU engine rejects
-  `(?U)`, which crashed 0.3.0 at start).
-- The PC brain: `python -m pytest brain/tests` (persona, safety and its mirror in Safety.kt,
-  pairing and the lockout, TLS, the signed update, the bundle, reports).
+- JVM unit tests in `app/src/test` (`./gradlew testGithubDebugUnitTest`): the device brain's
+  `PersonaTest`, `SafetyTest`, `BpeTest` (Brains' tokenizer), `KolEarsTest`, `SpokenAnswerTest` and
+  `VoiceTextTest`; `ListenDoneTest`; the level rule (`LevelRuleTest`); `ContentIntegrityTest`,
+  `ChoicesTest`, `DragDropStateTest`, `ParentCheckTest`, `ScatterTest`, `StickerRewardTest`;
+  `UpdaterTest` (which version is newer); and `RegexPortabilityTest` (no Java-only regex flags:
+  Android's ICU engine rejects `(?U)`, which crashed 0.3.0 at start).
+- On a device, `app/src/androidTest` has benches for each model (`BrainsBench`, `ReadBench`,
+  `SquawkBench`, `KolEarsBench`): `./gradlew connectedGithubDebugAndroidTest -Ppuki.bench`.
+- `python -m pytest brain/tests`: the retired PC brain's tests, which still cover the source the app
+  uses (persona, safety and its mirror in Safety.kt, the word lists, pronunciation).
 - `python scripts/sync_safety_kt.py --check`: Safety.kt has safety.py's word lists.
 - `python scripts/check_voices.py`: every voice line the app plays has audio.
-- CI (`.github/workflows/ci.yml`) runs all of these on every push.
+- CI (`.github/workflows/ci.yml`) runs all of these but the benches on every push.
 - Before a release, run it on a real device: the debug build's `SelfTestReceiver`
   (`adb shell am broadcast -n io.github.tomsadeh.puki/.SelfTestReceiver`, then `adb logcat -s PukiSelfTest`).
-  Extras: `-e host <ip:port> -e code <CODE> -e pin <fingerprint>` checks the HTTPS connection to a PC;
-  `-e timelimit <minutes>` sets the time limit (0 = off; put it back after testing); `-e echotest 1`
+  Extras: `-e timelimit <minutes>` sets the time limit (0 = off; put it back after testing); `-e echotest 1`
   plays a tone through Echo Puki's voice.
 - Keep composables "dumb" — they render state and emit events, nothing else.
 
 ### Security and privacy
 
-- **The PC connection** is HTTPS only, pinned to the PC's own certificate (`brain/tls.py` makes it;
-  the pairing QR code carries its fingerprint; `PinnedTls` refuses any other). Never add a cleartext
-  fallback.
 - **The child's name and words** never go in git, logs or crash reports: personal voice lines and
-  `brain/config.json` are git-ignored, errors are logged by type, not message, and brain.py logs
-  lengths, not what she said or what Puki answered (`log_text` turns that on for debugging).
-- **What the child says goes through safety.py first** (brain.py's /listen; Safety.kt on the
-  phone, with the same word lists via `scripts/sync_safety_kt.py`): word lists, then a one-token
-  gate on the model's probabilities (`safety_threshold`, default 0.8; on the phone one greedy
-  digit) give hurt, danger, big questions, secrets and the like a fixed reply that points to mommy
-  or daddy; the model never writes those. The gate fails closed: an error or a non-digit is
-  "unclear", a neutral line. Every model line (replies, drawings, stories) then passes `reply_ok`
-  (no promises, no "best friend"). A stress test (October 2026) showed why: with Puki's cheerful
-  prompt, every Gemma size cheered at "let's make a fire" or "I fell down". Don't remove a net
-  without re-running it (`scripts/safety_eval.py`).
-- **Installer downloads** are pinned in `brain/pins.json`; regenerate with `brain/make_pins.py` after
-  changing a version or model.
+  `brain/config.json` are git-ignored, and errors are logged by type, not message. What she said is
+  held in memory only (the parent's "What Puki said" list) and forgotten when the game closes; the
+  brain keeps no memory beyond its last few lines. Recordings are never kept.
+- **What the child says goes through the safety nets first** (`Safety.kt`, called from
+  `LocalBrain.kt`; the word lists come from `brain/safety.py` via `scripts/sync_safety_kt.py`, so
+  change them there): word lists (`guard`), then Brains' gate on what she said
+  (`Safety.gateCategory`) give hurt, danger, big questions, secrets and the like a fixed reply that
+  points to mommy or daddy; the model never writes those. The gate fails closed: an error or a
+  non-digit is "unclear", a neutral line. Every model line then passes `Persona.clean` and
+  `Safety.replyOk` (no promises, no "best friend"); a line that fails is dropped and the game plays a
+  recorded line. A stress test (October 2026) showed why: with Puki's cheerful prompt, every model
+  cheered at "let's make a fire" or "I fell down". Don't remove a net without re-running the evals.
+- **Model changes:** a new or retrained model needs new pins (URL, size, SHA-256) in `DeviceModels.kt`,
+  an updated `train/pt_manifest.json` if the pretraining changed, and a re-run of the truth and safety
+  evals (`train/sft_small.py`'s held-out scoring: Puki's filter, the gate, the truth checks) before it
+  ships.
 - **Releases** are signed with the key in `~/keys`; `release.py` won't publish a debug-signed APK.
-- **Puki.exe** freezes the PC brain's code inside the exe: PC-side changes need a new exe on the
-  release. In it there's no stdout and no console, so every subprocess uses `CREATE_NO_WINDOW`.
 
 
 ## Things to Avoid
@@ -205,7 +207,7 @@ key, so it can't reach the real game, its progress or the release key.
 - **Art drawn in code:** a darker tone for outlines, one highlight, a soft contact shadow, so it matches the rest.
 - **No small tap targets.** If it's tappable, it's at least 100dp. 120dp preferred. (`BackButton` looks 64dp, so it doesn't compete with the game, but takes a 100dp touch.)
 - **No text-only navigation.** The child cannot read. All navigation is visual (icons, pictures, animations).
-- **No internet.** The only network use is the optional companion on a PC at home, over the home network (see `brain/`), and checking GitHub for app updates. Everything else works fully offline.
+- **No internet.** The only network use is the model download a parent asks for (pinned by size and SHA-256 in `DeviceModels.kt`) and the GitHub update check (github flavor only). Everything else, the device brain included, works fully offline.
 - **No third-party analytics, ads, or tracking.**
 - **No `Thread.sleep` or blocking calls on main thread.** Use coroutines.
 - **No hardcoded strings in composables.** All text goes through `BilingualText`.
@@ -235,11 +237,7 @@ The Play listing (texts, icon, feature graphic, screenshots) is in `fastlane/met
 steps and form answers in `fastlane/PLAY_CHECKLIST.md`; the privacy policy is `docs/privacy.html`.
 All builds are signed with the release key in `~/keys` (puki-release.jks + puki-signing.properties,
 never in git); without it they fall back to the debug key, which release.py won't publish.
-The PC brain's updates are signed the same way: release.py adds `puki-brain-<version>.zip` (the brain
-folder, with `brain/release.txt`) and its `.sig`, made with `~/keys/puki-update` (an ssh-keygen ed25519
-key, never in git), and `install.py --update` uses a release only if it verifies against
-`brain/update_signers`. Losing that key means installed PCs can't take signed updates any more; a new
-key reaches them only in a release signed with the old one.
+The PC brain is retired: releases carry no brain zip and no Puki.exe any more.
 
 ---
 
@@ -249,5 +247,6 @@ The original build plan is done (all islands, My Day, canvas, stickers, bedtime,
 are the security pass and the first new toys (0.6: Peekaboo barn, Echo Puki, the calm goodbye).
 0.7 is most of v1: counting one by one, shadow match, drawing modes with an eraser and a camera,
 the cake and the car wash, offline Puki, Dance and Freeze, tracing, a redrawn dress-up and bath,
-safety nets for what the child says (PC and phone), מלשין לרנינג, signed PC updates, and a
-hygiene, security and performance pass. What's next is in ROADMAP.md (the Play launch).
+safety nets for what the child says, מלשין לרנינג, and a hygiene, security and performance pass.
+0.9 moved Puki's brain onto the device (Brains, Beak, Syrinx, Ears; Hebrew only for now) and retired
+the PC brain. What's next is in ROADMAP.md (English on the device, Brains v2, Puki's eyes, the Play launch).

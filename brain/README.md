@@ -1,5 +1,28 @@
 # פוקי's brain (companion server)
 
+> **Retired in 0.9.0.** Puki's brain now runs on the device itself (parent settings, **Puki on
+> this device**), and the app no longer talks to a PC. This folder takes no new features. It is
+> kept only because `safety.py`, `persona.py` and `pronunciation.tsv` are the source that
+> `scripts/sync_safety_kt.py` (for the app's `Safety.kt`) and `train/` use.
+>
+> **If your family used the PC brain:** update the app, turn on **Puki on this device**, then
+> remove the PC program and its models (about 10 GB):
+>
+> - **Puki.exe (Windows):** right-click Puki's tray icon (behind the **^** arrow if you don't see
+>   it), choose **Uninstall Puki...**, and answer yes to each part. Then delete Puki.exe.
+> - **Installed from this repo:** `python brain\install.py --uninstall` on Windows, or
+>   `python3 brain/install.py --uninstall` on Linux (add `--dir <folder>` if you installed it
+>   somewhere other than `~/puki-brain`). It stops Puki and asks before removing each part: the
+>   login shortcut (on Linux, the `puki` systemd user service), the firewall rule (on Linux, the
+>   `ufw` rule for port 8790), the models, llama.cpp, BlueTTS and the Python environment, and
+>   your settings, pairing code and certificate.
+> - **By hand:** quit Puki (the tray icon's **Quit**, or end `pythonw.exe`); delete the "Puki
+>   brain" shortcut, or any shortcut you made to `doorbell.py`, from `shell:startup`; in an
+>   administrator PowerShell, run `Remove-NetFirewallRule -DisplayName "Puki companion"`; then
+>   delete the folder it ran from (`~/puki-brain`, or `%LOCALAPPDATA%\Puki` for Puki.exe).
+>
+> The rest of this page describes the old PC brain, for reference.
+
 The parrot in the games gets its words from a PC at home. Gemma 4 E4B writes a short
 line about what just happened, and [BlueTTS](https://github.com/maxmelichov/BlueTTS)
 speaks it in Hebrew or English. Holding the parrot records the child, and

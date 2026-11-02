@@ -1,7 +1,7 @@
 # Contributing to Puki
 
-Thanks for wanting to help! Puki is a game for two-to-four-year-olds and a companion that
-lives in the family's home. Both shape what gets accepted. Please read this before opening a
+Thanks for wanting to help! Puki is a game for two-to-four-year-olds and a companion whose
+brain runs on the family's own device. Both shape what gets accepted. Please read this before opening a
 pull request; small, focused PRs that follow it get merged quickly.
 
 **Not sure an idea fits?** Open an issue first and describe it. That saves you building
@@ -26,22 +26,25 @@ A PR that breaks any of these won't be merged, however good it is otherwise.
   that address the child have both a girl and a boy form (`heGirl`, `_he_f` / `_he_m`).
 
 **For the family's privacy**
-- **Nothing leaves the home.** No analytics, crash reporting, ads, accounts, cloud APIs or
-  remote downloads at runtime. The only network traffic is the tablet talking to the
-  family's own PC over the home network. (The installer downloads models once, from
-  Hugging Face and GitHub, at the parent's request.)
+- **Nothing about the child leaves the device.** No analytics, crash reporting, ads, accounts
+  or cloud APIs. The app uses the network for two things only: the model download a parent
+  asks for (pinned by size and SHA-256 in `DeviceModels.kt`), and the GitHub update check in
+  the `github` flavor. Don't add any other.
 - **No personal data in the repo.** No children's names, voices, photos or recordings in
   code, tests, screenshots, commit messages or fixtures. Personal files stay git-ignored
-  (`brain/config.json`, `brain/pairing_code.txt`, `voice_*_name*`).
-- **The child's words stay private.** Don't log or store transcripts or recordings to disk
-  without an explicit, off-by-default parent setting. The dashboard stays local-only.
-- **Keep the brain locked down.** Every doorbell endpoint requires the pairing code; the
-  dashboard binds to 127.0.0.1 and keeps its host and header checks. Don't weaken these.
+  (`brain/config.json`, `voice_*_name*`).
+- **The child's words stay private.** Don't log or store transcripts or recordings to disk.
+  What she said is kept in memory only, for the parent's "What Puki said" list, and is
+  forgotten when the game closes.
 
 **For what Puki says**
-- **The safety rails stay on.** Changes to prompts or the reply filter (`brain/brain.py`) must
-  keep replies short, warm, age-appropriate, in the child's grammatical gender, with no
-  compliments tacked on. Show sample outputs in the PR.
+- **The safety rails stay on.** Changes to the prompt format, the reply filter or the safety
+  nets (`Persona.kt`, `Safety.kt`, and their source in `brain/persona.py` and
+  `brain/safety.py`) must keep replies short, warm, age-appropriate, in the child's
+  grammatical gender, with no compliments tacked on. Show sample outputs in the PR.
+- **A new model** comes with new pins in `DeviceModels.kt`, an updated
+  `train/pt_manifest.json` if the pretraining changed, and the truth and safety scores
+  (`train/sft_small.py`) before and after.
 
 **Legal**
 - Contributions are under the repo's [MIT license](LICENSE). Only add art, sound and music
@@ -54,9 +57,10 @@ A PR that breaks any of these won't be merged, however good it is otherwise.
 |---|---|
 | Anything in the app | `./gradlew assembleGithubDebug` builds, and you played the changed screen on a tablet or emulator (landscape). For visual changes, **before and after screenshots**, in Hebrew (RTL) if layout is involved. |
 | Voice lines | They're added to `scripts/generate_voices.py` and generated with BlueTTS (Noa); `python scripts/check_voices.py` reports nothing missing. Plain text without nikud; ambiguous words go in `PHONEMES`. |
-| The brain (`brain/`) | It runs, and you tried the endpoints you touched, in Hebrew and English (a few sample requests and replies in the PR). `doorbell.py`, `dashboard.py`, `qr.py` and `install.py` stay standard-library only. |
-| The installer | A `--dry-run` on a fresh folder, and a real run of the steps you changed. Pin versions you download (not "latest"), check sizes, and keep it safe to run twice. Say which OS you tested (Windows, Linux). |
-| Dependencies | Why it's needed and its license. Prefer none: no new Android libraries for things Compose can do (animations, drawing), no new Python packages in the doorbell. Pin exact versions, at least two weeks old. |
+| The device brain (`app/.../puki/brain/`) | `./gradlew testGithubDebugUnitTest` passes, and you tried it on a real device with the models downloaded: a few sample situations and Puki's replies in the PR. Say which device. |
+| The word lists or the filter | Change them in `brain/safety.py` / `brain/persona.py`, run `python scripts/sync_safety_kt.py` so `Safety.kt` matches (`--check` passes), and `python -m pytest brain/tests`. |
+| The PC brain (`brain/`) | It's retired in 0.9.0 and takes no new features. Only changes to `safety.py`, `persona.py` and `pronunciation.tsv` (the source the app and `train/` use) are accepted. |
+| Dependencies | Why it's needed and its license. Prefer none: no new Android libraries for things Compose can do (animations, drawing). Pin exact versions, at least two weeks old. |
 
 ## Style
 
