@@ -13,7 +13,7 @@ if (makingProfile) apply(plugin = "androidx.baselineprofile")
 
 // The game's version. Bump it for each release; scripts/release.py reads it from here, and the
 // game updates itself to a newer one found in the GitHub releases.
-val pukiVersion = "0.7.0"
+val pukiVersion = "0.8.5"
 
 // The release key lives outside the repo, in ~/keys (puki-release.jks, and its password in
 // puki-signing.properties as storePassword=...). Without it (CI, contributors) builds use the

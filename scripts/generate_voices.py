@@ -268,8 +268,6 @@ voice_lines = [
     # --- My Day prompts ---
     ("voice_prompt_bath", "Let's take a bath!", ("בואי נתרחץ!", "בוא נתרחץ!")),
     ("voice_prompt_tidy_up", "Let's tidy up the room!", ("בואי נסדר את החדר!", "בוא נסדר את החדר!")),
-    ("voice_prompt_get_dressed", "Let's get dressed! What goes on first?",
-     ("בואי נתלבש! מה שמים קודם?", "בוא נתלבש! מה שמים קודם?")),
     ("voice_prompt_set_table", "Let's set the table!", ("בואי נערוך את השולחן!", "בוא נערוך את השולחן!")),
     ("voice_prompt_table_teddy", "Let's set the table for Teddy!", ("בואי נערוך את השולחן לדובי!", "בוא נערוך את השולחן לדובי!")),
     ("voice_prompt_table_puki", "Let's set the table for Puki!", ("בואי נערוך את השולחן לפוקי!", "בוא נערוך את השולחן לפוקי!")),

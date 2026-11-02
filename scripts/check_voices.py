@@ -39,6 +39,7 @@ TEMPLATE_SOURCES = {
     "voice_say_": "SayWord",
     "voice_bedtime_": "BedtimeStep",
     "voice_number_": "CountingRound",  # ids are 1..max targetNumber
+    "voice_give_": "MOST_TO_GIVE",  # ids are 1..MOST_TO_GIVE, what the rabbit can ask for
     "voice_island_": "IslandDef",
 }
 
@@ -63,6 +64,8 @@ def constructor_ids(all_code, constructor):
     if constructor == "CountingRound":
         numbers = [int(n) for n in re.findall(r"CountingRound\(\s*(\d+)", all_code)]
         return [str(n) for n in range(1, max(numbers) + 1)]
+    if constructor == "MOST_TO_GIVE":
+        return [str(n) for n in range(1, int(re.search(r"MOST_TO_GIVE = (\d+)", all_code).group(1)) + 1)]
     pattern = rf'\b{constructor}\(\s*(?:id\s*=\s*)?"([a-z0-9_]+)"'
     return sorted(set(re.findall(pattern, all_code)))
 
