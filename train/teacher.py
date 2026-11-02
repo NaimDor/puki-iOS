@@ -53,7 +53,8 @@ def _load_cache():
     if _cache is None:
         _cache = {}
         if os.path.exists(CACHE):
-            with open(CACHE, encoding="utf-8") as f:
+            # (errors="replace": a line torn by two runs writing at once fails as JSON below, and is asked again)
+            with open(CACHE, encoding="utf-8", errors="replace") as f:
                 for line in f:
                     try:
                         e = json.loads(line)
