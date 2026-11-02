@@ -64,6 +64,8 @@ import io.github.tomsadeh.puki.audio.EchoVoice
 import io.github.tomsadeh.puki.audio.MicRecorder
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
+import io.github.tomsadeh.puki.ui.common.awaitUnpaused
+import io.github.tomsadeh.puki.ui.common.rememberGamePaused
 import io.github.tomsadeh.puki.ui.components.BackButton
 import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.Scene
@@ -92,6 +94,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
     val voicePlayer = LocalVoicePlayer.current
     val language = LocalLanguage.current
     val scope = rememberCoroutineScope()
+    val paused = rememberGamePaused()
     val recorder = remember { MicRecorder() }
     var mode by remember { mutableStateOf(EchoMode.IDLE) }
     var lastActive by remember { mutableStateOf(SystemClock.uptimeMillis()) }
@@ -123,6 +126,7 @@ fun EchoScreen(onBack: () -> Unit, viewModel: EchoViewModel = viewModel()) {
         voicePlayer.play("voice_prompt_echo", language)
         repeat(2) {
             while (SystemClock.uptimeMillis() - lastActive < 15_000 || mode != EchoMode.IDLE) delay(1000)
+            awaitUnpaused(paused)  // (not over the time limit's goodbye)
             voicePlayer.play("voice_prompt_echo", language)
             lastActive = SystemClock.uptimeMillis()
         }

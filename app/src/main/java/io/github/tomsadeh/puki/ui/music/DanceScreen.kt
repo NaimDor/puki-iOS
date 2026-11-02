@@ -69,6 +69,8 @@ import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalMusicPlayer
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
+import io.github.tomsadeh.puki.ui.common.awaitUnpaused
+import io.github.tomsadeh.puki.ui.common.rememberGamePaused
 import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
 import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.GameTopBar
@@ -110,6 +112,7 @@ fun DanceScreen(
     val sfxPlayer = LocalSfxPlayer.current
     val companion = LocalCompanion.current
     val scope = rememberCoroutineScope()
+    val paused = rememberGamePaused()
 
     var started by remember { mutableStateOf(false) }
     var dancing by remember { mutableStateOf(false) }
@@ -143,10 +146,12 @@ fun DanceScreen(
         if (!started) return@LaunchedEffect
         var last: Move? = null
         repeat(STOPS) { i ->
+            awaitUnpaused(paused)  // (nothing goes on under the time limit's goodbye)
             dancing = true
             move = null
             musicPlayer.resume()
             delay(Random.nextLong(5000, 9000))
+            awaitUnpaused(paused)
             dancing = false
             musicPlayer.pause()
             val next = (Move.entries - setOfNotNull(last)).random()
@@ -154,6 +159,7 @@ fun DanceScreen(
             move = next
             voicePlayer.play(next.voice, language)
             delay(3800)
+            awaitUnpaused(paused)
             stops = i + 1
             viewModel.session.star()
             sfxPlayer.play(Sfx.STAR_COLLECT, 0.7f)
@@ -162,6 +168,7 @@ fun DanceScreen(
                 delay(900)
             }
         }
+        awaitUnpaused(paused)
         // The end: everyone takes a bow
         move = null
         musicPlayer.resume()

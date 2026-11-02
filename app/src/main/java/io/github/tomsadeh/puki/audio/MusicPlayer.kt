@@ -53,7 +53,7 @@ class MusicPlayer(val context: Context) {
             player.setOnPreparedListener {
                 if (mediaPlayer !== it) return@setOnPreparedListener  // another track was picked meanwhile
                 prepared = true
-                if (enabled) it.start()
+                if (enabled && !held) it.start()
                 fadeTo(it, target())
             }
             player.prepareAsync()  // (not on the main thread: a long track would stall the screen opening)
@@ -99,9 +99,15 @@ class MusicPlayer(val context: Context) {
     }
 
     fun resume() {
-        if (!enabled || !prepared) return
+        if (!enabled || !prepared || held) return
         mediaPlayer?.takeIf { !it.isPlaying }?.start()
     }
+
+    /**
+     * While held (the time limit's goodbye is up), nothing restarts the music: not a game's loop,
+     * not coming back to the app. Letting go doesn't start it either; whoever held it resumes.
+     */
+    var held = false
 
     fun stop() {
         fade?.cancel()

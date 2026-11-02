@@ -75,6 +75,8 @@ import io.github.tomsadeh.puki.ui.common.LocalCompanion
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalSfxPlayer
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
+import io.github.tomsadeh.puki.ui.common.awaitUnpaused
+import io.github.tomsadeh.puki.ui.common.rememberGamePaused
 import io.github.tomsadeh.puki.ui.components.ConfettiOverlay
 import io.github.tomsadeh.puki.ui.components.GameBackground
 import io.github.tomsadeh.puki.ui.components.GameTopBar
@@ -88,6 +90,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import io.github.tomsadeh.puki.ui.common.GameSession
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 data class SayState(
@@ -129,18 +132,22 @@ class SayItViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-/** Plays a voice line and returns when it's done. */
-private suspend fun VoicePlayer.say(key: String, language: Language) =
+/** Plays a voice line and returns when it's done (or after LINE_TIMEOUT_MS, so a lost line can't freeze the round). */
+private suspend fun VoicePlayer.say(key: String, language: Language) = withTimeoutOrNull(LINE_TIMEOUT_MS) {
     suspendCancellableCoroutine { cont ->
         play(key, language) { if (cont.isActive) cont.resume(Unit) }
         cont.invokeOnCancellation { stop() }
     }
+}
 
-private suspend fun VoicePlayer.praise(language: Language) =
+private suspend fun VoicePlayer.praise(language: Language) = withTimeoutOrNull(LINE_TIMEOUT_MS) {
     suspendCancellableCoroutine { cont ->
         playPraise(language) { if (cont.isActive) cont.resume(Unit) }
         cont.invokeOnCancellation { stop() }
     }
+}
+
+private const val LINE_TIMEOUT_MS = 15_000L
 
 /**
  * Say it with Puki: a picture appears, Puki says the word, and the child says it back.
@@ -178,7 +185,9 @@ fun SayItScreen(
         if (!hasMic) askMic.launch(Manifest.permission.RECORD_AUDIO) else micAsked = true
     }
 
+    val paused = rememberGamePaused()
     suspend fun say(key: String) {
+        awaitUnpaused(paused)  // (every step of a round goes through here: nothing goes on under the goodbye)
         talking = true
         try { voicePlayer.say(key, language) } finally { talking = false }
     }
@@ -202,6 +211,7 @@ fun SayItScreen(
                 WordTry.CLOSE -> { say("voice_say_almost"); say(wordKey); say("voice_say_your_turn") }
                 else -> { say("voice_say_listen"); say(wordKey); say("voice_say_your_turn") }
             }
+            awaitUnpaused(paused)
             last = companion?.listenForWord(text, alsoCounts) ?: run {
                 delay(3500)  // no microphone: just leave time to say it
                 WordTry.SPOKE

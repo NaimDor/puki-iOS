@@ -21,16 +21,16 @@ import kotlin.math.max
  *
  * [modelDir] holds the BlueTTS2.5 ONNX bundle (duration_predictor_style, text_encoder,
  * vector_estimator, vocoder, uncond.npz, stats.npz, vocab.json, tts.json); [voiceStyle] is
- * voices/noa.json; [renikud] reads the Hebrew.
+ * voices/noa.json; [renikud] reads the Hebrew (without it, only [voice] can speak, from phonemes).
  */
 class BlueVoice(
     private val env: OrtEnvironment,
     modelDir: File,
     voiceStyle: File,
-    private val renikud: Renikud,
+    private val renikud: Renikud?,
     threads: Int = 2,  // fastest on a Galaxy S25 (more threads were slower)
 ) {
-    private val sampleRate: Int
+    val sampleRate: Int
     private val baseChunkSize: Int
     private val compressFactor: Int
     private val latentDim: Int
@@ -103,7 +103,12 @@ class BlueVoice(
     fun synthesize(text: String, speed: Float = 0.92f, totalStep: Int = 8): FloatArray? {
         val normalized = VoiceText.prepareTextForSynthesis(text)
         if (normalized.none { it in '֐'..'׿' }) return null  // nothing Hebrew to say
-        val phonemes = VoiceText.stripLangTags(renikud.phonemize(normalized))
+        val reader = renikud ?: return null
+        return voice(VoiceText.stripLangTags(reader.phonemize(normalized)), speed, totalStep)
+    }
+
+    /** [phonemes] (IPA, as Renikud writes them) spoken: chunked, voiced, peak-limited. */
+    fun voice(phonemes: String, speed: Float = 0.92f, totalStep: Int = 8): FloatArray? {
         var out = FloatArray(0)
         for (chunk in VoiceText.chunkText(phonemes)) out += infer(chunk, speed, totalStep)
         if (out.isEmpty()) return null
@@ -176,7 +181,7 @@ class BlueVoice(
 
     fun close() {
         listOf(dp, textEnc, vectorEst, vocoder).forEach { it.close() }
-        renikud.close()  // 311 MB of its own
+        renikud?.close()  // 311 MB of its own
     }
 
     private fun wav(samples: FloatArray): ByteArray {

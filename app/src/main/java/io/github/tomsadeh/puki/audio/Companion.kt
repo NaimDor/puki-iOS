@@ -118,8 +118,9 @@ class Companion(
     val recentLines: StateFlow<List<SaidLine>> = _recentLines
 
     /**
-     * A parent says [line] wasn't right. Kept on the tablet (reports.jsonl) and sent to the PC
-     * when there is one (its dashboard keeps them too): each becomes a case to fix Puki by.
+     * A parent says [line] wasn't right. Sent to the PC when there is one (its dashboard keeps
+     * them): each becomes a case to fix Puki by. The tablet keeps nothing of it (what she said
+     * stays off the tablet); the parent can also mail it to Puki's makers ([shareText]).
      */
     fun report(line: SaidLine) {
         if (line.reported) return
@@ -128,7 +129,6 @@ class Companion(
             .put("game", line.game).put("lang", line.lang).put("source", "tablet")
             .put("t", java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()))
         scope.launch(Dispatchers.IO) {
-            runCatching { File(context.filesDir, "reports.jsonl").appendText(json.toString() + "\n") }
             if (code.isNotBlank()) {
                 runCatching { pcBrain.request("POST", "/report", json.toString().toByteArray(Charsets.UTF_8), 5000, "application/json; charset=utf-8") }
             }
@@ -183,6 +183,11 @@ class Companion(
     private var childName = ""
     private var childGirl = true
     private val voiceDir = File(context.filesDir, "voice")
+
+    init {
+        // Reports were kept on the tablet too, with what she said; no longer (see report())
+        scope.launch(Dispatchers.IO) { File(context.filesDir, "reports.jsonl").delete() }
+    }
 
     /** Who's playing, from the app's settings. Sent with every request. */
     fun setChild(name: String, girl: Boolean) {
@@ -502,13 +507,13 @@ class Companion(
     private fun refreshNameLines() {
         val wanted = if (childName.isBlank()) "" else "$childName|$childGirl|$NAME_LINES_VERSION"
         scope.launch(Dispatchers.IO) {
-            val marker = File(voiceDir, "name_lines.txt")
-            val have = runCatching { marker.readText() }.getOrDefault("")
-            if (wanted == have) return@launch
-            if (wanted.isEmpty()) {
+            if (wanted.isEmpty()) {  // (whatever the marker says: lines that never finished go too)
                 voiceDir.listFiles()?.forEach { it.delete() }
                 return@launch
             }
+            val marker = File(voiceDir, "name_lines.txt")
+            val have = runCatching { marker.readText() }.getOrDefault("")
+            if (wanted == have) return@launch
             if (!isReady) {
                 wake()  // records them as soon as the brain is up
                 return@launch
@@ -520,7 +525,12 @@ class Companion(
                 for ((lang, text) in listOf("he" to he, "en" to en)) {
                     val body = JSONObject().put("text", text).put("lang", lang).toString()
                     val audio = request("POST", "/speak", body.toByteArray(Charsets.UTF_8), timeoutMs = 10000)
-                    if (audio != null && audio.isNotEmpty()) File(voiceDir, "${key}_$lang.ogg").writeBytes(audio) else all = false
+                    // No answer is a failure (tried again on the next wake); an empty one means the brain
+                    // doesn't speak this language (the phone's, English), which more tries won't change
+                    when {
+                        audio == null -> all = false
+                        audio.isNotEmpty() -> File(voiceDir, "${key}_$lang.ogg").writeBytes(audio)
+                    }
                 }
             }
             if (all) marker.writeText(wanted)

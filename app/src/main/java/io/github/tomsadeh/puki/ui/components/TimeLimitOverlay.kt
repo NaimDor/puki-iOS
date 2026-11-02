@@ -93,9 +93,15 @@ fun TimeLimitOverlay(
         voicePlayer.play("voice_prompt_see_you_soon", language)
         delay(2500)
         musicPlayer.pause()
+        musicPlayer.held = true  // (from here no game loop or return to the app brings it back)
     }
+    // The game's scene holds still behind the evening, and comes back to life when a parent closes it
+    val clock = LocalAmbientClock.current
     DisposableEffect(Unit) {
+        clock.hold()
         onDispose {
+            clock.release()
+            musicPlayer.held = false
             musicPlayer.duck(false)
             musicPlayer.resume()
         }

@@ -25,7 +25,9 @@ import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import android.os.SystemClock
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,10 +42,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Until when (uptime) the gate stays shut after a wrong answer: for every gate, whichever screen. */
+private var lockedUntil = 0L
+private const val LOCK_MS = 60_000L
+
 /**
  * For grown-ups only: after a [holdDurationMs] hold (a ring fills up), a grown-up taps the number
- * written out in words among six ([ParentCheck]); only then [onUnlocked] runs. A toddler can hold
- * on for two seconds, but can't read "seventeen".
+ * written out in words among six, twice in a row ([ParentCheck]); only then [onUnlocked] runs. A
+ * toddler can hold on for two seconds, but can't read "seventeen", and mashing gets nowhere: a
+ * wrong tap shuts every gate for a minute.
  */
 @Composable
 fun LongPressGate(
@@ -56,7 +63,7 @@ fun LongPressGate(
     if (checking) {
         ParentCheck(onDone = { passed ->
             checking = false
-            if (passed) onUnlocked()
+            if (passed) onUnlocked() else lockedUntil = SystemClock.uptimeMillis() + LOCK_MS
         })
     }
     var holdProgress by remember { mutableFloatStateOf(0f) }
@@ -75,6 +82,7 @@ fun LongPressGate(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
+                        if (SystemClock.uptimeMillis() < lockedUntil) return@detectTapGestures  // (shut for now: the ring doesn't fill)
                         holdJob = scope.launch {
                             val steps = 15
                             for (i in 1..steps) {
@@ -116,12 +124,21 @@ internal fun numberInWords(n: Int, language: Language): String = when (language)
         "seventeen", "eighteen", "nineteen")[n - 11]
 }
 
-/** "For grown-ups: tap seventeen", among six numbers. [onDone] says whether the right one was tapped. */
+/**
+ * "For grown-ups: tap seventeen", among six numbers, then a second number. [onDone] says whether
+ * the right one was tapped both times (a guess gets through once in 36).
+ */
 @Composable
 private fun ParentCheck(onDone: (Boolean) -> Unit) {
     val language = LocalLanguage.current
-    val target = remember { (11..19).random() }
-    val choices = remember { ((11..19).filter { it != target }.shuffled().take(5) + target).shuffled() }
+    var round by remember { mutableIntStateOf(0) }
+    val target = remember(round) { (11..19).random() }
+    val choices = remember(round) { ((11..19).filter { it != target }.shuffled().take(5) + target).shuffled() }
+    fun picked(n: Int) = when {
+        n != target -> onDone(false)
+        round == 0 -> round = 1
+        else -> onDone(true)
+    }
     Dialog(onDismissRequest = { onDone(false) }) {
         Column(
             modifier = Modifier
@@ -145,7 +162,7 @@ private fun ParentCheck(onDone: (Boolean) -> Unit) {
                                 .size(72.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(0xFFFFF3E0))
-                                .clickable { onDone(n == target) },
+                                .clickable { picked(n) },
                             contentAlignment = Alignment.Center
                         ) {
                             Text("$n", fontSize = 28.sp, color = Color(0xFF5D4037))

@@ -43,10 +43,27 @@ class VoicePlayer(private val context: Context) {
         while (waiting.size > MAX_WAITING) waiting.removeFirst().second?.invoke()
     }
 
+    /** The line playing now's caller, told when it ends, or when stop() cuts it short. */
+    private var playingDone: (() -> Unit)? = null
+
+    /** While held (the microphone listening), new lines wait their turn instead of playing. */
+    private var held = false
+
+    fun hold() {
+        held = true
+    }
+
+    /** Let lines play again: the first one waiting starts now. */
+    fun unhold() {
+        held = false
+        if (!isPlaying()) waiting.removeFirstOrNull()?.first?.invoke()
+    }
+
     /** A line ended: tell its caller, then start the next waiting one (unless the caller just did). */
     private fun finished(onComplete: (() -> Unit)?) {
         mediaPlayer = null
         preparing = false
+        playingDone = null
         onComplete?.invoke()
         if (mediaPlayer == null) waiting.removeFirstOrNull()?.first?.invoke()
         _speaking.value = mediaPlayer != null
@@ -57,7 +74,7 @@ class VoicePlayer(private val context: Context) {
             onComplete?.invoke()
             return
         }
-        if (isPlaying()) {
+        if (held || isPlaying()) {
             enqueue({ play(voiceKey, language, onComplete) }, onComplete)
             return
         }
@@ -101,6 +118,7 @@ class VoicePlayer(private val context: Context) {
                 _speaking.value = true
             }
             mediaPlayer = player
+            playingDone = onComplete
             preparing = true
             player.prepareAsync()
         }.onFailure {
@@ -115,7 +133,7 @@ class VoicePlayer(private val context: Context) {
             onComplete?.invoke()
             return
         }
-        if (isPlaying()) {
+        if (held || isPlaying()) {
             enqueue({ playFile(file, onComplete) }, onComplete)
             return
         }
@@ -207,12 +225,20 @@ class VoicePlayer(private val context: Context) {
         _speaking.value = false
     }
 
-    /** Silence now: the line playing and everything waiting (e.g. before the microphone listens). */
+    /**
+     * Silence now: the line playing and everything waiting (e.g. before the microphone listens).
+     * Their callers are still told, as when a fast tap skips a waiting line, so whatever waits on
+     * a line (Say It's next word) carries on instead of waiting forever.
+     */
     fun stop() {
+        val cut = listOfNotNull(playingDone) + waiting.mapNotNull { it.second }
         waiting.clear()
+        playingDone = null
         mediaPlayer?.let { runCatching { if (it.isPlaying) it.stop() }; runCatching { it.release() } }
         mediaPlayer = null
         preparing = false
+        _speaking.value = false
+        cut.forEach { it() }
     }
 
     fun release() {

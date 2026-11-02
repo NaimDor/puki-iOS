@@ -8,6 +8,8 @@ import io.github.tomsadeh.puki.update.Updater
 import io.github.tomsadeh.puki.ui.common.LocalAppSettings
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 import io.github.tomsadeh.puki.ui.common.LocalVoicePlayer
+import io.github.tomsadeh.puki.ui.common.awaitUnpaused
+import io.github.tomsadeh.puki.ui.common.rememberGamePaused
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import android.app.Activity
@@ -104,6 +106,7 @@ fun HubScreen(
         label = "hub_tick"
     )
     var called by remember { mutableStateOf<String?>(null) }
+    val paused = rememberGamePaused()
 
     val sparkles = rememberTouchSparkles()
     Box(modifier = Modifier.fillMaxSize().touchSparkles(sparkles)) {
@@ -120,6 +123,7 @@ fun HubScreen(
             LaunchedEffect(islands) {
                 repeat(3) {
                     delay(IDLE_CALL_MS)
+                    awaitUnpaused(paused)  // (not over the time limit's goodbye)
                     if (!voicePlayer.isPlaying()) {
                         val island = islands.random()
                         called = island.id

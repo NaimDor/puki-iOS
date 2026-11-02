@@ -165,7 +165,10 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
                                 if (!hasMic()) {
                                     askMic.launch(Manifest.permission.RECORD_AUDIO)
                                 } else {
-                                    voicePlayer.stop()  // so the mic doesn't hear the app
+                                    // So the mic doesn't hear the app: silence now, and the game's
+                                    // next lines wait until she's done
+                                    voicePlayer.stop()
+                                    voicePlayer.hold()
                                     listening = recorder.startOffMain()
                                 }
                             }
@@ -177,11 +180,15 @@ fun CompanionParrot(modifier: Modifier = Modifier) {
                                 listening = false
                                 scope.launch {
                                     val wav = recorder.stopOffMain()
+                                    voicePlayer.unhold()
                                     if (released) companion.listen(wav)
                                 }
-                            } else if (released && quick) {
-                                scope.launch { mood?.hop() }  // he noticed, right away
-                                companion.chat()
+                            } else {
+                                voicePlayer.unhold()  // (never listened after all)
+                                if (released && quick) {
+                                    scope.launch { mood?.hop() }  // he noticed, right away
+                                    companion.chat()
+                                }
                             }
                         })
                     }

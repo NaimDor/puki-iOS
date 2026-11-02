@@ -222,7 +222,8 @@ fun PukiApp(
                     TimeLimitOverlay(
                         onDismiss = {
                             showTimeLimit = false
-                            playedMs = 0L  // a new allowance starts counting
+                            // A little more time, not a whole new allowance (a parent wanting more changes the limit)
+                            playedMs = (settings.timeLimitMinutes * 60_000L - EXTENSION_MS).coerceAtLeast(0L)
                             saveClock()
                         }
                     )
@@ -234,3 +235,6 @@ fun PukiApp(
 
 /** An hour away from the game starts a new time-limit allowance. */
 private const val REST_FOR_NEW_ALLOWANCE_MS = 60 * 60 * 1000L
+
+/** A parent closing the goodbye gives this much more play before the next one. */
+private const val EXTENSION_MS = 10 * 60 * 1000L
