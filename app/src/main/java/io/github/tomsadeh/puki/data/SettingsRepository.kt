@@ -128,4 +128,14 @@ class SettingsRepository(private val context: Context) {
     suspend fun updateBrainOnDevice(on: Boolean) {
         context.settingsDataStore.edit { it[Keys.BRAIN_ON_DEVICE] = on }
     }
+
+    /**
+     * Left by 0.8.x: the PC brain's address, its pairing code (a secret) and the parent's PIN for
+     * it. Removed once; after that there is nothing to remove, and DataStore writes nothing.
+     */
+    suspend fun forgetPcBrain() {
+        context.settingsDataStore.edit { prefs ->
+            for (old in listOf("companion_address", "companion_code", "companion_pin")) prefs.remove(stringPreferencesKey(old))
+        }
+    }
 }

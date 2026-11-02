@@ -5,15 +5,18 @@ Puki uses these, with thanks:
 
 - AndroidX and Jetpack Compose, by Google: Apache License 2.0
 - ONNX Runtime, by Microsoft: MIT License (Copyright (c) Microsoft Corporation)
-- BlueTTS, by Max Melichov: Puki's voice, downloaded separately; MIT License
+- BlueTTS, by Max Melichov: Puki's voice, downloaded separately; MIT License. Syrinx is Puki's int8
+  build of BlueTTS, for weaker tablets (MIT License, Max Melichov)
 - Puki's own models, made for this project and downloaded separately: Brains (writes his lines) and Beak
   (reads them aloud). Beak learned to read from RenikudPlus, by Max Melichov, Yakov Kolani and Morris Alper
   (Apache License 2.0). Brains was pretrained on public text: FineWeb-Edu, by Hugging Face (ODC-By, and the
   Common Crawl terms of use), Cosmopedia, by Hugging Face (Apache License 2.0), Project Gutenberg books and
-  YouTube Commons videos from the Common Pile (public domain, and CC BY per video), and HeDC4, by HeNLP.
-  Exactly what entered it: train/pt_manifest.json in the source.
-- kol-stream, by MaorB, on Google's EmbeddingGemma 2 (trained on ivrit.ai's Hebrew speech): downloaded
-  separately, for listening on the device; Apache License 2.0
+  YouTube Commons videos from the Common Pile (public domain, and CC BY per video), and HeDC4, by HeNLP
+  (Shalumov & Haskey, "HeRo: RoBERTa and Longformer Hebrew Language Models", arXiv:2304.11077).
+  Exactly what entered it: train/pt_manifest.json in the source. Brains' fine-tuning lines were written
+  and judged by DeepSeek's models (through the DeepSeek API).
+- kol-stream, by MaorB, on Google's EmbeddingGemma 2 (trained on ivrit.ai's Hebrew speech and on
+  LibriSpeech, CC BY 4.0): downloaded separately, for listening on the device; Apache License 2.0
 - Music: by the project's author (piano, produced with Suno)
 
 

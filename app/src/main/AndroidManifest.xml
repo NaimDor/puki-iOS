@@ -24,12 +24,6 @@
         android:appCategory="game"
         tools:targetApi="36">
 
-        <!-- The phone brain runs Gemma on the GPU through OpenCL; Android 12+ hides the phone's
-             OpenCL library from apps that don't ask for it ("Can not find OpenCL library") -->
-        <uses-native-library android:name="libOpenCL.so" android:required="false" />
-        <uses-native-library android:name="libOpenCL-pixel.so" android:required="false" />
-        <uses-native-library android:name="libvndksupport.so" android:required="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -154,8 +154,8 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // Puki's brain on the device itself (optional, for high-end phones): Gemma through
-    // LiteRT-LM, the voice and Hebrew pronunciation through ONNX Runtime
+    // Puki's brain on the device itself: Brains, Beak, the voice and the ears, all through
+    // ONNX Runtime on the CPU
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     // Testing

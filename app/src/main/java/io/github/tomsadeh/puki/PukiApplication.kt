@@ -29,6 +29,8 @@ class PukiApplication : Application() {
         super.onCreate()
         settingsRepository = SettingsRepository(this)
         progressRepository = ProgressRepository(this)
+        // Left by older versions, like reports.jsonl and the pack folder (see Companion)
+        appScope.launch(Dispatchers.IO) { runCatching { settingsRepository.forgetPcBrain() } }
     }
 
     /**

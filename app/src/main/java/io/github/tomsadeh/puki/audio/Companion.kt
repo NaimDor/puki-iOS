@@ -91,7 +91,7 @@ class Companion(
 
     /**
      * A parent says [line] wasn't right: it's marked, and they can mail it to Puki's makers
-     * ([shareText]). The tablet keeps nothing of it (what she said stays off the tablet).
+     * ([shareText]). The tablet keeps nothing of it, and what she said stays out of the report.
      */
     fun report(line: SaidLine) {
         if (line.reported) return
@@ -99,9 +99,10 @@ class Companion(
     }
 
     /**
-     * The text of a report a parent may send to Puki's makers: what Puki said and what came
-     * before, in the parent's language, with the child's name replaced. They see and can edit it
-     * before their own mail app sends it.
+     * The text of a report a parent may send to Puki's makers: what Puki said and what was
+     * happening in the game just before, in the parent's language, with the child's name replaced.
+     * What the child said ([SaidLine.heard]) is never in it: that stays on the card, on the tablet.
+     * They see and can edit it before their own mail app sends it.
      */
     fun shareText(line: SaidLine): String {
         val noNikud = { s: String -> io.github.tomsadeh.puki.brain.Persona.stripNikud(s) }
@@ -112,7 +113,7 @@ class Companion(
             if (name.length > 1) t = t.replace(name, placeholder, ignoreCase = true)
             t
         }
-        val before = line.heard.ifBlank { line.situation }
+        val before = line.situation
         return buildString {
             appendLine(pick("פוקי אמר:", "Puki said:") + " " + hide(line.said))
             if (before.isNotBlank()) appendLine(pick("לפני זה:", "Before that:") + " " + hide(before))

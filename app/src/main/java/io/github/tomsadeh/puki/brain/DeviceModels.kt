@@ -27,18 +27,19 @@ class DeviceModels(context: Context) {
     private fun hf(repo: String, path: String, name: String, size: Long, sha: String) =
         Model("https://huggingface.co/$repo/resolve/main/$path", name, size, sha)
 
-    private val bt = "notmax123/BlueTTS2.5-onnx"
     val models = listOf(
-        // The voice: BlueTTS (MIT) with the Noa voice. Syrinx is its int8 build for weak tablets
-        // (train/squawk_quant.py: no audible difference, 3x smaller, twice as fast)
-        hf(bt, "duration_predictor_style.onnx", "voice/duration_predictor_style.onnx", 1508749, "3d0347cfc09234b78a20d5fa50b5c402d338fb99825f40ada8c70301edbb60ea"),
-        hf(bt, "text_encoder.onnx", "voice/text_encoder.onnx", 27419694, "f971aa25315b93efff1850b39fe293aa93ae85df69fabf5e5022318cc632973c"),
+        // The voice: BlueTTS (MIT) with the Noa voice, kept with Syrinx's int8 parts in
+        // dtsj89/puki-syrinx so an upstream change can't break new installs. Syrinx is its int8
+        // build for weak tablets (train/squawk_quant.py: no audible difference, 3x smaller, twice
+        // as fast). noa.json stays on BlueTTS's GitHub at its pinned commit
+        hf(SYRINX_REPO, "duration_predictor_style.onnx", "voice/duration_predictor_style.onnx", 1508749, "3d0347cfc09234b78a20d5fa50b5c402d338fb99825f40ada8c70301edbb60ea"),
+        hf(SYRINX_REPO, "text_encoder.onnx", "voice/text_encoder.onnx", 27419694, "f971aa25315b93efff1850b39fe293aa93ae85df69fabf5e5022318cc632973c"),
         hf(SYRINX_REPO, "vector_estimator.onnx", "voice/vector_estimator.onnx", 34535720, "e4ae775c1287a8d441a26c4d0b6961a941762032690bb061757ae26afccfb82f"),
         hf(SYRINX_REPO, "vocoder.onnx", "voice/vocoder.onnx", 35518078, "525c2c3ea5b10d2f9c57f7ac1093a568d3e3351d7efeec087cf89202eeac3e81"),
-        hf(bt, "uncond.npz", "voice/uncond.npz", 52732, "1c71c2b2836fd97f4c56eb21e258227650bbe0dcd906f64e2bba58e6ac09e76b"),
-        hf(bt, "stats.npz", "voice/stats.npz", 1920, "20d44fae010d46b859ee6238609780eb7bd5bf82320bad17b826a5dcfa4ed658"),
-        hf(bt, "vocab.json", "voice/vocab.json", 3157, "13fba5e735222fcf30d9c062d898982a1ba86d481f11560fbbdf6e0af79417b3"),
-        hf(bt, "tts.json", "voice/tts.json", 9260, "862d44194197de4873eccc8bfdab1835d15f98e469a90489df6da8f92a48c7ea"),
+        hf(SYRINX_REPO, "uncond.npz", "voice/uncond.npz", 52732, "1c71c2b2836fd97f4c56eb21e258227650bbe0dcd906f64e2bba58e6ac09e76b"),
+        hf(SYRINX_REPO, "stats.npz", "voice/stats.npz", 1920, "20d44fae010d46b859ee6238609780eb7bd5bf82320bad17b826a5dcfa4ed658"),
+        hf(SYRINX_REPO, "vocab.json", "voice/vocab.json", 3157, "13fba5e735222fcf30d9c062d898982a1ba86d481f11560fbbdf6e0af79417b3"),
+        hf(SYRINX_REPO, "tts.json", "voice/tts.json", 9260, "862d44194197de4873eccc8bfdab1835d15f98e469a90489df6da8f92a48c7ea"),
         Model("https://raw.githubusercontent.com/maxmelichov/BlueTTS/0e38dbf08ed53f85863d1eab092bd9572c53a503/voices/noa.json",
             "voice/noa.json", 288898, "c233f066a7d505306892509649bc80abeb7d0a565687f143e277ec93874a47c8"),
         // Puki's own models (train/): Brains writes his lines, Beak reads them aloud (int8, ONNX)
@@ -169,15 +170,12 @@ class DeviceModels(context: Context) {
         private const val BEAK_REPO = "dtsj89/puki-beak"
         private const val SYRINX_REPO = "dtsj89/puki-syrinx"
 
-        /**
-         * Whether settings offer the download. Off until Brains is published (its Hebrew pretraining
-         * data's terms are being settled); a device that already has the models still uses them.
-         */
-        const val OFFERED = false
+        /** Whether settings offer the download. They do, on capable devices ([capable]). */
+        const val OFFERED = true
 
         /**
          * Devices that can run it: 64-bit ARM with about 3 GB of memory or more. Measured on a Galaxy
-         * Tab A7 Lite (3 GB, MT8768): a line written, read and spoken in about 3 seconds.
+         * Tab A7 Lite (3 GB, MT8768): a line written, read and spoken in about 1.5 seconds.
          */
         fun capable(context: Context): Boolean {
             val mem = ActivityManager.MemoryInfo().also { (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(it) }

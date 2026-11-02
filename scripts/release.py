@@ -8,10 +8,7 @@ from the public puki checkout, and stops if any personal voice lines (voice_*_na
 the child's name) are in res/raw, so a release never carries them. It also refuses to publish an
 APK signed with the debug key: releases are signed with the key in ~/keys (see app/build.gradle.kts).
 
-Each release also carries the PC brain, signed: dist/puki-brain-<version>.zip (the brain folder at this
-commit, with brain/release.txt saying its version) and its .sig, made with Puki's update key
-(~/keys/puki-update, an ssh-keygen ed25519 key). install.py --update takes it only if the
-signature checks out against brain/update_signers, the key's public half.
+Puki's brain runs on the tablet itself (0.9.0 on), so a release carries only the APK.
 """
 import argparse
 import glob
@@ -22,20 +19,9 @@ import re
 import shutil
 import subprocess
 import sys
-import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = "TomSadeh/puki"
-UPDATE_KEY = os.path.join(os.path.expanduser("~"), "keys", "puki-update")
-sys.path.insert(0, os.path.join(ROOT, "brain"))
-from common import SIGN_NAMESPACE, ssh_keygen as _ssh_keygen  # noqa: E402
-
-
-def ssh_keygen():
-    found = _ssh_keygen()
-    if not found:
-        sys.exit("Stopping: ssh-keygen (OpenSSH) is needed to sign the PC brain.")
-    return found
 
 
 def run(cmd, **kw):
@@ -63,30 +49,6 @@ def signer(apk):
     dn = re.search(r"certificate DN: (.*)", out).group(1).strip()
     fp = re.search(r"certificate SHA-256 digest: ([0-9a-f]+)", out).group(1)
     return dn, fp
-
-
-def brain_release(version):
-    """The PC brain for this release, and its signature: (zip, sig)."""
-    out = os.path.join(ROOT, "dist", f"puki-brain-{version}.zip")
-    prefix = f"puki-{version}/"
-    run(["git", "archive", "--format=zip", f"--prefix={prefix}", "-o", out, "HEAD", "brain"])  # all the PC needs
-    with zipfile.ZipFile(out, "a") as z:  # what's signed says which version it is
-        z.writestr(prefix + "brain/release.txt", version + "\n")
-    sig = out + ".sig"
-    if os.path.exists(sig):
-        os.remove(sig)
-    if not os.path.exists(UPDATE_KEY):
-        sys.exit(f"Stopping: Puki's update key isn't in {UPDATE_KEY}, so the PC brain can't be signed.")
-    exe = ssh_keygen()
-    subprocess.run([exe, "-Y", "sign", "-q", "-f", UPDATE_KEY, "-n", SIGN_NAMESPACE, out], check=True)
-    # Checked the way install.py --update will check it, so a release never carries a bad signature
-    with open(out, "rb") as f:
-        ok = subprocess.run([exe, "-Y", "verify", "-f", os.path.join(ROOT, "brain", "update_signers"), "-I", "puki",
-                             "-n", SIGN_NAMESPACE, "-s", sig], stdin=f, capture_output=True).returncode == 0
-    if not ok:
-        sys.exit("Stopping: the brain's signature doesn't check out against brain/update_signers (another key?).")
-    print(f"  {out}  {os.path.getsize(out) / 1e6:.1f} MB, signed with Puki's update key")
-    return out, sig
 
 
 def main():
@@ -120,7 +82,6 @@ def main():
     print(f"  {out}  {os.path.getsize(out) / 1e6:.1f} MB  sha256 {sha}")
     dn, fp = signer(out)
     print(f"  signed by {dn}  (certificate SHA-256 {fp})")
-    brain_zip, brain_sig = brain_release(version)
     if "Android Debug" in dn:
         if args.publish:
             sys.exit("Stopping: this APK is signed with the debug key. Put the release key in ~/keys first "
@@ -135,12 +96,12 @@ def main():
     if have.returncode == 0:
         if any(a["name"].endswith(".apk") for a in json.loads(have.stdout)["assets"]):
             sys.exit(f"Stopping: {tag} already has an APK. Bump pukiVersion for a new release.")
-        run(["gh", "release", "upload", tag, out, brain_zip, brain_sig, "-R", REPO])
+        run(["gh", "release", "upload", tag, out, "-R", REPO])
     else:
         notes = args.notes or f"Puki {version}. Installed games update themselves from here (parent settings)."
-        run(["gh", "release", "create", tag, out, brain_zip, brain_sig, "-R", REPO, "--title", f"Puki {version}", "--notes", notes,
+        run(["gh", "release", "create", tag, out, "-R", REPO, "--title", f"Puki {version}", "--notes", notes,
              "--prerelease"])
-    print(f"Published {tag}: games will offer the update, and install.py --update will find the PC brain.")
+    print(f"Published {tag}: games will offer the update.")
 
 
 if __name__ == "__main__":

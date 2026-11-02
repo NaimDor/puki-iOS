@@ -46,7 +46,8 @@ import io.github.tomsadeh.puki.ui.common.LocalLanguage
 /**
  * מלשין לרנינג: what Puki said this session, newest first, each with a flag for a parent who
  * heard something that wasn't right, and three short steps saying what the list is, what to flag
- * and where a report goes (to Puki's makers, and only by the parent's own email).
+ * and where a report goes (to Puki's makers, and only by the parent's own email). What the child
+ * said shows here, in memory only; a report carries Puki's line and the game moment, not her words.
  */
 @Composable
 fun ReportCard(companion: Companion) {
@@ -82,8 +83,9 @@ fun ReportCard(companion: Companion) {
                 "Something not right? Scary, untrue, a promise, or just odd: tap 🚩 next to the line."
             ),
             if (canSend) BilingualText(
-                "אז מופיע ✉️: שולחים לנו את הדיווח מהמייל שלכם, ורואים בדיוק מה יישלח, עם השם מוחלף. ככה נתקן את פוקי לכל המשפחות. בטאבלט עצמו הוא לא נשמר, ושום דבר לא נשלח בלי שתבחרו.",
-                "Then ✉️ appears: send the report to Puki's makers from your own email, seeing exactly what goes, with your child's name replaced. That's how Puki gets fixed for every family. It isn't kept on this tablet, and nothing is sent unless you choose to."
+                "אז מופיע ✉️: שולחים לנו את הדיווח מהמייל שלכם, ורואים בדיוק מה יישלח: המשפט של פוקי ומה קרה במשחק, עם השם מוחלף. מה שהילד אמר לא נשלח. ככה נתקן את פוקי לכל המשפחות. בטאבלט עצמו הוא לא נשמר, ושום דבר לא נשלח בלי שתבחרו.",
+                "Then ✉️ appears: send the report to Puki's makers from your own email, seeing exactly what goes: Puki's line and what happened in the game, with your child's name replaced. What your child said isn't sent. That's how Puki gets fixed for every family. It isn't kept on this tablet, and nothing is sent unless you choose to.",
+                heGirl = "אז מופיע ✉️: שולחים לנו את הדיווח מהמייל שלכם, ורואים בדיוק מה יישלח: המשפט של פוקי ומה קרה במשחק, עם השם מוחלף. מה שהילדה אמרה לא נשלח. ככה נתקן את פוקי לכל המשפחות. בטאבלט עצמו הוא לא נשמר, ושום דבר לא נשלח בלי שתבחרו."
             ) else BilingualText(
                 "הדיווח לא נשמר בטאבלט ולא יוצא ממנו.",
                 "The report isn't kept on this tablet, and nothing leaves it."
