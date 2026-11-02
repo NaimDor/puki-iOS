@@ -40,3 +40,7 @@ __pycache__/
 # The small model's dataset and checkpoints (train/): made locally, never in git
 /train/data/
 /train/out/
+
+# Launch videos and the raw animal recordings (the game uses the trimmed copies in res/raw): local only
+/puki-video/
+/puki-sounds/
