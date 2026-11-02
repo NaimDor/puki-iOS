@@ -25,14 +25,18 @@ HEBREW_CSV = Path(r"C:\models\pt\hedc4\HeDC4.csv")
 EOT = 0  # <|endoftext|>, the first of pt_corpus.SPECIAL
 
 # Where each source came from. English commits are read from the download's own cache; the licences are as
-# the dataset cards state them, HeDC4's card states none.
+# each source states them, checked at the source on 2026-11-02.
 ORIGIN = {
     "hebrew": {"repo": "HeNLP/HeDC4", "files": "HeDC4.csv", "commit": "84395a7af1fc1be19ad02df0af609069253a9f9e",
-               "licence": None, "note": "cleaned by pt_clean.py, see \"cleaning\""},
-    "fineweb-edu": {"repo": "HuggingFaceFW/fineweb-edu", "files": "sample/10BT/", "licence": "ODC-By"},
+               "licence": None, "note": "cleaned by pt_clean.py, see \"cleaning\"; the card states no licence and asks to cite "
+                                        "Shalumov & Haskey, HeRo, arXiv:2304.11077"},
+    "fineweb-edu": {"repo": "HuggingFaceFW/fineweb-edu", "files": "sample/10BT/", "licence": "ODC-By",
+                    "note": "also subject to the Common Crawl terms of use"},
     "cosmopedia": {"repo": "HuggingFaceTB/cosmopedia", "files": "data/stories/", "licence": "Apache-2.0"},
-    "gutenberg": {"repo": "common-pile/project_gutenberg_filtered", "files": "project_gutenberg-dolma-*", "licence": "public domain"},
-    "youtube": {"repo": "common-pile/youtube_filtered", "files": "youtube-commons-*", "licence": "CC-BY (per channel)"},
+    "gutenberg": {"repo": "common-pile/project_gutenberg_filtered", "files": "project_gutenberg-dolma-*", "licence": None,
+                  "note": "no licence tag; books marked public domain in upstream metadata"},
+    "youtube": {"repo": "common-pile/youtube_filtered", "files": "youtube-commons-*", "licence": None,
+                "note": "no licence tag; each video's row states its own, CC BY as the card describes"},
 }
 
 # The steps, as they were run.

@@ -55,7 +55,7 @@
    "files": "HeDC4.csv",
    "commit": "84395a7af1fc1be19ad02df0af609069253a9f9e",
    "licence": null,
-   "note": "cleaned by pt_clean.py, see \"cleaning\"",
+   "note": "cleaned by pt_clean.py, see \"cleaning\"; the card states no licence and asks to cite Shalumov & Haskey, HeRo, arXiv:2304.11077",
    "url": "https://huggingface.co/datasets/HeNLP/HeDC4",
    "corpus": {
     "docs": 2166567,
@@ -110,7 +110,8 @@
     "sample/10BT/000_00000.parquet": "b1ba7b2ce4cb5ea6ef42dca40263eabb85f37700d01693a68e9b30a31d78e871",
     "sample/10BT/001_00000.parquet": "3fcf2dc69cd52503986276d3d2d26a8c356d0f2ea28a0de4fdbda8cf87755693",
     "sample/10BT/002_00000.parquet": "547ae182d132c9f06b6ce63149567208ea9f57630bfd9b1a2938e504f0c9ebd7"
-   }
+   },
+   "note": "also subject to the Common Crawl terms of use"
   },
   "cosmopedia": {
    "repo": "HuggingFaceTB/cosmopedia",
@@ -147,7 +148,7 @@
   "gutenberg": {
    "repo": "common-pile/project_gutenberg_filtered",
    "files": "project_gutenberg-dolma-*",
-   "licence": "public domain",
+   "licence": null,
    "url": "https://huggingface.co/datasets/common-pile/project_gutenberg_filtered",
    "commit": "3cdf6879c807f4e4e063f2ceb23bc268d8c29ab7",
    "corpus": {
@@ -163,12 +164,13 @@
    "raw_files": {
     "project_gutenberg-dolma-0000.json.gz": "f7e3716e1e2be607a044920ffec69d1395598cca178d4ccbbd343f206b31effb",
     "project_gutenberg-dolma-0001.json.gz": "a38ccf7cb3851664f1c3ab256deac7ebd5597fffd90e15afff3e5e5a252e411c"
-   }
+   },
+   "note": "no licence tag; books marked public domain in upstream metadata"
   },
   "youtube": {
    "repo": "common-pile/youtube_filtered",
    "files": "youtube-commons-*",
-   "licence": "CC-BY (per channel)",
+   "licence": null,
    "url": "https://huggingface.co/datasets/common-pile/youtube_filtered",
    "commit": "dff8c8a54e98bce64c2e7ce9a8466c144c1cddd6",
    "corpus": {
@@ -185,7 +187,8 @@
     "youtube-commons-0000.json.gz": "c90b82cff8b9550184a063ab71e5e8bf46ac9bf6640c19f3a9647095c9112005",
     "youtube-commons-0001.json.gz": "d2016ce3c1594de463e2cd5b13d848a4b0d762713d6425d21bfcf7f4989547c5",
     "youtube-commons-0002.json.gz": "864e66b322bd869382095c8eafab8de2324161bd1e20704697bba7ce93866422"
-   }
+   },
+   "note": "no licence tag; each video's row states its own, CC BY as the card describes"
   }
  }
 }
