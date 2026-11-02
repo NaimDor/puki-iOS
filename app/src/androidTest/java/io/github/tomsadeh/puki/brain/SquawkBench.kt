@@ -22,7 +22,8 @@ import java.util.Random
  */
 @RunWith(AndroidJUnit4::class)
 class SquawkBench {
-    private val dir = File("/data/local/tmp/voice")
+    // (-Pandroid.testInstrumentationRunnerArguments.voiceDir=... for another build of the voice, e.g. int8)
+    private val dir = File(InstrumentationRegistry.getArguments().getString("voiceDir") ?: "/data/local/tmp/voice")
     private val lines = listOf(
         "haχazˈiʁ ʁaʔˈev.",
         "hatsˈel niʁʔˈa kmˈo pˈil ʔanˈak!",

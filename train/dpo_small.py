@@ -99,10 +99,15 @@ def main():
         policy.train()
         return right / len(val_enc)
 
+    truth_rows = [r for name in sorted((HERE / "data").glob("*_heldout.jsonl")) if not name.name.startswith(("pilot", "train_", "look_pilot"))
+                  for r in map(json.loads, open(name, encoding="utf-8")) if r["task"] in ("silly", "silly_fix", "recap")]
+
     def evaluate(step):
         loss = S.reference_loss(policy, refs, device)
         made = S.samples(policy, tok, held_rows, eot, device, a.samples, a.seed)
-        rate, _, gate, gate_n, truths = S.judge_samples(made)
+        rate, _, gate, gate_n, _ = S.judge_samples(made)
+        # The truth checks on the same 400 extra held-out inputs sft_small.py scores
+        _, _, _, _, truths = S.judge_samples(made + S.samples(policy, tok, truth_rows, eot, device, 400, a.seed + 1))
         pref = prefers()
         row = {"step": step, "ref_heldout": loss, "filter_pass": rate, "gate": gate, "truth": truths, "prefers_kept": pref,
                "time": time.strftime("%H:%M")}

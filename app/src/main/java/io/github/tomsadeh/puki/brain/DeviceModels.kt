@@ -29,11 +29,12 @@ class DeviceModels(context: Context) {
 
     private val bt = "notmax123/BlueTTS2.5-onnx"
     val models = listOf(
-        // The voice: BlueTTS (MIT) with the Noa voice
+        // The voice: BlueTTS (MIT) with the Noa voice. Syrinx is its int8 build for weak tablets
+        // (train/squawk_quant.py: no audible difference, 3x smaller, twice as fast)
         hf(bt, "duration_predictor_style.onnx", "voice/duration_predictor_style.onnx", 1508749, "3d0347cfc09234b78a20d5fa50b5c402d338fb99825f40ada8c70301edbb60ea"),
         hf(bt, "text_encoder.onnx", "voice/text_encoder.onnx", 27419694, "f971aa25315b93efff1850b39fe293aa93ae85df69fabf5e5022318cc632973c"),
-        hf(bt, "vector_estimator.onnx", "voice/vector_estimator.onnx", 132475789, "50557b34acfafa4b34f21dae263faa74d3f3169f114ff927599a1eff110d0b6e"),
-        hf(bt, "vocoder.onnx", "voice/vocoder.onnx", 101411919, "b0709df316ff44cc263c04fbf9d17371b16897071a48b79d3634d5f379fb3067"),
+        hf(SYRINX_REPO, "vector_estimator.onnx", "voice/vector_estimator.onnx", 34535720, "e4ae775c1287a8d441a26c4d0b6961a941762032690bb061757ae26afccfb82f"),
+        hf(SYRINX_REPO, "vocoder.onnx", "voice/vocoder.onnx", 35518078, "525c2c3ea5b10d2f9c57f7ac1093a568d3e3351d7efeec087cf89202eeac3e81"),
         hf(bt, "uncond.npz", "voice/uncond.npz", 52732, "1c71c2b2836fd97f4c56eb21e258227650bbe0dcd906f64e2bba58e6ac09e76b"),
         hf(bt, "stats.npz", "voice/stats.npz", 1920, "20d44fae010d46b859ee6238609780eb7bd5bf82320bad17b826a5dcfa4ed658"),
         hf(bt, "vocab.json", "voice/vocab.json", 3157, "13fba5e735222fcf30d9c062d898982a1ba86d481f11560fbbdf6e0af79417b3"),
@@ -166,6 +167,7 @@ class DeviceModels(context: Context) {
         const val BEAK = "beak"
         private const val BRAINS_REPO = "dtsj89/puki-brains"
         private const val BEAK_REPO = "dtsj89/puki-beak"
+        private const val SYRINX_REPO = "dtsj89/puki-syrinx"
 
         /**
          * Whether settings offer the download. Off until Brains is published (its Hebrew pretraining
