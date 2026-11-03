@@ -281,14 +281,14 @@ class Companion(
      * line that passed, too slow): the game plays its own then.
      */
     suspend fun line(task: String, input: String, truth: String = "", mustSay: Boolean? = null,
-                     present: List<String> = emptyList(), absent: List<String> = emptyList(), earlier: String = ""): String? {
+                     present: List<String> = emptyList(), absent: List<String> = emptyList(), earlier: String = "", pick: String = ""): String? {
         if (!isReady) return null
         _thinking.value = true
         val (audio, text) = try {
             withContext(Dispatchers.IO) {
                 val body = JSONObject().put("task", task).put("input", input).put("lang", lang()).put("truth", truth)
                     .put("mustSay", when (mustSay) { true -> "yes"; false -> "no"; null -> "" })
-                    .put("present", org.json.JSONArray(present)).put("absent", org.json.JSONArray(absent)).put("earlier", earlier).toString()
+                    .put("present", org.json.JSONArray(present)).put("absent", org.json.JSONArray(absent)).put("earlier", earlier).put("pick", pick).toString()
                 // (what he said is read on this thread, right after the request: see Brain.lastSaid)
                 request("POST", "/line", body.toByteArray(Charsets.UTF_8), timeoutMs = 9000) to brain?.lastSaid()?.text
             }

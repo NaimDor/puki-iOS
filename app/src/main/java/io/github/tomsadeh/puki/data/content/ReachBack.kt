@@ -78,6 +78,12 @@ object ReachBack {
         return null
     }
 
+    /** Whether [line] says [word] (in any of its forms: "להר" says "הר", "dogs" says "dog"). */
+    fun says(line: String, word: String): Boolean {
+        val want = word.split(' ').filter { it.isNotEmpty() }.flatMap { forms(it) }.toSet()
+        return line.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }.any { w -> forms(w).any { it in want } }
+    }
+
     /** Whether [line] names what only the earlier moment had (the horse, not "hiding", which both have): build.py's check. */
     fun namesEarlier(line: String, input: String, earlier: String): Boolean {
         val only = contentWords(earlier.substringAfter(":")) - contentWords(input)

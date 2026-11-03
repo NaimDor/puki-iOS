@@ -149,7 +149,10 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         val absent = req.optJSONArray("absent")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
                         val input = req.optString("input").take(400)
                         val earlier = req.optString("earlier").take(300)
+                        val pick = req.optString("pick")
                         val accept: (String) -> Boolean = when {
+                            pick.isNotEmpty() || (task == "story_next" && absent.isNotEmpty()) ->  // (a story's sentence names what she picked, and nothing she didn't)
+                                { l -> (pick.isEmpty() || ReachBack.says(l, pick)) && absent.none { ReachBack.says(l, it) } }
                             task == "reach_back" -> { l -> ReachBack.namesEarlier(l, input, earlier) }  // (it names the earlier thing)
                             task == "recap" -> { l -> RecapContent.eventsNamed(l, input) >= 2 }  // (two of the day's things, or more)
                             present.isNotEmpty() -> { l -> LookContent.ok(l, present, absent) }
@@ -272,6 +275,6 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     private companion object {
         const val TAG = "PukiBrain"
         /** The tasks a game may ask for by name (/line); moment, tap and talk have their own routes. */
-        val GAME_TASKS = setOf("silly", "silly_fix", "look", "recap", "reach_back")
+        val GAME_TASKS = setOf("silly", "silly_fix", "look", "recap", "reach_back", "care", "story_next")
     }
 }

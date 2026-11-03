@@ -49,15 +49,24 @@ object StoryContent {
         "Story with choices. ${hero(plan, true)}.$past Now: ${stepText(plan, true, step)}."
     }
 
-    /** Whether a step's sentence names what was picked (the place, the friend, the thing); the start and the end are free. */
-    fun namesPick(sentence: String, plan: Plan, english: Boolean, step: Int): Boolean {
-        val want = when (step) {
-            1 -> PLACES.getValue(plan.place).let { if (english) it.second.removePrefix("the ") else it.first }
-            2 -> if (english) plan.friend.name.en else plan.friend.name.he
-            3 -> THINGS.getValue(plan.thing).let { if (english) it.second.substringAfter(' ') else it.first }
-            else -> return true
+    /** What a sentence must not name: the places, friends and things the child didn't pick (a story about the garden
+     *  when she picked the farm), from the steps so far. */
+    fun notPicked(plan: Plan, english: Boolean, step: Int, offered: Map<Int, List<String>>): List<String> =
+        (1..minOf(step, 3)).flatMap { s ->
+            offered[s].orEmpty().filter { it != when (s) { 1 -> plan.place; 2 -> plan.friend.id; else -> plan.thing } }.mapNotNull { id ->
+                when (s) {
+                    1 -> PLACES[id]?.let { if (english) it.second.removePrefix("the ") else it.first.removePrefix("ה") }
+                    2 -> allAnimals.firstOrNull { it.id == id }?.let { if (english) it.name.en.lowercase() else it.name.he }
+                    else -> THINGS[id]?.let { if (english) it.second.substringAfter(' ') else it.first }
+                }
+            }
         }
-        val got = ReachBack.contentWords(":$sentence")
-        return ReachBack.forms(want).any { it in got } || sentence.lowercase().contains(want.lowercase())
+
+    /** What a step's sentence must name (the place, the friend, the thing picked), or null (the start and the end are free). */
+    fun pickWord(plan: Plan, english: Boolean, step: Int): String? = when (step) {
+        1 -> PLACES.getValue(plan.place).let { if (english) it.second.removePrefix("the ") else it.first.removePrefix("ה") }
+        2 -> if (english) plan.friend.name.en.lowercase() else plan.friend.name.he
+        3 -> THINGS.getValue(plan.thing).let { if (english) it.second.substringAfter(' ') else it.first }
+        else -> null
     }
 }

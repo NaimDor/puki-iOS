@@ -62,6 +62,8 @@ object Routes {
     /** The parrot island: Puki's corner with his brain on, else Say it with Puki directly. */
     const val CORNER = "corner"
     const val SILLY = "silly"
+    const val CARE = "care"
+    const val STORY = "story"
     const val PEEKABOO = "peekaboo"
     const val ECHO = "echo"
     const val MY_DAY = "myday"
@@ -196,10 +198,18 @@ fun PukiNavGraph(navController: NavHostController) {
             else DoorChooserScreen(onBack = safeBack, scene = Scene.PLAYGROUND, doors = listOf(
                 imageDoor(BilingualText("מדברים עם פוקי", "Say it with Puki"), Color(0xFF81D4FA), R.drawable.ic_companion_parrot_talk) { safeNavigate(Routes.SAY) },
                 imageDoor(BilingualText("פוקי המבולבל", "Silly Puki"), Color(0xFFFFCC80), R.drawable.ic_companion_parrot, badge = "?!") { safeNavigate(Routes.SILLY) },
+                imageDoor(BilingualText("עוזרים לחברים", "Helping friends"), Color(0xFFF8BBD0), R.drawable.ic_tidy_teddy) { safeNavigate(Routes.CARE) },
+                imageDoor(BilingualText("סיפור עם פוקי", "A story with Puki"), Color(0xFFC5E1A5), R.drawable.ic_tidy_storybook) { safeNavigate(Routes.STORY) },
             ))
         }
         composable(Routes.SILLY) {
             SillyPukiScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SILLY))
+        }
+        composable(Routes.CARE) {
+            io.github.tomsadeh.puki.ui.silly.CareGameScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.CARE))
+        }
+        composable(Routes.STORY) {
+            io.github.tomsadeh.puki.ui.silly.StoryGameScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.STORY))
         }
         composable(Routes.PEEKABOO) {
             PeekabooScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.PEEKABOO))

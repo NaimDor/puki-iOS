@@ -1,5 +1,6 @@
 package io.github.tomsadeh.puki.ui.components
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,9 +40,9 @@ class Door(val label: BilingualText, val color: Color, val onTap: () -> Unit, va
 
 /** A door whose picture is a drawable, with an optional [badge] in its corner ("?!"). */
 fun imageDoor(label: BilingualText, color: Color, drawable: Int, badge: String? = null, onTap: () -> Unit) = Door(label, color, onTap) {
-    Image(painterResource(drawable), contentDescription = null, modifier = Modifier.size(170.dp))
+    Image(painterResource(drawable), contentDescription = null, modifier = Modifier.fillMaxSize(0.7f))
     if (badge != null) Text(badge, fontSize = 56.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE65100),
-        modifier = Modifier.align(Alignment.TopEnd).padding(top = 34.dp, end = 52.dp))
+        modifier = Modifier.align(androidx.compose.ui.AbsoluteAlignment.TopRight).padding(top = 40.dp, end = 56.dp))  // (behind his head, whichever way the page reads)
 }
 
 /**
@@ -51,11 +52,13 @@ fun imageDoor(label: BilingualText, color: Color, drawable: Int, badge: String? 
 @Composable
 fun DoorChooserScreen(onBack: () -> Unit, scene: Scene, doors: List<Door>) {
     val language = LocalLanguage.current
-    GameBackground(scene = scene) {
+    GameBackground(scene = scene, withCompanion = false) {  // (the doors show Puki already; the corner one would cover a label)
         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             GameTopBar(onBack = onBack, roundIndex = 0, totalRounds = 0, starsEarned = null)
+            BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val size = minOf(240.dp, maxWidth / doors.size - 28.dp, maxHeight - 80.dp)
             Row(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -64,7 +67,7 @@ fun DoorChooserScreen(onBack: () -> Unit, scene: Scene, doors: List<Door>) {
                     modifier = Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClick = door.onTap)
                 ) {
                     Box(
-                        modifier = Modifier.size(240.dp).idleBob(amount = 0.6f).shadow(10.dp, CircleShape).clip(CircleShape).background(door.color),
+                        modifier = Modifier.size(size).idleBob(amount = 0.6f).shadow(10.dp, CircleShape).clip(CircleShape).background(door.color),
                         contentAlignment = Alignment.Center,
                         content = door.picture
                     )
@@ -74,6 +77,7 @@ fun DoorChooserScreen(onBack: () -> Unit, scene: Scene, doors: List<Door>) {
                         modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.92f))
                             .padding(horizontal = 18.dp, vertical = 6.dp))
                 }
+            }
             }
         }
     }
