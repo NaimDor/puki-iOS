@@ -20,13 +20,20 @@ jobs:
           cd ios && xcodegen
       - name: Build and test
         run: |
+          set +e
           cd ios
-          SIM=$(xcrun simctl list devices available | grep -m1 -oE 'iPad[^(]*\(([0-9A-F-]{36})\)' | grep -oE '[0-9A-F-]{36}')
+          SIM=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)['devices']
+          ids = [x['udid'] for rt, xs in sorted(d.items(), reverse=True) if 'iOS' in rt for x in xs if x['isAvailable'] and 'iPad' in x['name']]
+          ids += [x['udid'] for rt, xs in sorted(d.items(), reverse=True) if 'iOS' in rt for x in xs if x['isAvailable']]
+          print(ids[0] if ids else '')")
           echo "simulator: $SIM"
-          status=0
           xcodebuild -project Puki.xcodeproj -scheme Puki -destination "id=$SIM" \
-            CODE_SIGNING_ALLOWED=NO test > build.log 2>&1 || status=$?
-          grep -E "error:|Test Suite|Test Case.*failed|Executed|\*\* (BUILD|TEST)" build.log | sort -u | head -300 || true
+            CODE_SIGNING_ALLOWED=NO test > build.log 2>&1
+          status=$?
+          grep -E "error:|Test Suite|Test Case.*failed|Executed|\*\* (BUILD|TEST)" build.log | sort -u | head -300
+          tail -30 build.log
           exit $status
       - name: Keep the build log
         if: always()

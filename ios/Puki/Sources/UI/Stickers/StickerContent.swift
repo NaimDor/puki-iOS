@@ -69,3 +69,10 @@ struct StarCounter: View {
         }
     }
 }
+
+/** The star counter, following her stars as they come. */
+struct LiveStarCounter: View {
+    @ObservedObject var progress: ProgressRepository
+    var onClick: (() -> Void)? = nil
+    var body: some View { StarCounter(stars: progress.progress.totalStars, onClick: onClick) }
+}

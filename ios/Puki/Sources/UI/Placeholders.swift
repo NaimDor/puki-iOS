@@ -12,8 +12,6 @@ private struct Stub: View {
     }
 }
 
-struct HubScreen: View { let onIslandClick: (Route) -> Void; let onSettingsClick: () -> Void; let onStickersClick: () -> Void
-    var body: some View { Stub(name: "hub", onBack: {}) } }
 struct AnimalGardenScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "animals", onBack: onBack) } }
 struct ColorSplashScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "colors", onBack: onBack) } }
 struct ShapePlaygroundScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "shapes", onBack: onBack) } }
@@ -38,6 +36,5 @@ struct CakeScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; v
 struct CarWashScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "carwash", onBack: onBack) } }
 struct BedtimeRoutineScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "bedtime", onBack: onBack) } }
 struct FreeCanvasScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "canvas", onBack: onBack) } }
-struct StickerAlbumScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "stickers", onBack: onBack) } }
 struct SettingsScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "settings", onBack: onBack) } }
 struct OnboardingScreen: View { let settings: AppSettings; var body: some View { Text("welcome") } }

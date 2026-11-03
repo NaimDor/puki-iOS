@@ -7,3 +7,6 @@
 *.jpg binary
 *.jar binary
 *.so binary
+*.m4a binary
+*.wav binary
+*.svg text eol=lf
