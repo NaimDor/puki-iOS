@@ -375,23 +375,11 @@ private fun DrawScope.drawDanceFloor(beat: Float, dance: Float, side: Float, gap
     }
 }
 
-/** The disco ball on the music stage that opens Dance and Freeze. */
+/** The disco ball, turning slowly: the music island's door to the dance. */
 @Composable
-fun DanceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SpinningDiscoBall(modifier: Modifier = Modifier) {
     val turn by rememberInfiniteTransition(label = "door_ball").animateFloat(
         0f, 1f, infiniteRepeatable(tween(5000, easing = LinearEasing)), label = "door_ball_turn"
     )
-    Box(
-        modifier = modifier
-            .idleBob(2, 1.2f)
-            .size(110.dp)
-            .shadow(8.dp, CircleShape)
-            .clip(CircleShape)
-            .background(Color(0xFF4A148C))
-            .border(5.dp, Color(0xFFFFCA28), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.size(80.dp)) { drawDiscoBall(Offset(size.width / 2, size.height / 2), size.width * 0.46f, turn) }
-    }
+    Canvas(modifier = modifier) { drawDiscoBall(Offset(size.width / 2, size.height / 2), size.width * 0.46f, turn) }
 }

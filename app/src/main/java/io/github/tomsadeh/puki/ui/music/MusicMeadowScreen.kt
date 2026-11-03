@@ -182,7 +182,6 @@ class MusicMeadowViewModel(application: Application) : AndroidViewModel(applicat
 fun MusicMeadowScreen(
     onBack: () -> Unit,
     onPlayAgain: () -> Unit = onBack,  // "Continue" on the end card: this game again, from the start
-    onDance: () -> Unit,  // the dancer on the stage opens Dance and Freeze
     viewModel: MusicMeadowViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -386,7 +385,6 @@ fun MusicMeadowScreen(
         // Dance and Freeze, waiting at the side of the stage (after the column, or it would take her touch)
         // (gone once a tune starts, so a stray tap can't walk out on it)
         if (state.phase == MusicPhase.FREE_PLAY) Box(modifier = Modifier.fillMaxSize()) {
-            DanceButton(onClick = onDance, modifier = Modifier.align(Alignment.TopStart).padding(start = if (compact) 4.dp else 44.dp, top = if (compact) 92.dp else 120.dp))
         }
         if (state.phase == MusicPhase.FREE_PLAY && compact) Box(modifier = Modifier.fillMaxSize().padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
             PlayButton(88.dp) { viewModel.startSimonSays() }

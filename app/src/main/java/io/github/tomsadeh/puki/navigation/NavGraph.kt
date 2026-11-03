@@ -24,7 +24,17 @@ import io.github.tomsadeh.puki.ui.words.WordGardenScreen
 import io.github.tomsadeh.puki.ui.echo.EchoScreen
 import io.github.tomsadeh.puki.ui.peekaboo.PeekabooScreen
 import io.github.tomsadeh.puki.ui.say.SayItScreen
-import io.github.tomsadeh.puki.ui.silly.PukiCornerScreen
+import io.github.tomsadeh.puki.ui.components.Door
+import io.github.tomsadeh.puki.ui.components.DoorChooserScreen
+import io.github.tomsadeh.puki.ui.components.Scene
+import io.github.tomsadeh.puki.ui.components.imageDoor
+import io.github.tomsadeh.puki.ui.music.SpinningDiscoBall
+import io.github.tomsadeh.puki.data.models.BilingualText
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
+import io.github.tomsadeh.puki.R
 import io.github.tomsadeh.puki.ui.silly.SillyPukiScreen
 import io.github.tomsadeh.puki.ui.myday.MyDayScreen
 import io.github.tomsadeh.puki.ui.myday.bath.BathTimeScreen
@@ -44,6 +54,8 @@ object Routes {
     const val SHAPES = "shapes"
     const val COUNTING = "counting"
     const val MUSIC = "music"
+    /** The music island: a door to the instruments and one to the dance. */
+    const val MUSIC_DOORS = "music/doors"
     const val DANCE = "dance"
     const val WORDS = "words"
     const val SAY = "say"
@@ -162,7 +174,13 @@ fun PukiNavGraph(navController: NavHostController) {
             CountingGardenScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.COUNTING))
         }
         composable(Routes.MUSIC) {
-            MusicMeadowScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MUSIC), onDance = { safeNavigate(Routes.DANCE) })
+            MusicMeadowScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.MUSIC))
+        }
+        composable(Routes.MUSIC_DOORS) {
+            DoorChooserScreen(onBack = safeBack, scene = Scene.STAGE, doors = listOf(
+                imageDoor(BilingualText("כלי נגינה", "Instruments"), Color(0xFFFFB74D), R.drawable.ic_island_music) { safeNavigate(Routes.MUSIC) },
+                Door(BilingualText("ריקוד", "Dance"), Color(0xFF4A148C), { safeNavigate(Routes.DANCE) }) { SpinningDiscoBall(Modifier.size(170.dp)) },
+            ))
         }
         composable(Routes.DANCE) {
             DanceScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.DANCE))
@@ -175,7 +193,10 @@ fun PukiNavGraph(navController: NavHostController) {
         }
         composable(Routes.CORNER) {
             if (companion?.brain == null) SayItScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SAY))
-            else PukiCornerScreen(onBack = safeBack, onSay = { safeNavigate(Routes.SAY) }, onSilly = { safeNavigate(Routes.SILLY) })
+            else DoorChooserScreen(onBack = safeBack, scene = Scene.PLAYGROUND, doors = listOf(
+                imageDoor(BilingualText("מדברים עם פוקי", "Say it with Puki"), Color(0xFF81D4FA), R.drawable.ic_companion_parrot_talk) { safeNavigate(Routes.SAY) },
+                imageDoor(BilingualText("פוקי המבולבל", "Silly Puki"), Color(0xFFFFCC80), R.drawable.ic_companion_parrot, badge = "?!") { safeNavigate(Routes.SILLY) },
+            ))
         }
         composable(Routes.SILLY) {
             SillyPukiScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SILLY))

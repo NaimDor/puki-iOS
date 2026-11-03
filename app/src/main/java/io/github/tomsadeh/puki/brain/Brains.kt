@@ -43,11 +43,12 @@ class Brains(private val env: OrtEnvironment, dir: File, threads: Int = 4) {
     private fun prompt(task: String, lang: String, girl: Boolean, input: String) =
         "lang: $lang\nchild: ${if (girl) "girl" else "boy"}\ntask: $task\ninput: $input\npuki:"
 
-    /** Puki's line for [input] (null if it came out empty): sampled as it was evaluated, temperature 0.7, top-p 0.9. */
+    /** Puki's line for [input] (null if it came out empty): temperature 0.5, top-p 0.9. (0.5 beat 0.7 in a blind A/B,
+     *  train/ab.py, 43 to 16 of 250, with as many different lines.) */
     fun line(task: String, lang: String, girl: Boolean, input: String, maxNew: Int = 48, random: Random = Random): String? {
         val out = ArrayList<Int>()
         generate(bpe.encode(prompt(task, lang, girl, input)), maxNew) { logits ->
-            sample(logits, 0.7f, 0.9f, random).takeIf { it != eot }?.also { out += it }
+            sample(logits, 0.5f, 0.9f, random).takeIf { it != eot }?.also { out += it }
         }
         return bpe.decode(out.toIntArray()).trim().ifEmpty { null }
     }

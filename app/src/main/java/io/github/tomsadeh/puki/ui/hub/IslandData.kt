@@ -73,7 +73,7 @@ val allIslands = listOf(
     IslandDef(
         id = "music",
         name = BilingualText("מוזיקה", "Music"),
-        route = Routes.MUSIC,
+        route = Routes.MUSIC_DOORS,
         color = WarmOrange,
         drawableRes = R.drawable.ic_island_music,
         fractionalX = 0.91f,
