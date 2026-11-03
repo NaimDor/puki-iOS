@@ -92,6 +92,14 @@ fun PukiApp(
         companion.language = language
     }
     LaunchedEffect(settings.answersOutLoud) { companion.answersOutLoud = settings.answersOutLoud }
+    // The parent's choice: what Puki knows of her play stays in the session, or is kept on the device
+    LaunchedEffect(settings.rememberBetween, settings.loaded) {
+        if (!settings.loaded) return@LaunchedEffect
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            io.github.tomsadeh.puki.data.DayLog.keep(settings.rememberBetween)
+            io.github.tomsadeh.puki.data.MomentMemory.keep(settings.rememberBetween)
+        }
+    }
 
     // Whether Puki thinks: on this device once its models are downloaded, else his recorded lines
     val context = LocalContext.current

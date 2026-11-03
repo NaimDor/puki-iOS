@@ -101,6 +101,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { settingsRepository.updateAnswersOutLoud(on) }
     }
 
+    fun setRememberBetween(on: Boolean) {
+        viewModelScope.launch { settingsRepository.updateRememberBetween(on) }
+    }
+
     fun setBrainOnDevice(on: Boolean) {
         viewModelScope.launch { settingsRepository.updateBrainOnDevice(on) }
     }

@@ -54,18 +54,26 @@ object ReachBack {
     }
 
     /**
-     * An earlier moment of this session to reach back to for [he] in [game] (its screen): a few minutes back at
-     * least, in the same game, and of the same kind or about the same thing; with when it was, as the brain learned
-     * it ("קודם היום", earlier today). Null when there's none. (Only this session's moments: MomentMemory keeps
-     * nothing between sessions.)
+     * An earlier moment to reach back to for [he] in [game] (its screen): a few minutes back at least, in the same
+     * game, and of the same kind or about the same thing; with when it was, as the brain learned it ("קודם היום",
+     * "אתמול", "לפני יומיים"). Null when there's none. (The history is this session's, unless the parent turned on
+     * "Puki remembers between sessions": MomentMemory.)
      */
-    fun related(he: String, game: String, history: List<Moment>, nowMs: Long, ignore: Set<String> = emptySet()): Pair<Pair<String, String>, Moment>? {
+    fun related(he: String, game: String, history: List<Moment>, nowMs: Long, today: java.time.LocalDate,
+                ignore: Set<String> = emptySet()): Pair<Pair<String, String>, Moment>? {
         if (game.isEmpty()) return null
         val words = contentWords(he, ignore)
         val shape = skeleton(he)
         for (m in history.asReversed()) {
             if (m.t > nowMs - GAP_MS || m.he == he || m.game != game) continue
-            if (words.any { it in contentWords(m.he, ignore) } || skeleton(m.he) == shape) return ("קודם היום" to "earlier today") to m
+            if (!(words.any { it in contentWords(m.he, ignore) } || skeleton(m.he) == shape)) continue
+            val day = java.time.Instant.ofEpochMilli(m.t).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+            return when (java.time.temporal.ChronoUnit.DAYS.between(day, today)) {
+                0L -> "קודם היום" to "earlier today"
+                1L -> "אתמול" to "yesterday"
+                2L -> "לפני יומיים" to "2 days ago"
+                else -> continue
+            } to m
         }
         return null
     }

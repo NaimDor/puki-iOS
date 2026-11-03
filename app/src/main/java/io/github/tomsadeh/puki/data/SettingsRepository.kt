@@ -37,6 +37,7 @@ class SettingsRepository(private val context: Context) {
         val COMPANION_ENABLED = booleanPreferencesKey("companion_enabled")
         val BRAIN_ON_DEVICE = booleanPreferencesKey("brain_on_device")
         val BRAIN_LANGUAGES = stringPreferencesKey("brain_languages")
+        val REMEMBER_BETWEEN = booleanPreferencesKey("remember_between")
         val ANSWERS_OUT_LOUD = booleanPreferencesKey("answers_out_loud")
         val PLAYED_MS = longPreferencesKey("played_ms")
         val LAST_SEEN = longPreferencesKey("play_last_seen")
@@ -61,6 +62,7 @@ class SettingsRepository(private val context: Context) {
             brainOnDevice = prefs[Keys.BRAIN_ON_DEVICE] ?: false,
             brainLanguages = prefs[Keys.BRAIN_LANGUAGES]?.let { runCatching { BrainLanguages.valueOf(it) }.getOrNull() },
             answersOutLoud = prefs[Keys.ANSWERS_OUT_LOUD] ?: true,
+            rememberBetween = prefs[Keys.REMEMBER_BETWEEN] ?: false,
             hiddenIslands = prefs[Keys.HIDDEN_ISLANDS] ?: emptySet()
         )
     }
@@ -130,6 +132,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun updateBrainOnDevice(on: Boolean) {
         context.settingsDataStore.edit { it[Keys.BRAIN_ON_DEVICE] = on }
+    }
+
+    suspend fun updateRememberBetween(on: Boolean) {
+        context.settingsDataStore.edit { it[Keys.REMEMBER_BETWEEN] = on }
     }
 
     suspend fun updateBrainLanguages(langs: BrainLanguages) {

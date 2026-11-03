@@ -20,6 +20,9 @@ data class AppSettings(
     /** Which languages the parent picked for Puki's brain (each has its own reader); null until they pick
      *  (then it's what's downloaded, else the game's language: DeviceModels.languagesFor). */
     val brainLanguages: BrainLanguages? = null,
+    /** "Puki remembers between sessions": the day's games for the bedtime recap and the last days' moments for
+     *  reaching back, kept on the device (DayLog, MomentMemory). Off: nothing outlives the session. */
+    val rememberBetween: Boolean = false,
     /** After a game's question, Puki listens a few seconds for the answer said out loud. */
     val answersOutLoud: Boolean = true,
     /** Islands a parent took off the map (fewer choices at two), by id. */

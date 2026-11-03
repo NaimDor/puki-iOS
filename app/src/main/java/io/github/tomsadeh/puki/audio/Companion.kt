@@ -209,8 +209,8 @@ class Companion(
      * runs [fallback] instead if it's not available or doesn't answer in time.
      */
     fun react(he: String, en: String, fallback: () -> Unit = {}) {
-        // A game moment (not a tap on Puki): remembered for this session, and now and then an earlier one of
-        // the same game is worth reaching back to ("like the cow before!", ReachBack)
+        // A game moment (not a tap on Puki): remembered for this session (or longer, if the parent chose), and now
+        // and then an earlier one of the same game is worth reaching back to ("like the cow before!", ReachBack)
         val tap = he.startsWith("לחצו על התוכי")
         val link = if (tap) null else reachBack(he)
         if (!tap) MomentMemory.record(he, en, game)
@@ -225,7 +225,7 @@ class Companion(
         val now = System.currentTimeMillis()
         if (now - lastReachBack < 3 * 60_000L || Random.nextInt(3) != 0) return null
         val names = childName.split(' ').filter { it.length >= 2 }.flatMap { ReachBack.forms(it) }.toSet()
-        return ReachBack.related(he, game, MomentMemory.history(), now, names)?.also { lastReachBack = now }
+        return ReachBack.related(he, game, MomentMemory.history(), now, java.time.LocalDate.now(), names)?.also { lastReachBack = now }
     }
 
     private fun react(situation: String, fallback: () -> Unit, earlier: String? = null) {

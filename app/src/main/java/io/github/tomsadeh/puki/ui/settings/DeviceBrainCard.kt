@@ -87,6 +87,19 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
                         style = MaterialTheme.typography.titleMedium, color = EarthBrown)
                     Switch(checked = settings.brainOnDevice, onCheckedChange = { viewModel.setBrainOnDevice(it) })
                 }
+                // Off unless the parent turns it on: the site promises nothing outlives the session
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(BilingualText("פוקי זוכר בין משחקים", "Puki remembers between sessions").resolve(language),
+                            style = MaterialTheme.typography.titleMedium, color = EarthBrown)
+                        Text(BilingualText(
+                            "כבוי: פוקי שוכח הכל כשסוגרים את המשחק. דולק: הוא זוכר את המשחקים של היום לסיכום לפני השינה, ואת היומיים האחרונים (\"כמו הפרה אתמול!\"). רק בטאבלט, אף פעם לא מה שהילדים אמרו, ונמחק כשמכבים.",
+                            "Off: Puki forgets it all when the game closes. On: he keeps today's games for the bedtime recap, and the last two days (\"like the cow yesterday!\"). Only on this tablet, never what the child said, and deleted when you turn it off."
+                        ).resolve(language), style = MaterialTheme.typography.bodySmall, color = EarthBrown.copy(alpha = 0.75f))
+                    }
+                    Switch(checked = settings.rememberBetween, onCheckedChange = { viewModel.setRememberBetween(it) })
+                }
                 Text(
                     BilingualText("הסרה (מפנה $size)", "Remove (frees $size)").resolve(language),
                     style = MaterialTheme.typography.bodyMedium, color = EarthBrown.copy(alpha = 0.7f),
