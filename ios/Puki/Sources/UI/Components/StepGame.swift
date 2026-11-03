@@ -16,21 +16,26 @@ final class StepGame<S: Equatable>: ObservableObject {
     @Published private(set) var betweenSteps = false
     @Published private(set) var sessionComplete = false
     private let steps: Int
-    let session: GameSession
-    private let sfx: SfxPlayer
+    private(set) var session: GameSession?
+    private var sfx: SfxPlayer?
 
-    init(first: S, steps: Int, session: GameSession, sfx: SfxPlayer) {
+    init(first: S, steps: Int) {
         step = first
         self.steps = steps
-        self.session = session
-        self.sfx = sfx
+    }
+
+    /** The game's bookkeeping, once the screen has the app (call from .task). */
+    func attach(_ app: AppModel, island: String) {
+        if session != nil { return }
+        session = GameSession(island, app.progressRepository)
+        sfx = app.sfx
     }
 
     /** A step done: a star, a little party (`party` false for a quiet chime), and on to `next`. */
     func done(_ next: S?, party: Bool = true) {
         stars += 1
-        session.star()
-        sfx.play(party ? .success : .starCollect, volume: party ? 1 : 0.6)
+        session?.star()
+        sfx?.play(party ? .success : .starCollect, volume: party ? 1 : 0.6)
         celebrate = party
         betweenSteps = true
         Task { @MainActor in
@@ -43,7 +48,7 @@ final class StepGame<S: Equatable>: ObservableObject {
 
     /** The game's over: the end card. */
     func finish() {
-        session.finish(rounds: steps)
+        session?.finish(rounds: steps)
         sessionComplete = true
     }
 }
