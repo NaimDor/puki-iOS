@@ -241,7 +241,7 @@ class Companion(
         val now = System.currentTimeMillis()
         if (now - lastReachBack < 3 * 60_000L || Random.nextInt(3) != 0) return null
         val names = childName.split(' ').filter { it.length >= 2 }.flatMap { ReachBack.forms(it) }.toSet()
-        return ReachBack.related(he, game, MomentMemory.history(), now, java.time.LocalDate.now(), names)?.also { lastReachBack = now }
+        return ReachBack.related(he, game, MomentMemory.history(), now, java.time.LocalDate.now(), names)
     }
 
     private fun react(situation: String, fallback: () -> Unit, earlier: String? = null) {
@@ -256,7 +256,10 @@ class Companion(
         }
         scope.launch {
             // Reaching back if there's a link and a line names it; else the moment's own line
-            if (earlier != null && line("reach_back", situation, earlier = earlier) != null) return@launch
+            if (earlier != null && line("reach_back", situation, earlier = earlier) != null) {
+                lastReachBack = System.currentTimeMillis()
+                return@launch
+            }
             _thinking.value = true
             val said = try { say(situation) } finally { _thinking.value = false }
             if (!said) fallback()

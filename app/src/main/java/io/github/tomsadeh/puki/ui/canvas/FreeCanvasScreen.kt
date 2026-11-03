@@ -155,8 +155,7 @@ class DrawingViewModel : ViewModel() {
     var marks by mutableIntStateOf(0)  // strokes, stamps and fills so far: what Puki looks out for
     var lastLooked by mutableIntStateOf(0)
     val art = ArtLayer()
-    // What Puki's eyes go by (LookContent): how much of each paint, which stickers, and each stroke's shape
-    val paintUsed = mutableMapOf<String, Float>()
+    // What Puki's eyes go by (LookContent): which stickers, and each stroke's shape (the colors come off the paper)
     val stickers = mutableMapOf<String, Int>()
     val strokeShapes = mutableListOf<StrokeShape>()
 
@@ -165,9 +164,7 @@ class DrawingViewModel : ViewModel() {
         strokeCount++
         marks++
         if (stroke.erase) return
-        val shape = StrokeShape.of(stroke)
-        strokeShapes += shape
-        colorIds[stroke.color]?.let { paintUsed[it] = (paintUsed[it] ?: 0f) + (shape.length + stroke.strokeWidth) * stroke.strokeWidth }
+        strokeShapes += StrokeShape.of(stroke)
     }
 
     fun clearStrokes() {
@@ -175,7 +172,6 @@ class DrawingViewModel : ViewModel() {
         lastStroke = null
         strokeCount = 0
         strokeShapes.clear()
-        paintUsed.clear()
     }
 }
 
@@ -457,7 +453,6 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
                                         shape >= 0 -> {
                                             fills[shape] = drawing.selectedColor
                                             drawing.marks++
-                                            colorIds[drawing.selectedColor]?.let { drawing.paintUsed[it] = (drawing.paintUsed[it] ?: 0f) + paperSize.width * paperSize.height / 12 }
                                             repaintFills()  // the strokes already there stay on top
                                             sfxPlayer.play(Sfx.POP, 0.8f)
                                         }
@@ -559,7 +554,7 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
                     scope.launch {
                         // What's on the paper, as the studio knows it: Puki says only that, never what it might show
                         val bitmap = snapshot(canvasSize, density) { drawArtwork(art, pageShapes, stamps, stampPainters) }
-                        val cover = withContext(Dispatchers.Default) { coverOf(bitmap) }
+                        val (cover, painted) = withContext(Dispatchers.Default) { coverOf(bitmap) to colorsOf(bitmap) }
                         val page = coloringPages[drawing.pageIndex]
                         val turn = drawing.letterTurn.coerceAtLeast(0)
                         val letter = (page as? TracePage)?.takeIf { !it.numbers }?.let {
@@ -570,7 +565,7 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
                         val facts = LookFacts(
                             page = when { page is ColoringPage -> page.id; letter != null -> "trace"; else -> "blank" },
                             letter = letter,
-                            colors = drawing.paintUsed.entries.sortedByDescending { it.value }.take(4).map { it.key },
+                            colors = painted,
                             stamps = drawing.stickers.filterValues { it > 0 }.entries.sortedByDescending { it.value }.take(3).map { it.key to it.value },
                             cover = when { cover < 0.2f -> 0; cover < 0.55f -> 1; else -> 2 },
                             strokes = StrokeShape.kindOf(drawing.strokeShapes, paperSize.width),
@@ -811,6 +806,23 @@ private fun coverOf(bitmap: androidx.compose.ui.graphics.ImageBitmap): Float {
         if (d > 60) painted++
     }
     return painted / 2400f
+}
+
+/** The pots' colors on the paper now, the most first (up to four, each at least a sliver of what's painted): off the snapshot,
+ *  so paint rubbed out isn't named, and a page's own outlines aren't either. */
+private fun colorsOf(bitmap: androidx.compose.ui.graphics.ImageBitmap): List<String> {
+    val b = bitmap.asAndroidBitmap()
+    val pots = colorIds.entries.map { (c, id) -> Triple(id, c.toArgb(), 0) }
+    val counts = mutableMapOf<String, Int>()
+    for (y in 0 until 60) for (x in 0 until 90) {
+        val c = b.getPixel(x * (b.width - 1) / 89, y * (b.height - 1) / 59)
+        fun d(o: Int) = abs(android.graphics.Color.red(c) - android.graphics.Color.red(o)) +
+            abs(android.graphics.Color.green(c) - android.graphics.Color.green(o)) + abs(android.graphics.Color.blue(c) - android.graphics.Color.blue(o))
+        val near = pots.minBy { d(it.second) }
+        if (d(near.second) < 50) counts[near.first] = (counts[near.first] ?: 0) + 1
+    }
+    val total = counts.values.sum().coerceAtLeast(1)
+    return counts.filter { it.value * 50 >= total }.entries.sortedByDescending { it.value }.take(4).map { it.key }
 }
 
 /** A stroke's length (px), how much it turned on the way (radians) and its width: what kind of marks she makes. */

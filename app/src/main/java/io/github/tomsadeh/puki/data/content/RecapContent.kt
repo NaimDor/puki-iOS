@@ -59,6 +59,17 @@ object RecapContent {
         return out
     }
 
+    /** Like [eventsNamed], but a word two of the events share ("ספרת" in two counts) names neither: the app's
+     *  stricter check, so one word can't stand for two things. */
+    fun eventsNamedApart(line: String, input: String): Int {
+        val events = input.substringAfter(":").trimEnd('.').split(";").map { e ->
+            WORDS.findAll(e.lowercase()).map { it.value }.filter { it !in COMMON && it.length >= 3 }.flatMap { forms(it) }.toSet()
+        }
+        val shared = events.flatMap { it }.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
+        val seen = WORDS.findAll(line.lowercase()).flatMap { forms(it.value) }.toSet()
+        return events.count { e -> (e - shared).any { it in seen } }
+    }
+
     /** How many of [input]'s events [line] names, by a word only that event has (games.events_named). */
     fun eventsNamed(line: String, input: String): Int {
         val events = input.substringAfter(":").trimEnd('.').split(";")

@@ -6,6 +6,7 @@ import ai.onnxruntime.OrtSession
 import org.json.JSONObject
 import java.io.File
 import java.nio.LongBuffer
+import java.text.Normalizer
 
 /**
  * Puki's English reading model (train/en_read_train.py, 2.7M parameters): English to the phonemes the voice
@@ -35,15 +36,23 @@ class EnglishBeak(private val env: OrtEnvironment, dir: File, threads: Int = 2) 
         }.toMap()
     }
 
-    /** [text] read aloud as IPA, words joined by spaces, punctuation kept where it was (as espeak writes it). */
-    fun phonemize(text: String): String {
+    /**
+     * [text] read aloud as IPA, words joined by spaces, punctuation kept where it was (as espeak writes it). Accents
+     * come off (Zoë: zoe); Hebrew letters (a name written in Hebrew) go to [hebrew], or are left out.
+     */
+    fun phonemize(text: String, hebrew: (String) -> String = { "" }): String {
+        val plain = Normalizer.normalize(text, Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
         val out = StringBuilder()
-        for (m in TOKEN.findAll(spellNumbers(text))) {
+        for (m in TOKEN.findAll(spellNumbers(plain))) {
             val tok = m.value
             when {
                 tok.isBlank() -> out.append(' ')
                 WORD.matches(tok) -> tok.lowercase().let { out.append(table[it] ?: read(it)) }
-                else -> out.append(tok)
+                tok.any { it in 'א'..'ת' } -> {
+                    out.append(hebrew(tok.filter { it in 'א'..'ת' || it == '\'' || it == '׳' }))
+                    out.append(tok.filter { it in PUNCT })
+                }
+                else -> out.append(tok.filter { it in PUNCT || it.isDigit() })
             }
         }
         return out.toString().replace(Regex("\\s+"), " ").trim()
@@ -77,6 +86,8 @@ class EnglishBeak(private val env: OrtEnvironment, dir: File, threads: Int = 2) 
 
     private companion object {
         val WORD = Regex("[A-Za-z]+(?:'[A-Za-z]+)?")
+        /** What the voice reads as a pause or a tone (espeak keeps these). */
+        const val PUNCT = ".,!?;:-"
         val TOKEN = Regex("[A-Za-z]+(?:'[A-Za-z]+)?|[^\\sA-Za-z]+|\\s+")
         val NUMBER_WORDS = listOf("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
             "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty")

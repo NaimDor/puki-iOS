@@ -222,7 +222,7 @@ fun SayItScreen(
             if (last == WordTry.WORD || last == WordTry.SPOKE) break
             if (last == WordTry.SILENT && ++silences >= 2) break  // she's not in the mood: on to another picture
         }
-        if (last == WordTry.WORD || last == WordTry.SPOKE) DayLog.record(RecapContent.said(word.word))
+        if (last == WordTry.WORD) DayLog.record(RecapContent.said(word.word))  // (heard, not just a sound with no ears)
         when {
             last == WordTry.WORD -> {
                 sfxPlayer.play(Sfx.SUCCESS)

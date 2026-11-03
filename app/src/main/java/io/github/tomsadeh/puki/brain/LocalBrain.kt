@@ -156,13 +156,14 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                             pick.isNotEmpty() || (task == "story_next" && absent.isNotEmpty()) ->  // (a story's sentence names what she picked, and nothing she didn't)
                                 { l -> (pick.isEmpty() || ReachBack.says(l, pick)) && absent.none { ReachBack.says(l, it) } }
                             task == "reach_back" -> { l -> ReachBack.namesEarlier(l, input, earlier) }  // (it names the earlier thing)
-                            task == "recap" -> { l -> RecapContent.eventsNamed(l, input) >= 2 }  // (two of the day's things, or more)
+                            task == "recap" -> { l -> RecapContent.eventsNamedApart(l, input) >= 2 }  // (two of the day's things, or more)
                             present.isNotEmpty() -> { l -> LookContent.ok(l, present, absent) }
                             truth.isEmpty() || mustSay.isEmpty() -> { _ -> true }
                             mustSay == "yes" -> { l -> SillyContent.saysTruth(l, truth) }
                             else -> { l -> !SillyContent.saysTruth(l, truth) }
                         }
-                        reply(line(brains, task, input, lang, tries = 4, accept = accept, earlier = earlier), lang, voice)
+                        // (and never a question: she can't be asked to answer, as the trainer has it)
+                        reply(line(brains, task, input, lang, tries = 4, accept = { l -> '?' !in l && accept(l) }, earlier = earlier), lang, voice)
                     }
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
@@ -245,7 +246,8 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         if (lang == "en") {
             val reader = englishReader() ?: return ByteArray(0)  // not downloaded yet: the game uses its recorded line
             last.set(Said(text, heardNow.get() ?: ""))
-            val ipa = reader.phonemize(text)
+            // A name written in Hebrew letters goes to Beak, if it's here (else it's left out rather than garbled)
+            val ipa = reader.phonemize(text) { hebrew -> hebrewReader()?.phonemize(hebrew, persona.girl) ?: "" }
             return if (ipa.isBlank()) ByteArray(0) else voice.speakPhonemes(ipa, speed)
         }
         val beak = hebrewReader() ?: return ByteArray(0)  // Hebrew not downloaded: the game uses its recorded line
