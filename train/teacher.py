@@ -100,7 +100,7 @@ def ask_json(model, system, user, temperature=1.0, max_tokens=1200):
             if e.code in (400, 401, 402, 403):  # a bad request or key: retrying won't help
                 raise SystemExit(f"DeepSeek refused the request (HTTP {e.code})")
             time.sleep(2 ** attempt)
-        except (urllib.error.URLError, TimeoutError, ValueError, KeyError):
+        except (urllib.error.URLError, TimeoutError, ValueError, KeyError, TypeError):  # (TypeError: a reply of null)
             time.sleep(2 ** attempt)
     return None
 

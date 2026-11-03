@@ -3,6 +3,7 @@ package io.github.tomsadeh.puki.brain
 import ai.onnxruntime.OrtEnvironment
 import android.util.Log
 import io.github.tomsadeh.puki.brain.voice.Beak
+import io.github.tomsadeh.puki.data.content.SillyContent
 import io.github.tomsadeh.puki.brain.voice.BlueVoice
 import io.github.tomsadeh.puki.brain.voice.EnglishBeak
 import io.github.tomsadeh.puki.brain.voice.VoiceText
@@ -133,6 +134,21 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         val task = if (situation.startsWith("לחצו על התוכי") || situation.startsWith("The child tapped")) "tap" else "moment"
                         reply(line(brains, task, situation, lang), lang, voice)
                     }
+                    "/line" -> {
+                        // A game's own task (Silly Puki): its input as trained, and whether the line must say
+                        // the real answer (the correction) or must not (the silly line)
+                        val req = JSONObject(String(body ?: ByteArray(0)))
+                        val lang = if (req.optString("lang") == "en") "en" else "he"
+                        val task = req.optString("task").takeIf { it in GAME_TASKS } ?: return null
+                        val truth = req.optString("truth")
+                        val mustSay = req.optString("mustSay")
+                        val accept: (String) -> Boolean = when {
+                            truth.isEmpty() || mustSay.isEmpty() -> { _ -> true }
+                            mustSay == "yes" -> { l -> SillyContent.saysTruth(l, truth) }
+                            else -> { l -> !SillyContent.saysTruth(l, truth) }
+                        }
+                        reply(line(brains, task, req.optString("input").take(400), lang, tries = 4, accept = accept), lang, voice)
+                    }
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
                         val lang = if (req.optString("lang") == "en") "en" else "he"
@@ -189,11 +205,11 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         ears ?: KolEars(OrtEnvironment.getEnvironment(), models.file(DeviceModels.EARS)).also { ears = it }
     }
 
-    /** A line from Brains for [input] that passes Puki's filter, or null (three tries, like the PC). */
-    private fun line(brains: Brains, task: String, input: String, lang: String): String? {
-        repeat(3) {
+    /** A line from Brains for [input] that passes Puki's filter (and the game's [accept]), or null. */
+    private fun line(brains: Brains, task: String, input: String, lang: String, tries: Int = 3, accept: (String) -> Boolean = { true }): String? {
+        repeat(tries) {
             val raw = brains.line(task, lang, persona.girl, input) ?: return@repeat
-            persona.clean(withName(raw), lang)?.takeIf { Safety.replyOk(it) }?.let { persona.said(it); return it }
+            persona.clean(withName(raw), lang)?.takeIf { Safety.replyOk(it) && accept(it) }?.let { persona.said(it); return it }
             Log.i(TAG, "a line didn't pass the filter; trying again")  // (not what it said: it may be about her)
         }
         return null
@@ -244,5 +260,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
 
     private companion object {
         const val TAG = "PukiBrain"
+        /** The tasks a game may ask for by name (/line); moment, tap and talk have their own routes. */
+        val GAME_TASKS = setOf("silly", "silly_fix")
     }
 }

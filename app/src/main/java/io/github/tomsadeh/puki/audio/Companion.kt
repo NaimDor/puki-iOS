@@ -129,6 +129,7 @@ class Companion(
         val said = brain?.lastSaid() ?: return
         val situation = when (route) {
             "/say" -> runCatching { JSONObject(String(body ?: ByteArray(0), Charsets.UTF_8)).optString("situation") }.getOrDefault("")
+            "/line" -> runCatching { JSONObject(String(body ?: ByteArray(0), Charsets.UTF_8)).optString("input") }.getOrDefault("")
             "/look" -> pick("ציור", "a drawing")
             else -> ""
         }
@@ -261,6 +262,29 @@ class Companion(
         if (!play(audio)) return false
         awaitQuiet()
         return true
+    }
+
+    /**
+     * Puki writes and says a line for a game's own [task] (Silly Puki), from [input] as the brain was trained;
+     * with [truth], the line must say it ([mustSay]) or must not. Waits until he's done, and returns what he
+     * said, or null if he couldn't (no brain, no line that passed, too slow): the game plays its own then.
+     */
+    suspend fun line(task: String, input: String, truth: String = "", mustSay: Boolean? = null): String? {
+        if (!isReady) return null
+        _thinking.value = true
+        val (audio, text) = try {
+            withContext(Dispatchers.IO) {
+                val body = JSONObject().put("task", task).put("input", input).put("lang", lang()).put("truth", truth)
+                    .put("mustSay", when (mustSay) { true -> "yes"; false -> "no"; null -> "" }).toString()
+                // (what he said is read on this thread, right after the request: see Brain.lastSaid)
+                request("POST", "/line", body.toByteArray(Charsets.UTF_8), timeoutMs = 9000) to brain?.lastSaid()?.text
+            }
+        } finally {
+            _thinking.value = false
+        }
+        if (text == null || !play(audio)) return null
+        awaitQuiet()
+        return text
     }
 
     /** Fetches the audio for [text] without playing it (to prefetch story sentences). */
@@ -524,7 +548,7 @@ class Companion(
         } else path
         val result = brain?.request(method, full, body, timeoutMs, contentType)
         val route = path.substringBefore('?')
-        if (result != null && result.isNotEmpty() && route in setOf("/say", "/listen", "/look")) recordSaid(route, body)
+        if (result != null && result.isNotEmpty() && route in setOf("/say", "/listen", "/look", "/line")) recordSaid(route, body)
         return result
     }
 

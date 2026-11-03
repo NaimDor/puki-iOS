@@ -1,0 +1,542 @@
+{
+"inputs": [
+{
+"group": "color:banana",
+"he": "בתמונה: בננה. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלה (באמת: צהוב).",
+"en": "Picture: a banana. Make one silly mistake on purpose, about its color (really: yellow).",
+"truth_he": "צהוב",
+"truth_en": "yellow"
+},
+{
+"group": "color:carrot",
+"he": "בתמונה: גזר. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: כתום).",
+"en": "Picture: a carrot. Make one silly mistake on purpose, about its color (really: orange).",
+"truth_he": "כתום",
+"truth_en": "orange"
+},
+{
+"group": "color:chocolate",
+"he": "בתמונה: שוקולד. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: חום).",
+"en": "Picture: a chocolate. Make one silly mistake on purpose, about its color (really: brown).",
+"truth_he": "חום",
+"truth_en": "brown"
+},
+{
+"group": "color:cucumber",
+"he": "בתמונה: מלפפון. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: ירוק).",
+"en": "Picture: a cucumber. Make one silly mistake on purpose, about its color (really: green).",
+"truth_he": "ירוק",
+"truth_en": "green"
+},
+{
+"group": "color:eggplant",
+"he": "בתמונה: חציל. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: סגול).",
+"en": "Picture: an eggplant. Make one silly mistake on purpose, about its color (really: purple).",
+"truth_he": "סגול",
+"truth_en": "purple"
+},
+{
+"group": "color:grass",
+"he": "בתמונה: דשא. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: ירוק).",
+"en": "Picture: the grass. Make one silly mistake on purpose, about its color (really: green).",
+"truth_he": "ירוק",
+"truth_en": "green"
+},
+{
+"group": "color:milk",
+"he": "בתמונה: חלב. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: לבן).",
+"en": "Picture: the milk. Make one silly mistake on purpose, about its color (really: white).",
+"truth_he": "לבן",
+"truth_en": "white"
+},
+{
+"group": "color:orange",
+"he": "בתמונה: תפוז. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: כתום).",
+"en": "Picture: an orange. Make one silly mistake on purpose, about its color (really: orange).",
+"truth_he": "כתום",
+"truth_en": "orange"
+},
+{
+"group": "color:sky",
+"he": "בתמונה: שמיים. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: כחול).",
+"en": "Picture: the sky. Make one silly mistake on purpose, about its color (really: blue).",
+"truth_he": "כחול",
+"truth_en": "blue"
+},
+{
+"group": "color:snow",
+"he": "בתמונה: שלג. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: לבן).",
+"en": "Picture: the snow. Make one silly mistake on purpose, about its color (really: white).",
+"truth_he": "לבן",
+"truth_en": "white"
+},
+{
+"group": "color:strawberry",
+"he": "בתמונה: תות. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלו (באמת: אדום).",
+"en": "Picture: a strawberry. Make one silly mistake on purpose, about its color (really: red).",
+"truth_he": "אדום",
+"truth_en": "red"
+},
+{
+"group": "color:sun",
+"he": "בתמונה: שמש. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלה (באמת: צהוב).",
+"en": "Picture: the sun. Make one silly mistake on purpose, about its color (really: yellow).",
+"truth_he": "צהוב",
+"truth_en": "yellow"
+},
+{
+"group": "color:tomato",
+"he": "בתמונה: עגבנייה. תגיד טעות מצחיקה אחת בכוונה, על הצבע שלה (באמת: אדום).",
+"en": "Picture: a tomato. Make one silly mistake on purpose, about its color (really: red).",
+"truth_he": "אדום",
+"truth_en": "red"
+},
+{
+"group": "count:10:apples",
+"he": "בתמונה: 10 תפוחים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 10).",
+"en": "Picture: 10 apples. Make one silly mistake on purpose, about how many (really: 10).",
+"truth_he": "10",
+"truth_en": "10"
+},
+{
+"group": "count:2:apples",
+"he": "בתמונה: 2 תפוחים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 2).",
+"en": "Picture: 2 apples. Make one silly mistake on purpose, about how many (really: 2).",
+"truth_he": "2",
+"truth_en": "2"
+},
+{
+"group": "count:2:birds",
+"he": "בתמונה: 2 ציפורים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 2).",
+"en": "Picture: 2 birds. Make one silly mistake on purpose, about how many (really: 2).",
+"truth_he": "2",
+"truth_en": "2"
+},
+{
+"group": "count:2:butterflies",
+"he": "בתמונה: 2 פרפרים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 2).",
+"en": "Picture: 2 butterflies. Make one silly mistake on purpose, about how many (really: 2).",
+"truth_he": "2",
+"truth_en": "2"
+},
+{
+"group": "count:3:fish",
+"he": "בתמונה: 3 דגים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 3).",
+"en": "Picture: 3 fish. Make one silly mistake on purpose, about how many (really: 3).",
+"truth_he": "3",
+"truth_en": "3"
+},
+{
+"group": "count:3:hearts",
+"he": "בתמונה: 3 לבבות. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 3).",
+"en": "Picture: 3 hearts. Make one silly mistake on purpose, about how many (really: 3).",
+"truth_he": "3",
+"truth_en": "3"
+},
+{
+"group": "count:3:ladybugs",
+"he": "בתמונה: 3 חיפושיות. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 3).",
+"en": "Picture: 3 ladybugs. Make one silly mistake on purpose, about how many (really: 3).",
+"truth_he": "3",
+"truth_en": "3"
+},
+{
+"group": "count:3:stars",
+"he": "בתמונה: 3 כוכבים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 3).",
+"en": "Picture: 3 stars. Make one silly mistake on purpose, about how many (really: 3).",
+"truth_he": "3",
+"truth_en": "3"
+},
+{
+"group": "count:4:butterflies",
+"he": "בתמונה: 4 פרפרים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 4).",
+"en": "Picture: 4 butterflies. Make one silly mistake on purpose, about how many (really: 4).",
+"truth_he": "4",
+"truth_en": "4"
+},
+{
+"group": "count:4:flowers",
+"he": "בתמונה: 4 פרחים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 4).",
+"en": "Picture: 4 flowers. Make one silly mistake on purpose, about how many (really: 4).",
+"truth_he": "4",
+"truth_en": "4"
+},
+{
+"group": "count:4:hearts",
+"he": "בתמונה: 4 לבבות. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 4).",
+"en": "Picture: 4 hearts. Make one silly mistake on purpose, about how many (really: 4).",
+"truth_he": "4",
+"truth_en": "4"
+},
+{
+"group": "count:4:stars",
+"he": "בתמונה: 4 כוכבים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 4).",
+"en": "Picture: 4 stars. Make one silly mistake on purpose, about how many (really: 4).",
+"truth_he": "4",
+"truth_en": "4"
+},
+{
+"group": "count:5:birds",
+"he": "בתמונה: 5 ציפורים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 5).",
+"en": "Picture: 5 birds. Make one silly mistake on purpose, about how many (really: 5).",
+"truth_he": "5",
+"truth_en": "5"
+},
+{
+"group": "count:5:fish",
+"he": "בתמונה: 5 דגים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 5).",
+"en": "Picture: 5 fish. Make one silly mistake on purpose, about how many (really: 5).",
+"truth_he": "5",
+"truth_en": "5"
+},
+{
+"group": "count:6:butterflies",
+"he": "בתמונה: 6 פרפרים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 6).",
+"en": "Picture: 6 butterflies. Make one silly mistake on purpose, about how many (really: 6).",
+"truth_he": "6",
+"truth_en": "6"
+},
+{
+"group": "count:7:flowers",
+"he": "בתמונה: 7 פרחים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 7).",
+"en": "Picture: 7 flowers. Make one silly mistake on purpose, about how many (really: 7).",
+"truth_he": "7",
+"truth_en": "7"
+},
+{
+"group": "count:8:stars",
+"he": "בתמונה: 8 כוכבים. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 8).",
+"en": "Picture: 8 stars. Make one silly mistake on purpose, about how many (really: 8).",
+"truth_he": "8",
+"truth_en": "8"
+},
+{
+"group": "count:9:hearts",
+"he": "בתמונה: 9 לבבות. תגיד טעות מצחיקה אחת בכוונה, בכמה יש (באמת: 9).",
+"en": "Picture: 9 hearts. Make one silly mistake on purpose, about how many (really: 9).",
+"truth_he": "9",
+"truth_en": "9"
+},
+{
+"group": "food:cat",
+"he": "בתמונה: חתול. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: דג).",
+"en": "Picture: a cat. Make one silly mistake on purpose, about its food (really: fish).",
+"truth_he": "דג",
+"truth_en": "fish"
+},
+{
+"group": "food:chicken",
+"he": "בתמונה: תרנגולת. תגיד טעות מצחיקה אחת בכוונה, על מה שהיא אוכלת (באמת: גרעינים).",
+"en": "Picture: a chicken. Make one silly mistake on purpose, about its food (really: seeds).",
+"truth_he": "גרעינים",
+"truth_en": "seeds"
+},
+{
+"group": "food:cow",
+"he": "בתמונה: פרה. תגיד טעות מצחיקה אחת בכוונה, על מה שהיא אוכלת (באמת: עשב).",
+"en": "Picture: a cow. Make one silly mistake on purpose, about its food (really: grass).",
+"truth_he": "עשב",
+"truth_en": "grass"
+},
+{
+"group": "food:dog",
+"he": "בתמונה: כלב. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: עצם).",
+"en": "Picture: a dog. Make one silly mistake on purpose, about its food (really: bone).",
+"truth_he": "עצם",
+"truth_en": "bone"
+},
+{
+"group": "food:duck",
+"he": "בתמונה: ברווז. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: לחם).",
+"en": "Picture: a duck. Make one silly mistake on purpose, about its food (really: bread).",
+"truth_he": "לחם",
+"truth_en": "bread"
+},
+{
+"group": "food:elephant",
+"he": "בתמונה: פיל. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: בוטנים).",
+"en": "Picture: an elephant. Make one silly mistake on purpose, about its food (really: peanuts).",
+"truth_he": "בוטנים",
+"truth_en": "peanuts"
+},
+{
+"group": "food:giraffe",
+"he": "בתמונה: ג׳ירפה. תגיד טעות מצחיקה אחת בכוונה, על מה שהיא אוכלת (באמת: עלים).",
+"en": "Picture: a giraffe. Make one silly mistake on purpose, about its food (really: leaves).",
+"truth_he": "עלים",
+"truth_en": "leaves"
+},
+{
+"group": "food:goat",
+"he": "בתמונה: עז. תגיד טעות מצחיקה אחת בכוונה, על מה שהיא אוכלת (באמת: עלים).",
+"en": "Picture: a goat. Make one silly mistake on purpose, about its food (really: leaves).",
+"truth_he": "עלים",
+"truth_en": "leaves"
+},
+{
+"group": "food:horse",
+"he": "בתמונה: סוס. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: חציר).",
+"en": "Picture: a horse. Make one silly mistake on purpose, about its food (really: hay).",
+"truth_he": "חציר",
+"truth_en": "hay"
+},
+{
+"group": "food:lion",
+"he": "בתמונה: אריה. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: בשר).",
+"en": "Picture: a lion. Make one silly mistake on purpose, about its food (really: meat).",
+"truth_he": "בשר",
+"truth_en": "meat"
+},
+{
+"group": "food:monkey",
+"he": "בתמונה: קוף. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: בננה).",
+"en": "Picture: a monkey. Make one silly mistake on purpose, about its food (really: banana).",
+"truth_he": "בננה",
+"truth_en": "banana"
+},
+{
+"group": "food:penguin",
+"he": "בתמונה: פינגווין. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: דג).",
+"en": "Picture: a penguin. Make one silly mistake on purpose, about its food (really: fish).",
+"truth_he": "דג",
+"truth_en": "fish"
+},
+{
+"group": "food:pig",
+"he": "בתמונה: חזיר. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: תירס).",
+"en": "Picture: a pig. Make one silly mistake on purpose, about its food (really: corn).",
+"truth_he": "תירס",
+"truth_en": "corn"
+},
+{
+"group": "food:rabbit",
+"he": "בתמונה: ארנב. תגיד טעות מצחיקה אחת בכוונה, על מה שהוא אוכל (באמת: גזר).",
+"en": "Picture: a rabbit. Make one silly mistake on purpose, about its food (really: carrot).",
+"truth_he": "גזר",
+"truth_en": "carrot"
+},
+{
+"group": "food:sheep",
+"he": "בתמונה: כבשה. תגיד טעות מצחיקה אחת בכוונה, על מה שהיא אוכלת (באמת: תלתן).",
+"en": "Picture: a sheep. Make one silly mistake on purpose, about its food (really: clover).",
+"truth_he": "תלתן",
+"truth_en": "clover"
+},
+{
+"group": "shape:circle",
+"he": "בתמונה: עיגול. תגיד טעות מצחיקה אחת בכוונה, על הצורה שלו (באמת: עיגול).",
+"en": "Picture: a circle. Make one silly mistake on purpose, about its shape (really: circle).",
+"truth_he": "עיגול",
+"truth_en": "circle"
+},
+{
+"group": "shape:heart",
+"he": "בתמונה: לב. תגיד טעות מצחיקה אחת בכוונה, על הצורה שלו (באמת: לב).",
+"en": "Picture: a heart. Make one silly mistake on purpose, about its shape (really: heart).",
+"truth_he": "לב",
+"truth_en": "heart"
+},
+{
+"group": "shape:square",
+"he": "בתמונה: ריבוע. תגיד טעות מצחיקה אחת בכוונה, על הצורה שלו (באמת: ריבוע).",
+"en": "Picture: a square. Make one silly mistake on purpose, about its shape (really: square).",
+"truth_he": "ריבוע",
+"truth_en": "square"
+},
+{
+"group": "shape:star",
+"he": "בתמונה: כוכב. תגיד טעות מצחיקה אחת בכוונה, על הצורה שלו (באמת: כוכב).",
+"en": "Picture: a star. Make one silly mistake on purpose, about its shape (really: star).",
+"truth_he": "כוכב",
+"truth_en": "star"
+},
+{
+"group": "shape:triangle",
+"he": "בתמונה: משולש. תגיד טעות מצחיקה אחת בכוונה, על הצורה שלו (באמת: משולש).",
+"en": "Picture: a triangle. Make one silly mistake on purpose, about its shape (really: triangle).",
+"truth_he": "משולש",
+"truth_en": "triangle"
+},
+{
+"group": "sound:cat",
+"he": "בתמונה: חתול. תגיד טעות מצחיקה אחת בכוונה, על הקול שלו (באמת: מיאו).",
+"en": "Picture: a cat. Make one silly mistake on purpose, about its sound (really: meow).",
+"truth_he": "מיאו",
+"truth_en": "meow"
+},
+{
+"group": "sound:cow",
+"he": "בתמונה: פרה. תגיד טעות מצחיקה אחת בכוונה, על הקול שלה (באמת: מו).",
+"en": "Picture: a cow. Make one silly mistake on purpose, about its sound (really: moo).",
+"truth_he": "מו",
+"truth_en": "moo"
+},
+{
+"group": "sound:dog",
+"he": "בתמונה: כלב. תגיד טעות מצחיקה אחת בכוונה, על הקול שלו (באמת: הב הב).",
+"en": "Picture: a dog. Make one silly mistake on purpose, about its sound (really: woof).",
+"truth_he": "הב הב",
+"truth_en": "woof"
+},
+{
+"group": "sound:duck",
+"he": "בתמונה: ברווז. תגיד טעות מצחיקה אחת בכוונה, על הקול שלו (באמת: גע גע).",
+"en": "Picture: a duck. Make one silly mistake on purpose, about its sound (really: quack).",
+"truth_he": "גע גע",
+"truth_en": "quack"
+},
+{
+"group": "sound:horse",
+"he": "בתמונה: סוס. תגיד טעות מצחיקה אחת בכוונה, על הקול שלו (באמת: היהי).",
+"en": "Picture: a horse. Make one silly mistake on purpose, about its sound (really: neigh).",
+"truth_he": "היהי",
+"truth_en": "neigh"
+},
+{
+"group": "sound:pig",
+"he": "בתמונה: חזיר. תגיד טעות מצחיקה אחת בכוונה, על הקול שלו (באמת: אוינק).",
+"en": "Picture: a pig. Make one silly mistake on purpose, about its sound (really: oink).",
+"truth_he": "אוינק",
+"truth_en": "oink"
+},
+{
+"group": "sound:sheep",
+"he": "בתמונה: כבשה. תגיד טעות מצחיקה אחת בכוונה, על הקול שלה (באמת: מה).",
+"en": "Picture: a sheep. Make one silly mistake on purpose, about its sound (really: baa).",
+"truth_he": "מה",
+"truth_en": "baa"
+}
+],
+"said_truth": [
+{
+"line": "הפרה עושה מיאו!",
+"truth": "מו",
+"said": false
+},
+{
+"line": "הפרה עושה מו!",
+"truth": "מו",
+"said": true
+},
+{
+"line": "ופרה אומרת ומו",
+"truth": "מו",
+"said": false
+},
+{
+"line": "I see four hearts!",
+"truth": "4",
+"said": true
+},
+{
+"line": "I see 3 hearts!",
+"truth": "4",
+"said": false
+},
+{
+"line": "אני רואה ארבעה לבבות",
+"truth": "4",
+"said": true
+},
+{
+"line": "The cow says moo!",
+"truth": "moo",
+"said": true
+},
+{
+"line": "The cow says meow!",
+"truth": "moo",
+"said": false
+},
+{
+"line": "Look, a blue banana!",
+"truth": "yellow",
+"said": false
+},
+{
+"line": "בננה צהובה!",
+"truth": "צהוב",
+"said": false
+},
+{
+"line": "בננה צהובה!",
+"truth": "צהובה",
+"said": true
+},
+{
+"line": "הנה שלושה כוכבים",
+"truth": "3",
+"said": true
+},
+{
+"line": "It's a square!",
+"truth": "circle",
+"said": false
+},
+{
+"line": "Woof woof!",
+"truth": "woof",
+"said": true
+},
+{
+"line": "הכלב עושה הב הב",
+"truth": "הב הב",
+"said": true
+},
+{
+"line": "הכלב עושה הב",
+"truth": "הב הב",
+"said": false
+}
+],
+"fix": [
+[
+"nothing",
+"פוקי אמר בצחוק: \"הפרה עושה מיאו!\" (באמת: מו). ענו לו: כלום, רק צחקו."
+],
+[
+"right",
+"פוקי אמר בצחוק: \"הפרה עושה מיאו!\" (באמת: מו). ענו לו: \"לא, מו!\". זה נכון!"
+],
+[
+"right",
+"פוקי אמר בצחוק: \"הפרה עושה מיאו!\" (באמת: מו). ענו לו: \"מו!\". זה נכון!"
+],
+[
+"right",
+"פוקי אמר בצחוק: \"הפרה עושה מיאו!\" (באמת: מו). ענו לו: \"לא, מו!\". זה נכון!"
+],
+[
+"right",
+"פוקי אמר בצחוק: \"הפרה עושה מיאו!\" (באמת: מו). ענו לו: \"לא! מו!\". זה נכון!"
+],
+[
+"other",
+"פוקי אמר בצחוק: \"הפרה עושה מיאו!\" (באמת: מו). ענו לו: \"לא יודעת\"."
+],
+[
+"nothing",
+"Puki said as a joke: \"The cow says meow!\" (really: moo). The child answered: nothing, just laughed."
+],
+[
+"right",
+"Puki said as a joke: \"The cow says meow!\" (really: moo). The child answered: \"no, moo!\". That's right!"
+],
+[
+"right",
+"Puki said as a joke: \"The cow says meow!\" (really: moo). The child answered: \"moo!\". That's right!"
+],
+[
+"right",
+"Puki said as a joke: \"The cow says meow!\" (really: moo). The child answered: \"no, moo!\". That's right!"
+],
+[
+"right",
+"Puki said as a joke: \"The cow says meow!\" (really: moo). The child answered: \"No! moo!\". That's right!"
+],
+[
+"other",
+"Puki said as a joke: \"The cow says meow!\" (really: moo). The child answered: \"dunno\"."
+]
+]
+}

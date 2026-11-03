@@ -242,7 +242,7 @@ private val PICTURE_ZONES = setOf("target", "slot")
 private val allShapesById = level3Shapes.associateBy { it.id }
 
 /** A chunky toy piece: a shadow, a top-lit fill and a white rim. */
-private fun DrawScope.drawShapeFilled(shape: ShapeDef, c: Offset, r: Float) {
+internal fun DrawScope.drawShapeFilled(shape: ShapeDef, c: Offset, r: Float) {
     val fill = Brush.verticalGradient(
         listOf(lerp(shape.color, Color.White, 0.3f), shape.color, lerp(shape.color, Color.Black, 0.15f)),
         startY = c.y - r, endY = c.y + r
@@ -301,7 +301,7 @@ private fun DrawScope.drawPicture(picture: ShapePicture, done: Int, shapes: Map<
 }
 
 /** The outline of [shape]. Square sits flat, diamond stands on a point. */
-private fun shapePath(shape: ShapeDef, c: Offset, r: Float): Path = when (shape.id) {
+internal fun shapePath(shape: ShapeDef, c: Offset, r: Float): Path = when (shape.id) {
     "circle" -> Path().apply { addOval(Rect(c, r)) }
     "square" -> Path().apply {
         val h = r * 0.78f

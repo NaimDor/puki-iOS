@@ -24,6 +24,8 @@ import io.github.tomsadeh.puki.ui.words.WordGardenScreen
 import io.github.tomsadeh.puki.ui.echo.EchoScreen
 import io.github.tomsadeh.puki.ui.peekaboo.PeekabooScreen
 import io.github.tomsadeh.puki.ui.say.SayItScreen
+import io.github.tomsadeh.puki.ui.silly.PukiCornerScreen
+import io.github.tomsadeh.puki.ui.silly.SillyPukiScreen
 import io.github.tomsadeh.puki.ui.myday.MyDayScreen
 import io.github.tomsadeh.puki.ui.myday.bath.BathTimeScreen
 import io.github.tomsadeh.puki.ui.myday.brush.BrushyBrushyScreen
@@ -45,6 +47,9 @@ object Routes {
     const val DANCE = "dance"
     const val WORDS = "words"
     const val SAY = "say"
+    /** The parrot island: Puki's corner with his brain on, else Say it with Puki directly. */
+    const val CORNER = "corner"
+    const val SILLY = "silly"
     const val PEEKABOO = "peekaboo"
     const val ECHO = "echo"
     const val MY_DAY = "myday"
@@ -167,6 +172,13 @@ fun PukiNavGraph(navController: NavHostController) {
         }
         composable(Routes.SAY) {
             SayItScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SAY))
+        }
+        composable(Routes.CORNER) {
+            if (companion?.brain == null) SayItScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SAY))
+            else PukiCornerScreen(onBack = safeBack, onSay = { safeNavigate(Routes.SAY) }, onSilly = { safeNavigate(Routes.SILLY) })
+        }
+        composable(Routes.SILLY) {
+            SillyPukiScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SILLY))
         }
         composable(Routes.PEEKABOO) {
             PeekabooScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.PEEKABOO))
