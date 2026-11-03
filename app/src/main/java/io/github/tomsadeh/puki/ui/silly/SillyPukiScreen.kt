@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.silly
 
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.foundation.layout.fillMaxHeight
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
@@ -146,6 +148,15 @@ private fun wrongChoice(item: SillyItem, line: String, english: Boolean): String
     return others.firstOrNull { (_, n) -> said(n.first, n.second) }?.first ?: others.random().first
 }
 
+/** A choice's name in the game's language (what a tap on it "says"). */
+private fun choiceName(kind: SillyKind, id: String, english: Boolean): String = when (kind) {
+    SillyKind.FOOD -> level3Foods.firstOrNull { it.id == id }?.name?.let { if (english) it.en.lowercase() else it.he }
+    SillyKind.COLOR -> level3Colors.firstOrNull { it.id == id }?.name?.let { if (english) it.en.lowercase() else it.he }
+    SillyKind.SHAPE -> level3Shapes.firstOrNull { it.id == id }?.name?.let { if (english) it.en.lowercase() else it.he }
+    SillyKind.COUNT -> id
+    SillyKind.SOUND -> null
+} ?: ""
+
 private suspend fun VoicePlayer.say(key: String, language: Language) = withTimeoutOrNull(15_000) {
     suspendCancellableCoroutine { cont ->
         play(key, language) { if (cont.isActive) cont.resume(Unit) }
@@ -178,9 +189,10 @@ fun SillyPukiScreen(
     var talking by remember { mutableStateOf(false) }
     var confetti by remember { mutableStateOf(false) }
     var choices by remember { mutableStateOf<List<Choice>>(emptyList()) }
-    var tapped by remember { mutableStateOf<CompletableDeferred<Boolean>?>(null) }
+    var tapped by remember { mutableStateOf<CompletableDeferred<Boolean?>?>(null) }
     val listening by (companion?.listening ?: remember { MutableStateFlow(false) }).collectAsStateWithLifecycle()
-    val thinking by (companion?.thinking ?: remember { MutableStateFlow(false) }).collectAsStateWithLifecycle()
+    val speaking by (companion?.speaking ?: remember { MutableStateFlow(false) }).collectAsStateWithLifecycle()
+    var sillyLine by remember { mutableStateOf("") }  // (his mistake, said again on a tap on the picture or when she's quiet)
     val pictureReaction = rememberReactionState(state.roundIndex)
 
     var micAsked by remember { mutableStateOf(false) }
@@ -208,6 +220,9 @@ fun SillyPukiScreen(
         if (item == null || !micAsked || ready != true) return@LaunchedEffect
         val truth = if (english) item.truthEn else item.truthHe
         delay(600)
+        if (state.roundIndex == 0) companion?.speakAndWait(
+            if (english) "Let's play! I'll say something silly, and you fix me!" else "בואו נשחק! אני אגיד משהו מבולבל, ואתם תתקנו אותי!")
+        sillyLine = ""
         item.nameKey?.let { say(it) }
         awaitUnpaused(paused)
         val silly = companion?.line("silly", if (english) item.en else item.he, truth, mustSay = false)
@@ -220,20 +235,24 @@ fun SillyPukiScreen(
             return@LaunchedEffect
         }
         scope.launch { pictureReaction.hop() }
+        sillyLine = silly
 
         // She puts him right: out loud, or a tap on the real answer (or on his mistake)
-        choices = if (item.kind == SillyKind.SOUND) emptyList()
-            else listOf(Choice(item.answerId, true), Choice(wrongChoice(item, silly, english), false)).shuffled()
-        val tap = CompletableDeferred<Boolean>().also { tapped = it }
+        val wrong = if (item.kind == SillyKind.SOUND) null else wrongChoice(item, silly, english)
+        choices = if (wrong == null) emptyList() else listOf(Choice(item.answerId, true), Choice(wrong, false)).shuffled()
+        val tap = CompletableDeferred<Boolean?>().also { tapped = it }  // (null: nothing said, nothing to tap)
         val forms = when (item.kind) {
             SillyKind.COUNT -> listOf(truth) + numberWords(item.truthEn.toInt(), english)
             else -> listOf(truth)
         }
         var heard = ""
         val listen = scope.launch {
-            val h = companion.listenForAnswer(forms) ?: return@launch
-            heard = h
-            if (h.isNotBlank()) tap.complete(SpokenAnswer.pick(h, listOf(forms)) == 0)
+            val h = companion.listenForAnswer(forms)
+            heard = h ?: ""
+            when {
+                !h.isNullOrBlank() -> tap.complete(SpokenAnswer.pick(h, listOf(forms)) == 0)
+                choices.isEmpty() -> { delay(if (h == null) 3000 else 0); tap.complete(null) }  // (a sound to say, no bubbles: done listening)
+            }
         }
         val right = withTimeoutOrNull(12_000) { tap.await() }  // (toddlers take their time)
         listen.cancel()
@@ -244,6 +263,8 @@ fun SillyPukiScreen(
             right == false || heard.isNotBlank() -> SillyContent.Answer.OTHER
             else -> SillyContent.Answer.NOTHING
         }
+        // A tap on his mistake says what she picked, as if she'd said it
+        if (right == false && heard.isBlank() && wrong != null) heard = choiceName(item.kind, wrong, english)
         if (answer == SillyContent.Answer.RIGHT) {
             sfxPlayer.play(Sfx.SUCCESS)
             confetti = true
@@ -273,7 +294,7 @@ fun SillyPukiScreen(
                 val pictureSize = minOf(300.dp, maxHeight - 110.dp)
                 val hostSize = minOf(240.dp, maxHeight)
                 Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Host(talking = talking || thinking, listening = listening, size = hostSize)
+                    Host(talking = talking || speaking, listening = listening, size = hostSize)
                     Spacer(Modifier.width(40.dp))
                     if (item != null) Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
@@ -285,7 +306,10 @@ fun SillyPukiScreen(
                                 .shadow(10.dp, RoundedCornerShape(40.dp))
                                 .clip(RoundedCornerShape(40.dp))
                                 .background(Color.White)
-                                .border(if (listening) 8.dp else 0.dp, Color(0xFFFFEB3B), RoundedCornerShape(40.dp)),
+                                .border(if (listening) 8.dp else 0.dp, Color(0xFFFFEB3B), RoundedCornerShape(40.dp))
+                                .clickable(remember { MutableInteractionSource() }, indication = null, enabled = sillyLine.isNotEmpty() && !speaking && !listening) {
+                                    scope.launch { companion?.speakAndWait(sillyLine) }
+                                },
                             contentAlignment = Alignment.Center
                         ) { Picture(item.picture, pictureSize * 0.74f) }
                         Spacer(Modifier.height(14.dp))
@@ -344,7 +368,7 @@ private fun ChoiceBubble(kind: SillyKind, id: String, onTap: () -> Unit) {
             SillyKind.SHAPE -> level3Shapes.firstOrNull { it.id == id }?.let { s ->
                 Canvas(Modifier.size(70.dp)) { drawShapeFilled(s, Offset(size.width / 2, size.height / 2), size.minDimension * 0.42f) }
             }
-            SillyKind.COUNT -> Text(id, fontSize = 52.sp, fontWeight = FontWeight.Bold, color = Color(0xFF5D4037))
+            SillyKind.COUNT -> Fingers(id.toIntOrNull() ?: 1, Modifier.size(80.dp))
             SillyKind.SOUND -> Unit
         }
     }
@@ -356,5 +380,47 @@ private fun Host(talking: Boolean, listening: Boolean, size: Dp) {
     Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
         if (listening) Box(Modifier.size(size * 0.9f).clip(CircleShape).background(Color(0x55FFEB3B)))
         TalkingParrotImage(talking = talking, modifier = Modifier.size(size * 0.77f).idleBob(amount = if (talking) 1f else 0.5f))
+    }
+}
+
+/** [n] fingers held up (one hand, or two for more than five): how many, for a child who can't read numbers yet. */
+@Composable
+private fun Fingers(n: Int, modifier: Modifier = Modifier) {
+    val hands = if (n <= 5) listOf(n) else listOf(5, n - 5)
+    Row(modifier = modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
+        for (up in hands) Canvas(Modifier.weight(1f).fillMaxHeight()) { drawHand(up) }
+    }
+}
+
+private val Skin = Color(0xFFFFCC80)
+private val SkinLine = Color(0xFFE0A050)
+
+/** A hand with [up] fingers raised (the thumb last), the rest folded down. */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHand(up: Int) {
+    val w = size.width
+    val h = size.height
+    val palmTop = h * 0.5f
+    val palm = androidx.compose.ui.geometry.Rect(w * 0.2f, palmTop, w * 0.8f, h * 0.95f)
+    val fingerW = palm.width / 4.4f
+    // Four fingers over the palm, the index first; then the thumb on the side
+    for (i in 0 until 4) {
+        val raised = i < minOf(up, 4)
+        val left = palm.left + i * palm.width / 4f + (palm.width / 4f - fingerW) / 2
+        val top = if (raised) h * (0.08f + if (i == 0 || i == 3) 0.06f else 0f) else palmTop - fingerW * 0.4f
+        drawRoundRect(Skin, androidx.compose.ui.geometry.Offset(left, top), androidx.compose.ui.geometry.Size(fingerW, palmTop - top + fingerW),
+            androidx.compose.ui.geometry.CornerRadius(fingerW / 2))
+        drawRoundRect(SkinLine, androidx.compose.ui.geometry.Offset(left, top), androidx.compose.ui.geometry.Size(fingerW, palmTop - top + fingerW),
+            androidx.compose.ui.geometry.CornerRadius(fingerW / 2), style = androidx.compose.ui.graphics.drawscope.Stroke(w * 0.025f))
+    }
+    drawRoundRect(Skin, palm.topLeft, palm.size, androidx.compose.ui.geometry.CornerRadius(w * 0.12f))
+    drawRoundRect(SkinLine, palm.topLeft, palm.size, androidx.compose.ui.geometry.CornerRadius(w * 0.12f), style = androidx.compose.ui.graphics.drawscope.Stroke(w * 0.025f))
+    // The thumb: out to the side when it's up (the fifth), tucked across the palm when not
+    val thumbUp = up >= 5
+    rotate(if (thumbUp) -40f else 60f, androidx.compose.ui.geometry.Offset(palm.right - fingerW * 0.3f, palm.top + palm.height * 0.55f)) {
+        val len = if (thumbUp) palm.height * 0.85f else palm.height * 0.5f
+        val tl = androidx.compose.ui.geometry.Offset(palm.right - fingerW * 0.8f, palm.top + palm.height * 0.55f - len)
+        drawRoundRect(Skin, tl, androidx.compose.ui.geometry.Size(fingerW * 1.05f, len), androidx.compose.ui.geometry.CornerRadius(fingerW / 2))
+        drawRoundRect(SkinLine, tl, androidx.compose.ui.geometry.Size(fingerW * 1.05f, len), androidx.compose.ui.geometry.CornerRadius(fingerW / 2),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(w * 0.025f))
     }
 }

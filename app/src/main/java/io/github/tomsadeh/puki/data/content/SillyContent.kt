@@ -101,7 +101,7 @@ object SillyContent {
         }
         for (s in level3Shapes.filter { it.id in PLAIN_SHAPES }) {
             out += item("shape:${s.id}", SillyKind.SHAPE, s.name.he, a(s.name.en.lowercase()), false, "הצורה שלו" to "הצורה שלו", "shape",
-                s.name.he, s.name.en.lowercase(), SillyPicture.Shape(s), "voice_shape_${s.id}", "voice_shape_${s.id}", s.id)
+                s.name.he, s.name.en.lowercase(), SillyPicture.Shape(s), null, "voice_shape_${s.id}", s.id)  // (its name is the answer: not said first)
         }
         for (r in (level1CountingRounds + level2CountingRounds + level3CountingRounds).filter { it.targetNumber > 1 }) {
             val n = r.targetNumber
@@ -142,7 +142,8 @@ object SillyContent {
      *  a Hebrew word also behind a one-letter prefix (ו, ה, ב, ל, מ, ש). */
     fun saysTruth(line: String, truth: String): Boolean {
         val words = WORDS.findAll(line.lowercase()).map { it.value }.toList()
-        for (alt in listOf(truth) + (NUMBER_WORDS[truth] ?: emptyList())) {
+        val colorForms = LookContent.COLORS.values.firstOrNull { (he, en) -> he[0] == truth || en == truth }?.first ?: emptyList()
+        for (alt in listOf(truth) + (NUMBER_WORDS[truth] ?: emptyList()) + colorForms) {
             val t = WORDS.findAll(alt.lowercase()).map { it.value }.toList()
             if (t.isEmpty()) continue
             for (i in words.indices) {
