@@ -4,6 +4,7 @@ import ai.onnxruntime.OrtEnvironment
 import android.util.Log
 import io.github.tomsadeh.puki.brain.voice.Beak
 import io.github.tomsadeh.puki.brain.voice.BlueVoice
+import io.github.tomsadeh.puki.brain.voice.EnglishBeak
 import io.github.tomsadeh.puki.brain.voice.VoiceText
 import org.json.JSONObject
 import java.net.URLDecoder
@@ -24,6 +25,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     private val persona = Persona()
     private var brains: Brains? = null
     private var beak: Beak? = null
+    private var beakEn: EnglishBeak? = null  // (only when its files are here: English is spoken with it)
     private var voice: BlueVoice? = null
     private var ears: KolEars? = null
     private val earsLock = Any()  // around loading the ears (see ears())
@@ -48,16 +50,19 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)  // (the game comes first)
             var v: BlueVoice? = null
             var k: Beak? = null
+            var en: EnglishBeak? = null
             var b: Brains? = null
             try {
                 val env = OrtEnvironment.getEnvironment()
                 v = BlueVoice(env, models.file("voice"), models.file("voice/noa.json"), null, threads = 4)
                 k = Beak(env, models.file(DeviceModels.BEAK))
                 v.voice(k.phonemize("שלום", girl = true))  // warms up the voice before the first real line
+                en = models.file(DeviceModels.BEAK_EN).takeIf { java.io.File(it, "reader_int8.onnx").exists() }
+                    ?.let { dir -> runCatching { EnglishBeak(env, dir) }.onFailure { Log.e(TAG, "the English reader didn't load: ${it.message}") }.getOrNull() }
                 b = Brains(env, models.file(DeviceModels.BRAINS))
                 synchronized(lifecycle) {
                     if (gen != generation) error("switched off while loading")
-                    work.withLock { voice = v; beak = k; brains = b }
+                    work.withLock { voice = v; beak = k; beakEn = en; brains = b }
                     state = "ready"
                 }
                 // The ears last (about 17 s on a slow tablet), so Puki is ready sooner; a listen
@@ -68,6 +73,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                 Log.e(TAG, "the device brain didn't load: ${e.message}")
                 runCatching { b?.close() }
                 runCatching { k?.close() }
+                runCatching { en?.close() }
                 runCatching { v?.close() }
                 synchronized(lifecycle) { if (gen == generation) state = "asleep" }
             }
@@ -83,9 +89,11 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         work.withLock {
             runCatching { brains?.close() }
             runCatching { beak?.close() }
+            runCatching { beakEn?.close() }
             runCatching { voice?.close() }
             brains = null
             beak = null
+            beakEn = null
             voice = null
         }
         synchronized(earsLock) {
@@ -204,7 +212,12 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     /** [text] spoken (empty when there's nothing to say; null when it can't be voiced here). */
     private fun reply(text: String?, lang: String, beak: Beak, voice: BlueVoice, speed: Float = 0.92f): ByteArray? {
         if (text.isNullOrBlank()) return ByteArray(0)
-        if (lang == "en") return ByteArray(0)  // no English voice here yet: the game uses its recorded line
+        if (lang == "en") {
+            val reader = beakEn ?: return ByteArray(0)  // no English reader here: the game uses its recorded line
+            last.set(Said(text, heardNow.get() ?: ""))
+            val ipa = reader.phonemize(text)
+            return if (ipa.isBlank()) ByteArray(0) else voice.speakPhonemes(ipa, speed)
+        }
         last.set(Said(text, heardNow.get() ?: ""))
         val prepared = VoiceText.prepareTextForSynthesis(persona.forVoice(text))
         if (prepared.none { it in '֐'..'׿' }) return ByteArray(0)  // nothing Hebrew to say

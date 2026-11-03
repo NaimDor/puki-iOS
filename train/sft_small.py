@@ -24,7 +24,7 @@ import torch.nn.functional as F
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from pt_corpus import strip  # noqa: E402
+from pt_corpus import LANG, strip  # noqa: E402
 
 
 def load_model(ckpt, device):
@@ -167,6 +167,8 @@ def main():
     # (train_heldout is final_heldout before final.py; the pilots and old versions aren't held-out sets of their own)
     truth_rows = [r for name in sorted((HERE / "data").glob("*_heldout.jsonl")) if not name.name.startswith(("pilot", "train_", "look_pilot"))
                   for r in map(json.loads, open(name, encoding="utf-8")) if r["task"] in ("silly", "silly_fix", "recap")]
+    if LANG:  # a one-language model (PUKI_LANG, as in pt_corpus): only its lines
+        rows, held_rows, truth_rows = ([r for r in x if r["lang"] == LANG] for x in (rows, held_rows, truth_rows))
     train = examples(tok, rows, eot, a.seq)
     model = load_model(a.ckpt, device)
     print(f"{a.run}: {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M params, {len(train)} examples, "

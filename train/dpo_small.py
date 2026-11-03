@@ -61,6 +61,7 @@ def main():
     ap.add_argument("--seq", type=int, default=256)
     ap.add_argument("--samples", type=int, default=200)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--val", type=int, default=500, help="pairs kept apart to check the preference took")
     a = ap.parse_args()
     from tokenizers import Tokenizer
     import hashlib
@@ -72,7 +73,7 @@ def main():
     kinds = set(a.kinds.split(","))
     pairs = [p for p in map(json.loads, open(a.pairs, encoding="utf-8")) if p["kind"] in kinds]
     rng.shuffle(pairs)
-    val, pairs = pairs[:500], pairs[500:]  # (pairs it never trains on, to check the preference took)
+    val, pairs = pairs[:a.val], pairs[a.val:]  # (pairs it never trains on, to check the preference took)
     enc = [encode(tok, p, eot, a.seq) for p in pairs]
     val_enc = [encode(tok, p, eot, a.seq) for p in val]
     held_rows = [json.loads(l) for l in open(a.heldout, encoding="utf-8")]
@@ -101,6 +102,8 @@ def main():
 
     truth_rows = [r for name in sorted((HERE / "data").glob("*_heldout.jsonl")) if not name.name.startswith(("pilot", "train_", "look_pilot"))
                   for r in map(json.loads, open(name, encoding="utf-8")) if r["task"] in ("silly", "silly_fix", "recap")]
+    if S.LANG:  # a one-language model (PUKI_LANG): only its inputs
+        held_rows, truth_rows = ([r for r in x if r["lang"] == S.LANG] for x in (held_rows, truth_rows))
 
     def evaluate(step):
         loss = S.reference_loss(policy, refs, device)

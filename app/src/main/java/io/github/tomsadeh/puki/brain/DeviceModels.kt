@@ -166,6 +166,8 @@ class DeviceModels(context: Context) {
         /** Brains' and Beak's folders in [dir]. */
         const val BRAINS = "brains"
         const val BEAK = "beak"
+        /** The English reader's folder (EnglishBeak); not downloaded yet, so English speaks only where it was put by hand. */
+        const val BEAK_EN = "beak-en"
         private const val BRAINS_REPO = "dtsj89/puki-brains"
         private const val BEAK_REPO = "dtsj89/puki-beak"
         private const val SYRINX_REPO = "dtsj89/puki-syrinx"
