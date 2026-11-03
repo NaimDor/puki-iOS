@@ -20,7 +20,7 @@ import java.security.MessageDigest
  * The models the device brain needs, downloaded once from where their makers publish them
  * (Hugging Face, and BlueTTS's GitHub for the voice style), checked against SHA-256, and kept
  * in the app's own storage. Downloads resume where they stopped. Some are shared, and each
- * language has its own reader: the parent picks Hebrew, English or both ([BrainLanguages]).
+ * language has its own Brains and reader: the parent picks Hebrew, English or both ([BrainLanguages]).
  */
 class DeviceModels(context: Context) {
     val dir = File(context.getExternalFilesDir(null) ?: context.filesDir, "brain")
@@ -31,7 +31,7 @@ class DeviceModels(context: Context) {
     private fun hf(repo: String, path: String, name: String, size: Long, sha: String) =
         Model("https://huggingface.co/$repo/resolve/main/$path", name, size, sha)
 
-    /** What every language needs: the voice, Brains and the ears. */
+    /** What every language needs: the voice and the ears. */
     val shared = listOf(
         // The voice: BlueTTS (MIT) with the Noa voice, kept with Syrinx's int8 parts in
         // dtsj89/puki-syrinx so an upstream change can't break new installs. Syrinx is its int8
@@ -47,10 +47,6 @@ class DeviceModels(context: Context) {
         hf(SYRINX_REPO, "tts.json", "voice/tts.json", 9260, "862d44194197de4873eccc8bfdab1835d15f98e469a90489df6da8f92a48c7ea"),
         Model("https://raw.githubusercontent.com/maxmelichov/BlueTTS/0e38dbf08ed53f85863d1eab092bd9572c53a503/voices/noa.json",
             "voice/noa.json", 288898, "c233f066a7d505306892509649bc80abeb7d0a565687f143e277ec93874a47c8"),
-        // Puki's own models (train/): Brains writes his lines, Beak reads them aloud (int8, ONNX)
-        hf(BRAINS_REPO, "brains_int8.onnx", "$BRAINS/brains_int8.onnx", 71704455, "fb2c45325df821fff309c3785622061c0960f15a7925599f8e523cf36c6f20af"),
-        hf(BRAINS_REPO, "tokenizer.json", "$BRAINS/tokenizer.json", 1000032, "f00623972a58b663923fea399afae21fbc148bf3ee9725a6c505a86fc004fe45"),
-        hf(BRAINS_REPO, "brains.json", "$BRAINS/brains.json", 103, "e248f6a8a0d6ac8cfdfd3def0308e993085c84d2f852f9b2ae2664b520f2e92a"),
         // Puki's ears: kol-stream (Hebrew and English, Apache 2.0, on EmbeddingGemma 2), made
         // ready for phones by train/kolstream_export.py (int8, optimized) and kept on Hugging Face
         hf(EARS_REPO, "encoder.onnx", "$EARS/encoder.onnx", 357955315, "4193fc7e9a39bb33e3d1fbc645db39f9a917d6996aa0d4f9aba5080b0c77dd3d"),
@@ -58,14 +54,22 @@ class DeviceModels(context: Context) {
         hf(EARS_REPO, "tokens.txt", "$EARS/tokens.txt", 17060, "1dfdd2c55ec357b9b2dd575b2dcf4c729774155097416fa5d7c3f3565f4f16ae"),
     )
 
-    /** Hebrew: Beak reads Puki's lines aloud. */
+    // Puki's own models (train/), one of each per language: Brains writes his lines, Beak reads them aloud (int8, ONNX)
+
+    /** Hebrew: its Brains, and Beak. */
     val hebrew = listOf(
+        hf(BRAINS_HE_REPO, "brains_int8.onnx", "$BRAINS_HE/brains_int8.onnx", 61198215, "a4412965e18e3d335d64dc19fb4222dba889f7e0e7dec0ef4db1813976ba48ce"),
+        hf(BRAINS_HE_REPO, "tokenizer.json", "$BRAINS_HE/tokenizer.json", 700924, "9cdd53bc43bbbf9ada1840137c7996ee2aa0352dfccc156c342ef9696dce7acf"),
+        hf(BRAINS_HE_REPO, "brains.json", "$BRAINS_HE/brains.json", 101, "fed5775d484310b3ffff311052805b237761d3d0a6151ac5d8a39a4bfd77d16d"),
         hf(BEAK_REPO, "beak_int8.onnx", "$BEAK/beak_int8.onnx", 2545483, "1d4f77719d21a5ec6cdd7710066ba9b081b39fdcc4052ca1eed2236996f0702d"),
         hf(BEAK_REPO, "vocab.json", "$BEAK/vocab.json", 1346, "c432d47d12e89098b28c53b9666179dad04e0beb2755ed5632fddd29a757b00f"),
     )
 
-    /** English: the English reader (EnglishBeak). */
+    /** English: its Brains, and the English reader (EnglishBeak). */
     val english = listOf(
+        hf(BRAINS_EN_REPO, "brains_int8.onnx", "$BRAINS_EN/brains_int8.onnx", 61198215, "8d74b98e8aba301c9107646ca31abbfd69ca2b7dfa6f63c0bc00e5c02cd2eb97"),
+        hf(BRAINS_EN_REPO, "tokenizer.json", "$BRAINS_EN/tokenizer.json", 551326, "e2b00c7270b48c22bcb980e25cb050a34bdafcabb7095632fb218ae4d93932bb"),
+        hf(BRAINS_EN_REPO, "brains.json", "$BRAINS_EN/brains.json", 101, "fed5775d484310b3ffff311052805b237761d3d0a6151ac5d8a39a4bfd77d16d"),
         hf(BEAK_EN_REPO, "reader_int8.onnx", "$BEAK_EN/reader_int8.onnx", 2873594, "d1ca62ceef4d3d8d01f51d5d26c1c9c4c5dd66f9e24f572449c82b6dfc86c318"),
         hf(BEAK_EN_REPO, "symbols.json", "$BEAK_EN/symbols.json", 387, "2eaf977851a9ead653f473947ac840ae02a0e6a5f4e80abd15bdacbaa48767a1"),
         hf(BEAK_EN_REPO, "words.tsv", "$BEAK_EN/words.tsv", 726932, "569b25dbea7e9506380e0ddb4e71dc977ee05f5e77d5fb4dc1be4a9fe2c3413b"),
@@ -76,7 +80,7 @@ class DeviceModels(context: Context) {
 
     fun totalBytes(langs: BrainLanguages) = models(langs).sumOf { it.size }
 
-    /** What's still to download for [langs] (adding a language to a downloaded brain is only its reader). */
+    /** What's still to download for [langs] (adding a language to a downloaded brain is only its Brains and reader). */
     fun missingBytes(langs: BrainLanguages) = models(langs).filterNot { done(it) }.sumOf { it.size }
 
     fun file(name: String) = File(dir, name)
@@ -112,7 +116,7 @@ class DeviceModels(context: Context) {
     private val _progress = MutableStateFlow<Float?>(null)
     val progress: StateFlow<Float?> = _progress
 
-    /** Downloads what [langs] needs, and frees a language's reader that the parent no longer picked. */
+    /** Downloads what [langs] needs, and frees a language's models that the parent no longer picked. */
     private val downloadLock = kotlinx.coroutines.sync.Mutex()
 
     suspend fun download(langs: BrainLanguages) = downloadLock.withLock { withContext(Dispatchers.IO) {
@@ -125,6 +129,7 @@ class DeviceModels(context: Context) {
                 okMark(m).delete()
             }
             File(dir, "whisper").deleteRecursively()  // the ears before kol-stream (1.6 GB)
+            File(dir, "brains").deleteRecursively()  // the one Brains for both languages, before 0.9.6 (72 MB)
             // Gemma and RenikudPlus, before Puki's own models (4 GB)
             for (old in listOf("gemma.litertlm", "voice/renikud_int8.onnx")) {
                 File(dir, old).delete()
@@ -212,14 +217,16 @@ class DeviceModels(context: Context) {
         /** The ears' folder in [dir]. */
         const val EARS = "ears"
         private const val EARS_REPO = "dtsj89/puki-ears"
-        /** Brains' and Beak's folders in [dir]. */
-        const val BRAINS = "brains"
+        /** Each language's Brains folder in [dir], and Beak's. */
+        const val BRAINS_HE = "brains-he"
+        const val BRAINS_EN = "brains-en"
         const val BEAK = "beak"
         /** The English reader's folder (EnglishBeak). */
         const val BEAK_EN = "beak-en"
         private const val BEAK_EN_REPO = "dtsj89/puki-beak-en"
-        private const val BRAINS_REPO = "dtsj89/puki-brains"
-        private const val BEAK_REPO = "dtsj89/puki-beak"
+        private const val BRAINS_HE_REPO = "dtsj89/puki-brains-he"
+        private const val BRAINS_EN_REPO = "dtsj89/puki-brains-en"
+        private const val BEAK_REPO = "dtsj89/puki-beak-he"
         private const val SYRINX_REPO = "dtsj89/puki-syrinx"
 
         /** Whether settings offer the download. They do, on capable devices ([capable]). */

@@ -20,15 +20,15 @@ import kotlin.concurrent.thread
 
 /**
  * Puki's brain on this device, all of it Puki's own models but the voice: answers the game's requests
- * (see [Brain]) with Brains (the small model that writes his lines, [Brains]), Beak
- * (which reads them, [Beak]), the BlueTTS voice ([BlueVoice]) and the same filter ([Persona], [Safety]).
- * It hears with kol-stream ([KolEars], loaded in the background once the rest is ready). It speaks
- * Hebrew only for now: English lines fall back to the recorded ones. Drawings and bedtime stories aren't
- * answered here yet (the game plays its own lines): drawings wait for Puki's eyes.
+ * (see [Brain]) with Brains (the small model that writes his lines, one per language, [Brains]), the
+ * readers (Beak for Hebrew, [EnglishBeak] for English), the BlueTTS voice ([BlueVoice]) and the same
+ * filter ([Persona], [Safety]). It hears with kol-stream ([KolEars], loaded in the background once the
+ * rest is ready). A language that wasn't downloaded falls back to the game's recorded lines.
  */
 class LocalBrain(private val models: DeviceModels) : Brain {
     private val persona = Persona()
-    private var brains: Brains? = null
+    private var brains: Brains? = null  // one language's at a time (see brainsFor()): two wouldn't fit a 3 GB tablet well
+    private var brainsLang = ""
     private var beak: Beak? = null
     private var beakEn: EnglishBeak? = null  // (loaded the first time Puki speaks English: see englishReader())
     private var voice: BlueVoice? = null
@@ -56,6 +56,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             var v: BlueVoice? = null
             var k: Beak? = null
             var b: Brains? = null
+            val bl = if (models.hasHebrew()) "he" else "en"
             try {
                 val env = OrtEnvironment.getEnvironment()
                 v = BlueVoice(env, models.file("voice"), models.file("voice/noa.json"), null, threads = 4)
@@ -64,10 +65,10 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                 // Warms up the voice before the first real line, with whichever reader there is
                 k?.let { v.voice(it.phonemize("שלום", girl = true)) }
                     ?: if (models.hasEnglish()) EnglishBeak(env, models.file(DeviceModels.BEAK_EN)).also { beakEn = it }.let { v.voice(it.phonemize("hello")) } else null
-                b = Brains(env, models.file(DeviceModels.BRAINS))
+                b = Brains(env, models.file(brainsDir(bl)))
                 synchronized(lifecycle) {
                     if (gen != generation) error("switched off while loading")
-                    work.withLock { voice = v; beak = k; brains = b }
+                    work.withLock { voice = v; beak = k; brains = b; brainsLang = bl }
                     state = "ready"
                 }
                 // The ears last (about 17 s on a slow tablet), so Puki is ready sooner; a listen
@@ -96,6 +97,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             runCatching { beakEn?.close() }
             runCatching { voice?.close() }
             brains = null
+            brainsLang = ""
             beak = null
             beakEn = null
             voice = null
@@ -128,7 +130,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
             if (!work.tryLock(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) return null
             try {
                 // Read inside the lock: close() may have just freed them
-                val brains = brains ?: return null
+                if (brains == null) return null
                 val voice = voice ?: return null
                 persona.setChild(query["name"]?.firstOrNull() ?: "", query["gender"]?.firstOrNull() ?: "")
                 when (route) {
@@ -139,7 +141,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         val situation = req.optString("situation").take(300)
                         // A tap on Puki comes as the scene with "say something short and cute" (Companion.chat)
                         val task = if (situation.startsWith(Parrot.TAP_HE) || situation.startsWith(Parrot.TAP_EN)) "tap" else "moment"
-                        reply(line(brains, task, situation, lang), lang, voice)
+                        reply(line(brainsFor(lang) ?: return null, task, situation, lang), lang, voice)
                     }
                     "/line" -> {
                         if (!speaks(if (JSONObject(String(body ?: ByteArray(0))).optString("lang") == "en") "en" else "he")) return ByteArray(0)
@@ -166,7 +168,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                             else -> { l -> !SillyContent.saysTruth(l, truth) }
                         }
                         // (and never a question: she can't be asked to answer, as the trainer has it)
-                        reply(line(brains, task, input, lang, tries = 4, accept = { l -> '?' !in l && accept(l) }, earlier = earlier), lang, voice)
+                        reply(line(brainsFor(lang) ?: return null, task, input, lang, tries = 4, accept = { l -> '?' !in l && accept(l) }, earlier = earlier), lang, voice)
                     }
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
@@ -181,6 +183,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         // She talked to Puki: the careful reply if it needs one (Safety), else his answer
                         val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
                         if (!speaks(lang)) return ByteArray(0)
+                        val brains = brainsFor(lang) ?: return null
                         val heard = ears().transcribe(body ?: ByteArray(0))
                         heardNow.set(heard)
                         val guarded = Safety.guardedReply(heard, lang, persona.girl, query["game"]?.firstOrNull()?.take(40) ?: "",
@@ -260,8 +263,22 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         return voice.speakPhonemes(beak.phonemize(prepared, persona.girl), speed)
     }
 
-    /** Whether Puki can voice [lang] here: its reader was downloaded (the parent picks the languages). */
+    /** Whether Puki can voice [lang] here: its Brains and reader were downloaded (the parent picks the languages). */
     private fun speaks(lang: String) = if (lang == "en") models.hasEnglish() else models.hasHebrew()
+
+    private fun brainsDir(lang: String) = if (lang == "en") DeviceModels.BRAINS_EN else DeviceModels.BRAINS_HE
+
+    /** [lang]'s Brains (called inside [work]): the other language's is freed first, so only one is in memory. */
+    private fun brainsFor(lang: String): Brains? {
+        if (brainsLang == lang) brains?.let { return it }
+        if (!speaks(lang)) return null
+        runCatching { brains?.close() }
+        brains = null
+        brainsLang = ""
+        return runCatching { Brains(OrtEnvironment.getEnvironment(), models.file(brainsDir(lang))) }
+            .onFailure { Log.e(TAG, "Brains ($lang) didn't load: ${it.message}") }
+            .getOrNull()?.also { brains = it; brainsLang = lang }
+    }
 
     /** Beak, loaded now if Hebrew was added after the brain woke. */
     private fun hebrewReader(): Beak? {
