@@ -249,31 +249,31 @@ CLAUDE.md                  conventions for working on the code (also read by Cla
 - [BlueTTS](https://github.com/maxmelichov/BlueTTS) by Max Melichov (MIT): Puki's voice, with
   the Noa voice, and the recorded lines
 - [RenikudPlus](https://huggingface.co/notmax123/RenikudPlus) by Max Melichov, Yakov Kolani and
-  Morris Alper (Apache-2.0): Beak learned to read from it
+  Morris Alper (Apache-2.0): Beak learned to read Hebrew from it
+- [espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0): English Beak learned to read from
+  its pronunciations (only its output; espeak-ng itself isn't part of Puki)
 - [kol-stream](https://huggingface.co/MaorB/embeddinggemma-2-asr-hebrew-english-streaming) by
   MaorB (Apache-2.0), on Google's EmbeddingGemma 2, trained with
   [ivrit.ai](https://huggingface.co/ivrit-ai)'s data (CC BY 4.0) and LibriSpeech: Puki's ears
-- Brains' pretraining text:
-  - [HeDC4](https://huggingface.co/datasets/HeNLP/HeDC4) by HeNLP, from HeRo (Vitaly Shalumov
-    and Harel Haskey, "HeRo: RoBERTa and Longformer Hebrew Language Models",
-    [arXiv:2304.11077](https://arxiv.org/abs/2304.11077))
+- The Hebrew Brains' pretraining text: [FineWeb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2)
+  (heb_Hebr) by Hugging Face (ODC-By, and the Common Crawl terms of use)
+- The English Brains' pretraining text:
   - [FineWeb-Edu](https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu) by Hugging Face
-    (ODC-By, and the Common Crawl terms of use)
+    (ODC-By, and the Common Crawl terms of use), which also gave English Beak its words
   - [Cosmopedia](https://huggingface.co/datasets/HuggingFaceTB/cosmopedia) by Hugging Face
     (Apache-2.0)
   - Project Gutenberg books and YouTube Commons videos from the
     [Common Pile](https://huggingface.co/common-pile) (public domain, and CC BY per video)
-
-  Exactly what entered it is listed in [`train/pt_manifest.json`](train/pt_manifest.json).
 - Brains' fine-tuning lines were written by [DeepSeek](https://www.deepseek.com) models, then
-  filtered by Puki's own checks
+  filtered by Puki's own checks; they're public as [dtsj89/puki-lines](https://huggingface.co/datasets/dtsj89/puki-lines)
+  (CC BY 4.0)
 
 The models are downloaded separately and are not part of this repository.
 
 ## What's next
 
-English on the device, a bigger and better Brains, Puki looking at drawings, bedtime stories
-and memory on the device, and Google Play. See [ROADMAP.md](ROADMAP.md).
+Google Play, a few more pictures for Puki's games (a doll, a blanket, the sea), and whatever
+families ask for. See [ROADMAP.md](ROADMAP.md).
 
 ## Contributing
 
