@@ -12,6 +12,5 @@ private struct Stub: View {
     }
 }
 
-struct FreeCanvasScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "canvas", onBack: onBack) } }
 struct SettingsScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "settings", onBack: onBack) } }
 struct OnboardingScreen: View { let settings: AppSettings; var body: some View { Text("welcome") } }

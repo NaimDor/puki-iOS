@@ -28,7 +28,7 @@ extension CGRect {
 extension Color {
     /** Kotlin's copy(alpha =). */
     func copy(alpha: Double) -> Color { opacity(alpha) }
-    private var rgba: (Double, Double, Double, Double) {
+    var rgba: (Double, Double, Double, Double) {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
         return (Double(r), Double(g), Double(b), Double(a))
@@ -98,7 +98,8 @@ struct Stroke {
     var width: CGFloat
     var cap: StrokeCap = .butt
     var join: CGLineJoin = .miter
-    var style: StrokeStyle { StrokeStyle(lineWidth: width, lineCap: cap.cg, lineJoin: join) }
+    var dash: [CGFloat] = []
+    var style: StrokeStyle { StrokeStyle(lineWidth: width, lineCap: cap.cg, lineJoin: join, dash: dash) }
 }
 
 /**
@@ -209,6 +210,12 @@ struct DrawScope {
     func clip(_ path: Path, _ body: (DrawScope) -> Void) {
         var c = ctx
         c.clip(to: path)
+        body(DrawScope(c, size))
+    }
+    /** Draws `body` everywhere except inside `path` (Compose's ClipOp.Difference). */
+    func clipOut(_ path: Path, _ body: (DrawScope) -> Void) {
+        var c = ctx
+        c.clip(to: path, options: .inverse)
         body(DrawScope(c, size))
     }
     func alpha(_ a: Double, _ body: (DrawScope) -> Void) {
