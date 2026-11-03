@@ -21,21 +21,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import io.github.tomsadeh.puki.data.models.BilingualText
+import io.github.tomsadeh.puki.data.models.BrainLanguages
+import io.github.tomsadeh.puki.data.models.Language
 import io.github.tomsadeh.puki.theme.CloudWhite
 import io.github.tomsadeh.puki.theme.EarthBrown
 import io.github.tomsadeh.puki.theme.GrassGreen
 import io.github.tomsadeh.puki.ui.common.LocalAppSettings
 import io.github.tomsadeh.puki.ui.common.LocalLanguage
 
-/** "Puki on this device": download the models once, then think here. */
+/** "Puki on this device": pick his languages, download the models once, then think here. */
 @Composable
 fun DeviceBrainCard(viewModel: SettingsViewModel) {
     val language = LocalLanguage.current
     val settings = LocalAppSettings.current
     val models = viewModel.deviceModels
     val progress by models.progress.collectAsState()
-    val ready = progress == null && models.ready()
-    val gb = "%.1f".format(models.totalBytes / 1e9)
+    val langs = models.languagesFor(settings.brainLanguages, settings.language)
+    val ready = progress == null && models.ready(langs)
+    val size = sizeText(models.totalBytes(langs))
+    val missing = sizeText(models.missingBytes(langs))
 
     Column(
         modifier = Modifier
@@ -49,13 +53,14 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
             style = MaterialTheme.typography.titleLarge, color = EarthBrown)
         Text(
             BilingualText(
-                "פוקי יכול לחשוב, לדבר ולהקשיב כאן במכשיר, בלי אינטרנט: גם מחוץ לבית. צריך להוריד פעם אחת $gb GB " +
-                    "(עדיף ב-Wi-Fi). בינתיים כאן הוא מדבר רק עברית.",
+                "פוקי יכול לחשוב, לדבר ולהקשיב כאן במכשיר, בלי אינטרנט: גם מחוץ לבית. מורידים פעם אחת (עדיף ב-Wi-Fi), " +
+                    "בשפה שבוחרים:",
                 "Puki can think, talk and listen right here on this device, with no internet: even away from home. " +
-                    "It's a one-time $gb GB download (Wi-Fi is best). For now he speaks only Hebrew here."
+                    "It's a one-time download (Wi-Fi is best), in the languages you pick:"
             ).resolve(language),
             style = MaterialTheme.typography.bodyMedium, color = EarthBrown
         )
+        BrainLanguagePicker(langs, language, enabled = progress == null) { viewModel.setBrainLanguages(it) }
         val p = progress
         when {
             p != null -> {
@@ -68,11 +73,11 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(GrassGreen)
-                    .clickable { viewModel.downloadDeviceBrain() }
+                    .clickable { viewModel.downloadDeviceBrain(langs) }
                     .padding(14.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text(BilingualText("הורדה ($gb GB)", "Download ($gb GB)").resolve(language),
+                Text(BilingualText("הורדה ($missing)", "Download ($missing)").resolve(language),
                     style = MaterialTheme.typography.titleMedium, color = CloudWhite)
             }
             else -> {
@@ -83,7 +88,7 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
                     Switch(checked = settings.brainOnDevice, onCheckedChange = { viewModel.setBrainOnDevice(it) })
                 }
                 Text(
-                    BilingualText("הסרה (מפנה $gb GB)", "Remove (frees $gb GB)").resolve(language),
+                    BilingualText("הסרה (מפנה $size)", "Remove (frees $size)").resolve(language),
                     style = MaterialTheme.typography.bodyMedium, color = EarthBrown.copy(alpha = 0.7f),
                     modifier = Modifier.clickable { viewModel.removeDeviceBrain() }.padding(vertical = 4.dp)
                 )
@@ -95,3 +100,31 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
         }
     }
 }
+
+/** Hebrew, English or both: each language has its own reader (a few MB); the rest is shared. */
+@Composable
+fun BrainLanguagePicker(selected: BrainLanguages, language: Language, enabled: Boolean = true, onPick: (BrainLanguages) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for ((option, label) in listOf(
+            BrainLanguages.HEBREW to BilingualText("עברית", "Hebrew"),
+            BrainLanguages.ENGLISH to BilingualText("אנגלית", "English"),
+            BrainLanguages.BOTH to BilingualText("שתיהן", "Both"),
+        )) {
+            val on = option == selected
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (on) GrassGreen else EarthBrown.copy(alpha = 0.08f))
+                    .clickable(enabled = enabled && !on) { onPick(option) }
+                    .padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(label.resolve(language), style = MaterialTheme.typography.titleMedium, color = if (on) CloudWhite else EarthBrown)
+            }
+        }
+    }
+}
+
+/** A download's size the way a parent reads it: MB under a gigabyte, else GB. */
+fun sizeText(bytes: Long): String = if (bytes < 1_000_000_000) "${(bytes + 999_999) / 1_000_000} MB" else "%.1f GB".format(bytes / 1e9)

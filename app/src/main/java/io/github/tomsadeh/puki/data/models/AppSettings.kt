@@ -17,6 +17,9 @@ data class AppSettings(
     val companionEnabled: Boolean = true,
     /** Puki thinks on this device (models downloaded); off, he plays his recorded lines. */
     val brainOnDevice: Boolean = false,
+    /** Which languages the parent picked for Puki's brain (each has its own reader); null until they pick
+     *  (then it's what's downloaded, else the game's language: DeviceModels.languagesFor). */
+    val brainLanguages: BrainLanguages? = null,
     /** After a game's question, Puki listens a few seconds for the answer said out loud. */
     val answersOutLoud: Boolean = true,
     /** Islands a parent took off the map (fewer choices at two), by id. */
@@ -25,6 +28,10 @@ data class AppSettings(
 
 enum class Language {
     HEBREW, ENGLISH
+}
+
+enum class BrainLanguages(val hebrew: Boolean, val english: Boolean) {
+    HEBREW(true, false), ENGLISH(false, true), BOTH(true, true)
 }
 
 enum class Gender {

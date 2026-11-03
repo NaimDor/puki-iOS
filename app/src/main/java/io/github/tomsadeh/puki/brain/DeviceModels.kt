@@ -3,6 +3,8 @@ package io.github.tomsadeh.puki.brain
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
+import io.github.tomsadeh.puki.data.models.BrainLanguages
+import io.github.tomsadeh.puki.data.models.Language
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +18,8 @@ import java.security.MessageDigest
 /**
  * The models the device brain needs, downloaded once from where their makers publish them
  * (Hugging Face, and BlueTTS's GitHub for the voice style), checked against SHA-256, and kept
- * in the app's own storage. Downloads resume where they stopped.
+ * in the app's own storage. Downloads resume where they stopped. Some are shared, and each
+ * language has its own reader: the parent picks Hebrew, English or both ([BrainLanguages]).
  */
 class DeviceModels(context: Context) {
     val dir = File(context.getExternalFilesDir(null) ?: context.filesDir, "brain")
@@ -27,7 +30,8 @@ class DeviceModels(context: Context) {
     private fun hf(repo: String, path: String, name: String, size: Long, sha: String) =
         Model("https://huggingface.co/$repo/resolve/main/$path", name, size, sha)
 
-    val models = listOf(
+    /** What every language needs: the voice, Brains and the ears. */
+    val shared = listOf(
         // The voice: BlueTTS (MIT) with the Noa voice, kept with Syrinx's int8 parts in
         // dtsj89/puki-syrinx so an upstream change can't break new installs. Syrinx is its int8
         // build for weak tablets (train/squawk_quant.py: no audible difference, 3x smaller, twice
@@ -46,8 +50,6 @@ class DeviceModels(context: Context) {
         hf(BRAINS_REPO, "brains_int8.onnx", "$BRAINS/brains_int8.onnx", 71704455, "fb2c45325df821fff309c3785622061c0960f15a7925599f8e523cf36c6f20af"),
         hf(BRAINS_REPO, "tokenizer.json", "$BRAINS/tokenizer.json", 1000032, "f00623972a58b663923fea399afae21fbc148bf3ee9725a6c505a86fc004fe45"),
         hf(BRAINS_REPO, "brains.json", "$BRAINS/brains.json", 103, "e248f6a8a0d6ac8cfdfd3def0308e993085c84d2f852f9b2ae2664b520f2e92a"),
-        hf(BEAK_REPO, "beak_int8.onnx", "$BEAK/beak_int8.onnx", 2545483, "1d4f77719d21a5ec6cdd7710066ba9b081b39fdcc4052ca1eed2236996f0702d"),
-        hf(BEAK_REPO, "vocab.json", "$BEAK/vocab.json", 1346, "c432d47d12e89098b28c53b9666179dad04e0beb2755ed5632fddd29a757b00f"),
         // Puki's ears: kol-stream (Hebrew and English, Apache 2.0, on EmbeddingGemma 2), made
         // ready for phones by train/kolstream_export.py (int8, optimized) and kept on Hugging Face
         hf(EARS_REPO, "encoder.onnx", "$EARS/encoder.onnx", 357955315, "4193fc7e9a39bb33e3d1fbc645db39f9a917d6996aa0d4f9aba5080b0c77dd3d"),
@@ -55,26 +57,70 @@ class DeviceModels(context: Context) {
         hf(EARS_REPO, "tokens.txt", "$EARS/tokens.txt", 17060, "1dfdd2c55ec357b9b2dd575b2dcf4c729774155097416fa5d7c3f3565f4f16ae"),
     )
 
-    val totalBytes get() = models.sumOf { it.size }
+    /** Hebrew: Beak reads Puki's lines aloud. */
+    val hebrew = listOf(
+        hf(BEAK_REPO, "beak_int8.onnx", "$BEAK/beak_int8.onnx", 2545483, "1d4f77719d21a5ec6cdd7710066ba9b081b39fdcc4052ca1eed2236996f0702d"),
+        hf(BEAK_REPO, "vocab.json", "$BEAK/vocab.json", 1346, "c432d47d12e89098b28c53b9666179dad04e0beb2755ed5632fddd29a757b00f"),
+    )
+
+    /** English: the English reader (EnglishBeak). */
+    val english = listOf(
+        hf(BEAK_EN_REPO, "reader_int8.onnx", "$BEAK_EN/reader_int8.onnx", 2873594, "d1ca62ceef4d3d8d01f51d5d26c1c9c4c5dd66f9e24f572449c82b6dfc86c318"),
+        hf(BEAK_EN_REPO, "symbols.json", "$BEAK_EN/symbols.json", 387, "2eaf977851a9ead653f473947ac840ae02a0e6a5f4e80abd15bdacbaa48767a1"),
+        hf(BEAK_EN_REPO, "words.tsv", "$BEAK_EN/words.tsv", 726932, "569b25dbea7e9506380e0ddb4e71dc977ee05f5e77d5fb4dc1be4a9fe2c3413b"),
+    )
+
+    /** The models for [langs]. */
+    fun models(langs: BrainLanguages) = shared + (if (langs.hebrew) hebrew else emptyList()) + (if (langs.english) english else emptyList())
+
+    fun totalBytes(langs: BrainLanguages) = models(langs).sumOf { it.size }
+
+    /** What's still to download for [langs] (adding a language to a downloaded brain is only its reader). */
+    fun missingBytes(langs: BrainLanguages) = models(langs).filterNot { done(it) }.sumOf { it.size }
 
     fun file(name: String) = File(dir, name)
     private fun okMark(m: Model) = File(dir, m.name + ".ok")
 
     private fun done(m: Model) = okMark(m).exists() && File(dir, m.name).length() == m.size
 
-    /** Everything downloaded, checked and ready to load. */
-    fun ready() = models.all { done(it) }
+    /** Everything [langs] needs downloaded, checked and ready to load. */
+    fun ready(langs: BrainLanguages) = models(langs).all { done(it) }
 
-    fun downloadedBytes() = models.sumOf { m -> if (done(m)) m.size else File(dir, m.name + ".part").length() }
+    /** Enough for the brain to wake: the shared models and at least one language. */
+    fun ready() = shared.all { done(it) } && (hasHebrew() || hasEnglish())
+
+    fun hasHebrew() = hebrew.all { done(it) }
+    fun hasEnglish() = english.all { done(it) }
+
+    /** The languages to offer: the parent's pick, else what's already downloaded (before the choice existed, that
+     *  was Hebrew), else the game's language. */
+    fun languagesFor(picked: BrainLanguages?, game: Language): BrainLanguages = picked ?: when {
+        hasHebrew() && hasEnglish() -> BrainLanguages.BOTH
+        hasHebrew() -> BrainLanguages.HEBREW
+        hasEnglish() -> BrainLanguages.ENGLISH
+        game == Language.ENGLISH -> BrainLanguages.ENGLISH
+        else -> BrainLanguages.HEBREW
+    }
+
+    // (what the running download counts its progress against)
+    @Volatile private var downloading = shared
+
+    fun downloadedBytes() = downloading.sumOf { m -> if (done(m)) m.size else File(dir, m.name + ".part").length() }
 
     /** Download progress (0..1) while [download] runs, else null. */
     private val _progress = MutableStateFlow<Float?>(null)
     val progress: StateFlow<Float?> = _progress
 
-    suspend fun download() = withContext(Dispatchers.IO) {
+    /** Downloads what [langs] needs, and frees a language's reader that the parent no longer picked. */
+    suspend fun download(langs: BrainLanguages) = withContext(Dispatchers.IO) {
         try {
-            _progress.value = downloadedBytes().toFloat() / totalBytes
-            for (m in models) if (!done(m)) ensure(m)
+            downloading = models(langs)
+            _progress.value = downloadedBytes().toFloat() / totalBytes(langs)
+            for (m in downloading) if (!done(m)) ensure(m)
+            for (m in (if (langs.hebrew) emptyList() else hebrew) + (if (langs.english) emptyList() else english)) {
+                File(dir, m.name).delete()
+                okMark(m).delete()
+            }
             File(dir, "whisper").deleteRecursively()  // the ears before kol-stream (1.6 GB)
             // Gemma and RenikudPlus, before Puki's own models (4 GB)
             for (old in listOf("gemma.litertlm", "voice/renikud_int8.onnx")) {
@@ -138,7 +184,7 @@ class DeviceModels(context: Context) {
                     out.write(buf, 0, n)
                     val now = System.nanoTime()
                     if (now - last > 500_000_000L) {
-                        _progress.value = downloadedBytes().toFloat() / totalBytes
+                        _progress.value = downloadedBytes().toFloat() / downloading.sumOf { it.size }
                         last = now
                     }
                 }
@@ -166,8 +212,9 @@ class DeviceModels(context: Context) {
         /** Brains' and Beak's folders in [dir]. */
         const val BRAINS = "brains"
         const val BEAK = "beak"
-        /** The English reader's folder (EnglishBeak); not downloaded yet, so English speaks only where it was put by hand. */
+        /** The English reader's folder (EnglishBeak). */
         const val BEAK_EN = "beak-en"
+        private const val BEAK_EN_REPO = "dtsj89/puki-beak-en"
         private const val BRAINS_REPO = "dtsj89/puki-brains"
         private const val BEAK_REPO = "dtsj89/puki-beak"
         private const val SYRINX_REPO = "dtsj89/puki-syrinx"

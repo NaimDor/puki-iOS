@@ -140,7 +140,8 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
             val context = LocalContext.current
             if (settings.companionEnabled && DeviceModels.OFFERED && remember { DeviceModels.capable(context) }) {
                 val progress by viewModel.deviceModels.progress.collectAsState()
-                val gb = "%.1f".format(viewModel.deviceModels.totalBytes / 1e9)
+                val langs = viewModel.deviceModels.languagesFor(settings.brainLanguages, lang)
+                val size = io.github.tomsadeh.puki.ui.settings.sizeText(viewModel.deviceModels.missingBytes(langs))
                 Column(
                     modifier = Modifier
                         .widthIn(max = 520.dp)
@@ -152,8 +153,8 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        t("פוקי יכול לדבר באמת, עם מוח משלו שרץ בטאבלט הזה, בלי אינטרנט. צריך להוריד אותו פעם אחת ($gb GB, עדיף ב-Wi-Fi). בינתיים הוא מדבר עברית.",
-                            "Puki can really talk, with a brain of his own that runs on this tablet, with no internet. It's a one-time download ($gb GB, Wi-Fi is best). For now he speaks Hebrew."),
+                        t("פוקי יכול לדבר באמת, עם מוח משלו שרץ בטאבלט הזה, בלי אינטרנט. מורידים אותו פעם אחת ($size, עדיף ב-Wi-Fi), בשפה שבוחרים:",
+                            "Puki can really talk, with a brain of his own that runs on this tablet, with no internet. It's a one-time download ($size, Wi-Fi is best), in the languages you pick:"),
                         style = MaterialTheme.typography.bodyLarge.copy(shadow = null),
                         color = Ink
                     )
@@ -164,14 +165,15 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
                             fontWeight = FontWeight.Bold,
                             color = Ink
                         )
-                        viewModel.deviceModels.ready() -> Text(
+                        viewModel.deviceModels.ready(langs) -> Text(
                             t("המוח של פוקי כבר כאן.", "Puki's brain is already here."),
                             style = MaterialTheme.typography.bodyMedium.copy(shadow = null),
                             fontWeight = FontWeight.Bold,
                             color = Ink
                         )
                         else -> {
-                            Choice(t("הורדה עכשיו", "Download now"), selected = false) { viewModel.downloadDeviceBrain() }
+                            io.github.tomsadeh.puki.ui.settings.BrainLanguagePicker(langs, lang) { viewModel.setBrainLanguages(it) }
+                            Choice(t("הורדה עכשיו", "Download now"), selected = false) { viewModel.downloadDeviceBrain(langs) }
                             Text(
                                 t("או אחר כך, בהגדרות ההורים: \"פוקי במכשיר הזה\".", "Or later, in the parent settings: \"Puki on this device\"."),
                                 style = MaterialTheme.typography.bodyMedium.copy(shadow = null),

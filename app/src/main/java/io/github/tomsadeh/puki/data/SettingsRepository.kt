@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.tomsadeh.puki.data.models.AppSettings
+import io.github.tomsadeh.puki.data.models.BrainLanguages
 import io.github.tomsadeh.puki.data.models.Gender
 import io.github.tomsadeh.puki.data.models.Language
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,7 @@ class SettingsRepository(private val context: Context) {
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val COMPANION_ENABLED = booleanPreferencesKey("companion_enabled")
         val BRAIN_ON_DEVICE = booleanPreferencesKey("brain_on_device")
+        val BRAIN_LANGUAGES = stringPreferencesKey("brain_languages")
         val ANSWERS_OUT_LOUD = booleanPreferencesKey("answers_out_loud")
         val PLAYED_MS = longPreferencesKey("played_ms")
         val LAST_SEEN = longPreferencesKey("play_last_seen")
@@ -57,6 +59,7 @@ class SettingsRepository(private val context: Context) {
             loaded = true,
             companionEnabled = prefs[Keys.COMPANION_ENABLED] ?: true,
             brainOnDevice = prefs[Keys.BRAIN_ON_DEVICE] ?: false,
+            brainLanguages = prefs[Keys.BRAIN_LANGUAGES]?.let { runCatching { BrainLanguages.valueOf(it) }.getOrNull() },
             answersOutLoud = prefs[Keys.ANSWERS_OUT_LOUD] ?: true,
             hiddenIslands = prefs[Keys.HIDDEN_ISLANDS] ?: emptySet()
         )
@@ -127,6 +130,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun updateBrainOnDevice(on: Boolean) {
         context.settingsDataStore.edit { it[Keys.BRAIN_ON_DEVICE] = on }
+    }
+
+    suspend fun updateBrainLanguages(langs: BrainLanguages) {
+        context.settingsDataStore.edit { it[Keys.BRAIN_LANGUAGES] = langs.name }
     }
 
     /**

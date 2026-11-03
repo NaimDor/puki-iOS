@@ -7,6 +7,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tomsadeh.puki.PukiApplication
+import io.github.tomsadeh.puki.data.models.BrainLanguages
 import io.github.tomsadeh.puki.data.models.Gender
 import io.github.tomsadeh.puki.data.models.Language
 import kotlinx.coroutines.launch
@@ -78,13 +79,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var downloadError by mutableStateOf<String?>(null)
         private set
 
-    fun downloadDeviceBrain() {
+    fun downloadDeviceBrain(langs: BrainLanguages) {
         downloadError = null
         // In the app's scope, so it carries on when the parent leaves settings (or the welcome screen).
         // Once it's all in, Puki starts thinking on the device: that's what the parent asked for
         app.appScope.launch {
             try {
-                app.deviceModels.download()
+                app.deviceModels.download(langs)
                 settingsRepository.updateBrainOnDevice(true)
             } catch (e: Exception) {
                 downloadError = e.message ?: e.javaClass.simpleName
@@ -102,6 +103,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setBrainOnDevice(on: Boolean) {
         viewModelScope.launch { settingsRepository.updateBrainOnDevice(on) }
+    }
+
+    /** Which languages the brain is for; one already downloaded that's no longer picked is freed. */
+    fun setBrainLanguages(langs: BrainLanguages) {
+        viewModelScope.launch {
+            settingsRepository.updateBrainLanguages(langs)
+            // (nothing to fetch: download() then only frees the reader that wasn't picked)
+            if (app.deviceModels.ready(langs)) app.appScope.launch { runCatching { app.deviceModels.download(langs) } }
+        }
     }
 
     fun removeDeviceBrain() {
