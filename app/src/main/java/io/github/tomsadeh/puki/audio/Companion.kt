@@ -130,7 +130,6 @@ class Companion(
         val situation = when (route) {
             "/say" -> runCatching { JSONObject(String(body ?: ByteArray(0), Charsets.UTF_8)).optString("situation") }.getOrDefault("")
             "/line" -> runCatching { JSONObject(String(body ?: ByteArray(0), Charsets.UTF_8)).optString("input") }.getOrDefault("")
-            "/look" -> pick("ציור", "a drawing")
             else -> ""
         }
         val line = SaidLine(System.nanoTime(), said.text, said.heard, situation, game, lang())
@@ -166,7 +165,6 @@ class Companion(
     }
 
     /** What the child did this session, for the bedtime story. */
-    private val today = ArrayDeque<String>()
 
     val isReady get() = _status.value == CompanionStatus.READY
 
@@ -210,7 +208,6 @@ class Companion(
     fun react(he: String, en: String, fallback: () -> Unit = {}) = react(pick(he, en), fallback)
 
     private fun react(situation: String, fallback: () -> Unit) {
-        remember(situation)
         // Already writing a line: no second request behind it (taps would pile up, each answered late);
         // a moment that has its own recorded line plays that instead
         if (!isReady || _thinking.value) {
@@ -242,16 +239,6 @@ class Companion(
         }
     }
 
-    /** The parrot looks at the child's drawing ([png]) and reacts. Returns false if it couldn't. */
-    suspend fun look(png: ByteArray): Boolean {
-        if (!isReady) return false
-        remember(pick("ציירה ציור", "drew a picture"))
-        val audio = withContext(Dispatchers.IO) {
-            request("POST", "/look?lang=${lang()}", body = png, contentType = "image/png", timeoutMs = 20000)
-        }
-        return play(audio)
-    }
-
     /** Says [text] in the parrot's voice and waits until it's done. False if it couldn't. */
     suspend fun speakAndWait(text: String, speed: Double = 0.92): Boolean {
         if (!isReady) return false
@@ -265,17 +252,20 @@ class Companion(
     }
 
     /**
-     * Puki writes and says a line for a game's own [task] (Silly Puki), from [input] as the brain was trained;
-     * with [truth], the line must say it ([mustSay]) or must not. Waits until he's done, and returns what he
-     * said, or null if he couldn't (no brain, no line that passed, too slow): the game plays its own then.
+     * Puki writes and says a line for a game's own [task] (Silly Puki, a drawing), from [input] as the brain was
+     * trained; with [truth], the line must say it ([mustSay]) or must not; with [present], it must name one of those
+     * and none of [absent]. Waits until he's done, and returns what he said, or null if he couldn't (no brain, no
+     * line that passed, too slow): the game plays its own then.
      */
-    suspend fun line(task: String, input: String, truth: String = "", mustSay: Boolean? = null): String? {
+    suspend fun line(task: String, input: String, truth: String = "", mustSay: Boolean? = null,
+                     present: List<String> = emptyList(), absent: List<String> = emptyList()): String? {
         if (!isReady) return null
         _thinking.value = true
         val (audio, text) = try {
             withContext(Dispatchers.IO) {
                 val body = JSONObject().put("task", task).put("input", input).put("lang", lang()).put("truth", truth)
-                    .put("mustSay", when (mustSay) { true -> "yes"; false -> "no"; null -> "" }).toString()
+                    .put("mustSay", when (mustSay) { true -> "yes"; false -> "no"; null -> "" })
+                    .put("present", org.json.JSONArray(present)).put("absent", org.json.JSONArray(absent)).toString()
                 // (what he said is read on this thread, right after the request: see Brain.lastSaid)
                 request("POST", "/line", body.toByteArray(Charsets.UTF_8), timeoutMs = 9000) to brain?.lastSaid()?.text
             }
@@ -296,28 +286,6 @@ class Companion(
     /** Plays prefetched audio and waits until it's done. */
     suspend fun playAndWait(audio: ByteArray) {
         if (play(audio)) awaitQuiet()
-    }
-
-    /**
-     * A short bedtime story about today: a list of (sentence, drawable name), the drawable
-     * picked from [icons] (name to label). Null if the brain isn't available.
-     */
-    suspend fun story(icons: Map<String, String>): List<Pair<String, String>>? {
-        if (!isReady) return null
-        val played = today.joinToString(", ").ifEmpty { if (language == Language.ENGLISH) "games" else "משחקים" }
-        val bytes = withContext(Dispatchers.IO) {
-            val body = JSONObject()
-                .put("played", played)
-                .put("lang", lang())
-                .put("icons", JSONObject(icons as Map<*, *>))
-                .toString()
-            request("POST", "/story", body.toByteArray(Charsets.UTF_8), timeoutMs = 30000)
-        } ?: return null
-        if (bytes.isEmpty()) return null
-        return runCatching {
-            val arr = JSONObject(String(bytes, Charsets.UTF_8)).getJSONArray("sentences")
-            (0 until arr.length()).map { arr.getJSONObject(it).let { s -> s.getString("text") to s.getString("icon") } }
-        }.getOrNull()
     }
 
     /**
@@ -517,11 +485,6 @@ class Companion(
         Triple("voice_round_done_name", if (girl) "$n, את סיימת! כל הכבוד!" else "$n, אתה סיימת! כל הכבוד!", "$n, all done! Great job!"),
     )
 
-    private fun remember(situation: String) {
-        today.addLast(situation.take(80))
-        while (today.size > 12) today.removeFirst()
-    }
-
     private fun lang() = if (language == Language.ENGLISH) "en" else "he"
 
     private fun pick(he: String, en: String) = if (language == Language.ENGLISH) en else he
@@ -548,7 +511,7 @@ class Companion(
         } else path
         val result = brain?.request(method, full, body, timeoutMs, contentType)
         val route = path.substringBefore('?')
-        if (result != null && result.isNotEmpty() && route in setOf("/say", "/listen", "/look", "/line")) recordSaid(route, body)
+        if (result != null && result.isNotEmpty() && route in setOf("/say", "/listen", "/line")) recordSaid(route, body)
         return result
     }
 

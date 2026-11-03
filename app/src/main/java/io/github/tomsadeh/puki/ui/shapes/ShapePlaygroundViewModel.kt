@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.shapes
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -74,6 +76,7 @@ class ShapePlaygroundViewModel(application: Application) : AndroidViewModel(appl
             val newStars = _state.value.totalStarsEarned + 1
             _state.value = _state.value.copy(roundComplete = true, totalStarsEarned = newStars)
             session.star()
+            DayLog.record(RecapContent.shape(_state.value.targetShape))
         } else {
             session.slip()
         }

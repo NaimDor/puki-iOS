@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.colors
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -70,6 +72,7 @@ class ColorSplashViewModel(application: Application) : AndroidViewModel(applicat
             val newStars = _state.value.totalStarsEarned + 1
             _state.value = _state.value.copy(showSuccess = true, totalStarsEarned = newStars)
             session.star()
+            DayLog.record(RecapContent.color(_state.value.targetColor))
         } else {
             session.slip()
         }

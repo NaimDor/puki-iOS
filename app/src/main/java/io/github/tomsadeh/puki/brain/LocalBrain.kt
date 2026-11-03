@@ -1,8 +1,10 @@
 package io.github.tomsadeh.puki.brain
 
+import io.github.tomsadeh.puki.data.content.RecapContent
 import ai.onnxruntime.OrtEnvironment
 import android.util.Log
 import io.github.tomsadeh.puki.brain.voice.Beak
+import io.github.tomsadeh.puki.data.content.LookContent
 import io.github.tomsadeh.puki.data.content.SillyContent
 import io.github.tomsadeh.puki.brain.voice.BlueVoice
 import io.github.tomsadeh.puki.brain.voice.EnglishBeak
@@ -135,19 +137,24 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         reply(line(brains, task, situation, lang), lang, voice)
                     }
                     "/line" -> {
-                        // A game's own task (Silly Puki): its input as trained, and whether the line must say
-                        // the real answer (the correction) or must not (the silly line)
+                        // A game's own task (Silly Puki, looking at a drawing): its input as trained, and the check its
+                        // line must pass: say the real answer or not (Silly Puki), name only what's there (a drawing)
                         val req = JSONObject(String(body ?: ByteArray(0)))
                         val lang = if (req.optString("lang") == "en") "en" else "he"
                         val task = req.optString("task").takeIf { it in GAME_TASKS } ?: return null
                         val truth = req.optString("truth")
                         val mustSay = req.optString("mustSay")
+                        val present = req.optJSONArray("present")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
+                        val absent = req.optJSONArray("absent")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
+                        val input = req.optString("input").take(400)
                         val accept: (String) -> Boolean = when {
+                            task == "recap" -> { l -> RecapContent.eventsNamed(l, input) >= 2 }  // (two of the day's things, or more)
+                            present.isNotEmpty() -> { l -> LookContent.ok(l, present, absent) }
                             truth.isEmpty() || mustSay.isEmpty() -> { _ -> true }
                             mustSay == "yes" -> { l -> SillyContent.saysTruth(l, truth) }
                             else -> { l -> !SillyContent.saysTruth(l, truth) }
                         }
-                        reply(line(brains, task, req.optString("input").take(400), lang, tries = 4, accept = accept), lang, voice)
+                        reply(line(brains, task, input, lang, tries = 4, accept = accept), lang, voice)
                     }
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
@@ -261,6 +268,6 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     private companion object {
         const val TAG = "PukiBrain"
         /** The tasks a game may ask for by name (/line); moment, tap and talk have their own routes. */
-        val GAME_TASKS = setOf("silly", "silly_fix")
+        val GAME_TASKS = setOf("silly", "silly_fix", "look", "recap")
     }
 }

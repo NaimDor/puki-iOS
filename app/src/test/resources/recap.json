@@ -1,0 +1,1002 @@
+{
+"events": [
+[
+"אמרת עם פוקי: אריה",
+"you said \"lion\" with Puki"
+],
+[
+"אמרת עם פוקי: בית",
+"you said \"house\" with Puki"
+],
+[
+"אמרת עם פוקי: גמל",
+"you said \"camel\" with Puki"
+],
+[
+"אמרת עם פוקי: דג",
+"you said \"fish\" with Puki"
+],
+[
+"אמרת עם פוקי: הר",
+"you said \"mountain\" with Puki"
+],
+[
+"אמרת עם פוקי: ורד",
+"you said \"rose\" with Puki"
+],
+[
+"אמרת עם פוקי: חתול",
+"you said \"cat\" with Puki"
+],
+[
+"אמרת עם פוקי: טיל",
+"you said \"rocket\" with Puki"
+],
+[
+"אמרת עם פוקי: ירח",
+"you said \"moon\" with Puki"
+],
+[
+"אמרת עם פוקי: כלב",
+"you said \"dog\" with Puki"
+],
+[
+"אמרת עם פוקי: לחם",
+"you said \"bread\" with Puki"
+],
+[
+"אמרת עם פוקי: מכונית",
+"you said \"car\" with Puki"
+],
+[
+"אמרת עם פוקי: נעליים",
+"you said \"shoes\" with Puki"
+],
+[
+"אמרת עם פוקי: סוס",
+"you said \"horse\" with Puki"
+],
+[
+"אמרת עם פוקי: עז",
+"you said \"goat\" with Puki"
+],
+[
+"אמרת עם פוקי: פיל",
+"you said \"elephant\" with Puki"
+],
+[
+"אמרת עם פוקי: קוף",
+"you said \"monkey\" with Puki"
+],
+[
+"אמרת עם פוקי: שמש",
+"you said \"sun\" with Puki"
+],
+[
+"אמרת עם פוקי: תוף",
+"you said \"drum\" with Puki"
+],
+[
+"אפית עוגה",
+"you baked a cake"
+],
+[
+"האכלת את האריה בבשר",
+"you fed the lion some meat"
+],
+[
+"האכלת את הארנב בגזר",
+"you fed the rabbit some carrot"
+],
+[
+"האכלת את הברווז בלחם",
+"you fed the duck some bread"
+],
+[
+"האכלת את הג׳ירפה בעלים",
+"you fed the giraffe some leaves"
+],
+[
+"האכלת את החזיר בתירס",
+"you fed the pig some corn"
+],
+[
+"האכלת את החתול בדג",
+"you fed the cat some fish"
+],
+[
+"האכלת את הכבשה בתלתן",
+"you fed the sheep some clover"
+],
+[
+"האכלת את הכלב בעצם",
+"you fed the dog some bone"
+],
+[
+"האכלת את הסוס בחציר",
+"you fed the horse some hay"
+],
+[
+"האכלת את העז בעלים",
+"you fed the goat some leaves"
+],
+[
+"האכלת את הפיל בבוטנים",
+"you fed the elephant some peanuts"
+],
+[
+"האכלת את הפינגווין בדג",
+"you fed the penguin some fish"
+],
+[
+"האכלת את הפרה בעשב",
+"you fed the cow some grass"
+],
+[
+"האכלת את הקוף בבננה",
+"you fed the monkey some banana"
+],
+[
+"האכלת את התרנגולת בגרעינים",
+"you fed the chicken some seeds"
+],
+[
+"הלבשת את הדובי",
+"you dressed the teddy"
+],
+[
+"מצאת את האריה במחבואים",
+"you found the lion hiding"
+],
+[
+"מצאת את הארנב במחבואים",
+"you found the rabbit hiding"
+],
+[
+"מצאת את הברווז במחבואים",
+"you found the duck hiding"
+],
+[
+"מצאת את הג׳ירפה במחבואים",
+"you found the giraffe hiding"
+],
+[
+"מצאת את החזיר במחבואים",
+"you found the pig hiding"
+],
+[
+"מצאת את החתול במחבואים",
+"you found the cat hiding"
+],
+[
+"מצאת את הכבשה במחבואים",
+"you found the sheep hiding"
+],
+[
+"מצאת את הכלב במחבואים",
+"you found the dog hiding"
+],
+[
+"מצאת את הסוס במחבואים",
+"you found the horse hiding"
+],
+[
+"מצאת את העז במחבואים",
+"you found the goat hiding"
+],
+[
+"מצאת את הפיל במחבואים",
+"you found the elephant hiding"
+],
+[
+"מצאת את הפינגווין במחבואים",
+"you found the penguin hiding"
+],
+[
+"מצאת את הפרה במחבואים",
+"you found the cow hiding"
+],
+[
+"מצאת את הצבע אדום",
+"you found the color red"
+],
+[
+"מצאת את הצבע ורוד",
+"you found the color pink"
+],
+[
+"מצאת את הצבע חום",
+"you found the color brown"
+],
+[
+"מצאת את הצבע ירוק",
+"you found the color green"
+],
+[
+"מצאת את הצבע כחול",
+"you found the color blue"
+],
+[
+"מצאת את הצבע כתום",
+"you found the color orange"
+],
+[
+"מצאת את הצבע לבן",
+"you found the color white"
+],
+[
+"מצאת את הצבע סגול",
+"you found the color purple"
+],
+[
+"מצאת את הצבע צהוב",
+"you found the color yellow"
+],
+[
+"מצאת את הצבע שחור",
+"you found the color black"
+],
+[
+"מצאת את הקוף במחבואים",
+"you found the monkey hiding"
+],
+[
+"מצאת את התרנגולת במחבואים",
+"you found the chicken hiding"
+],
+[
+"סידרת את הצעצועים",
+"you tidied up the toys"
+],
+[
+"ספרת 10 תפוחים",
+"you counted 10 apples"
+],
+[
+"ספרת 2 פרפרים",
+"you counted 2 butterflies"
+],
+[
+"ספרת 2 ציפורים",
+"you counted 2 birds"
+],
+[
+"ספרת 2 תפוחים",
+"you counted 2 apples"
+],
+[
+"ספרת 3 דגים",
+"you counted 3 fish"
+],
+[
+"ספרת 3 חיפושיות",
+"you counted 3 ladybugs"
+],
+[
+"ספרת 3 כוכבים",
+"you counted 3 stars"
+],
+[
+"ספרת 3 לבבות",
+"you counted 3 hearts"
+],
+[
+"ספרת 4 כוכבים",
+"you counted 4 stars"
+],
+[
+"ספרת 4 לבבות",
+"you counted 4 hearts"
+],
+[
+"ספרת 4 פרחים",
+"you counted 4 flowers"
+],
+[
+"ספרת 4 פרפרים",
+"you counted 4 butterflies"
+],
+[
+"ספרת 5 דגים",
+"you counted 5 fish"
+],
+[
+"ספרת 5 ציפורים",
+"you counted 5 birds"
+],
+[
+"ספרת 6 פרפרים",
+"you counted 6 butterflies"
+],
+[
+"ספרת 7 פרחים",
+"you counted 7 flowers"
+],
+[
+"ספרת 8 כוכבים",
+"you counted 8 stars"
+],
+[
+"ספרת 9 לבבות",
+"you counted 9 hearts"
+],
+[
+"ערכת את השולחן",
+"you set the table"
+],
+[
+"צחצחת שיניים לדובי",
+"you brushed the teddy's teeth"
+],
+[
+"ציירת באדום",
+"you drew with red"
+],
+[
+"ציירת בורוד",
+"you drew with pink"
+],
+[
+"ציירת בחום",
+"you drew with brown"
+],
+[
+"ציירת בירוק",
+"you drew with green"
+],
+[
+"ציירת בכחול",
+"you drew with blue"
+],
+[
+"ציירת בכתום",
+"you drew with orange"
+],
+[
+"ציירת בלבן",
+"you drew with white"
+],
+[
+"ציירת בסגול",
+"you drew with purple"
+],
+[
+"ציירת בצהוב",
+"you drew with yellow"
+],
+[
+"ציירת בשחור",
+"you drew with black"
+],
+[
+"ציירת ציור",
+"you drew a picture"
+],
+[
+"קיבלת מדבקה של אריה",
+"you got a lion sticker"
+],
+[
+"קיבלת מדבקה של ארנב",
+"you got a rabbit sticker"
+],
+[
+"קיבלת מדבקה של ברווז",
+"you got a duck sticker"
+],
+[
+"קיבלת מדבקה של גביע",
+"you got a trophy sticker"
+],
+[
+"קיבלת מדבקה של ג׳ירפה",
+"you got a giraffe sticker"
+],
+[
+"קיבלת מדבקה של חד קרן",
+"you got a unicorn sticker"
+],
+[
+"קיבלת מדבקה של חזיר",
+"you got a pig sticker"
+],
+[
+"קיבלת מדבקה של חתול",
+"you got a cat sticker"
+],
+[
+"קיבלת מדבקה של טיל",
+"you got a rocket sticker"
+],
+[
+"קיבלת מדבקה של יהלום",
+"you got a diamond sticker"
+],
+[
+"קיבלת מדבקה של ירח",
+"you got a moon sticker"
+],
+[
+"קיבלת מדבקה של כבשה",
+"you got a sheep sticker"
+],
+[
+"קיבלת מדבקה של כוכב",
+"you got a star sticker"
+],
+[
+"קיבלת מדבקה של כלב",
+"you got a dog sticker"
+],
+[
+"קיבלת מדבקה של כתר",
+"you got a crown sticker"
+],
+[
+"קיבלת מדבקה של לב",
+"you got a heart sticker"
+],
+[
+"קיבלת מדבקה של מוזיקה",
+"you got a music sticker"
+],
+[
+"קיבלת מדבקה של סוס",
+"you got a horse sticker"
+],
+[
+"קיבלת מדבקה של עז",
+"you got a goat sticker"
+],
+[
+"קיבלת מדבקה של פיל",
+"you got a elephant sticker"
+],
+[
+"קיבלת מדבקה של פינגווין",
+"you got a penguin sticker"
+],
+[
+"קיבלת מדבקה של פרה",
+"you got a cow sticker"
+],
+[
+"קיבלת מדבקה של פרח",
+"you got a flower sticker"
+],
+[
+"קיבלת מדבקה של פרפר",
+"you got a butterfly sticker"
+],
+[
+"קיבלת מדבקה של קוף",
+"you got a monkey sticker"
+],
+[
+"קיבלת מדבקה של קשת",
+"you got a rainbow sticker"
+],
+[
+"קיבלת מדבקה של שמש",
+"you got a sun sticker"
+],
+[
+"קיבלת מדבקה של תרנגולת",
+"you got a chicken sticker"
+],
+[
+"רחצת את הדובי באמבטיה",
+"you gave the teddy a bath"
+],
+[
+"רקדת למוזיקה",
+"you danced to the music"
+],
+[
+"שטפת את המכונית",
+"you washed the car"
+],
+[
+"שמת את הכוכב במקום",
+"you put the star in its place"
+],
+[
+"שמת את הלב במקום",
+"you put the heart in its place"
+],
+[
+"שמת את המשולש במקום",
+"you put the triangle in its place"
+],
+[
+"שמת את העיגול במקום",
+"you put the circle in its place"
+],
+[
+"שמת את הריבוע במקום",
+"you put the square in its place"
+]
+],
+"named": [
+{
+"input": "סיכום לפני השינה. היום: ציירת באדום; שמת את הלב במקום; ספרת 2 ציפורים.",
+"line": "ציירת באדום.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת באדום; שמת את הלב במקום; ספרת 2 ציפורים.",
+"line": "ציירת באדום ו ספרת 2 ציפורים.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת באדום; שמת את הלב במקום; ספרת 2 ציפורים.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת באדום; שמת את הלב במקום; ספרת 2 ציפורים.",
+"line": "ציירת באדום  שמת את הלב במקום  ספרת 2 ציפורים",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you drew with red; you put the heart in its place; you counted 2 birds.",
+"line": "you drew with red.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you drew with red; you put the heart in its place; you counted 2 birds.",
+"line": "you drew with red ו you counted 2 birds.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you drew with red; you put the heart in its place; you counted 2 birds.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you drew with red; you put the heart in its place; you counted 2 birds.",
+"line": "you drew with red  you put the heart in its place  you counted 2 birds",
+"named": 3
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הסוס במחבואים; קיבלת מדבקה של אריה; שמת את העיגול במקום; האכלת את הפינגווין בדג; ציירת ציור.",
+"line": "מצאת את הסוס במחבואים.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הסוס במחבואים; קיבלת מדבקה של אריה; שמת את העיגול במקום; האכלת את הפינגווין בדג; ציירת ציור.",
+"line": "מצאת את הסוס במחבואים ו ציירת ציור.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הסוס במחבואים; קיבלת מדבקה של אריה; שמת את העיגול במקום; האכלת את הפינגווין בדג; ציירת ציור.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הסוס במחבואים; קיבלת מדבקה של אריה; שמת את העיגול במקום; האכלת את הפינגווין בדג; ציירת ציור.",
+"line": "מצאת את הסוס במחבואים  קיבלת מדבקה של אריה  שמת את העיגול במקום  האכלת את הפינגווין בדג  ציירת ציור",
+"named": 5
+},
+{
+"input": "Bedtime recap. Today: you found the horse hiding; you got a lion sticker; you put the circle in its place; you fed the penguin some fish; you drew a picture.",
+"line": "you found the horse hiding.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you found the horse hiding; you got a lion sticker; you put the circle in its place; you fed the penguin some fish; you drew a picture.",
+"line": "you found the horse hiding ו you drew a picture.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you found the horse hiding; you got a lion sticker; you put the circle in its place; you fed the penguin some fish; you drew a picture.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you found the horse hiding; you got a lion sticker; you put the circle in its place; you fed the penguin some fish; you drew a picture.",
+"line": "you found the horse hiding  you got a lion sticker  you put the circle in its place  you fed the penguin some fish  you drew a picture",
+"named": 5
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הכלב במחבואים; מצאת את הצבע כתום; שמת את הלב במקום.",
+"line": "מצאת את הכלב במחבואים.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הכלב במחבואים; מצאת את הצבע כתום; שמת את הלב במקום.",
+"line": "מצאת את הכלב במחבואים ו שמת את הלב במקום.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הכלב במחבואים; מצאת את הצבע כתום; שמת את הלב במקום.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הכלב במחבואים; מצאת את הצבע כתום; שמת את הלב במקום.",
+"line": "מצאת את הכלב במחבואים  מצאת את הצבע כתום  שמת את הלב במקום",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you found the dog hiding; you found the color orange; you put the heart in its place.",
+"line": "you found the dog hiding.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you found the dog hiding; you found the color orange; you put the heart in its place.",
+"line": "you found the dog hiding ו you put the heart in its place.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you found the dog hiding; you found the color orange; you put the heart in its place.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you found the dog hiding; you found the color orange; you put the heart in its place.",
+"line": "you found the dog hiding  you found the color orange  you put the heart in its place",
+"named": 3
+},
+{
+"input": "סיכום לפני השינה. היום: שטפת את המכונית; קיבלת מדבקה של ארנב.",
+"line": "שטפת את המכונית.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: שטפת את המכונית; קיבלת מדבקה של ארנב.",
+"line": "שטפת את המכונית ו קיבלת מדבקה של ארנב.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: שטפת את המכונית; קיבלת מדבקה של ארנב.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: שטפת את המכונית; קיבלת מדבקה של ארנב.",
+"line": "שטפת את המכונית  קיבלת מדבקה של ארנב",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you washed the car; you got a rabbit sticker.",
+"line": "you washed the car.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you washed the car; you got a rabbit sticker.",
+"line": "you washed the car ו you got a rabbit sticker.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you washed the car; you got a rabbit sticker.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you washed the car; you got a rabbit sticker.",
+"line": "you washed the car  you got a rabbit sticker",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: ספרת 2 תפוחים; קיבלת מדבקה של כוכב.",
+"line": "ספרת 2 תפוחים.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: ספרת 2 תפוחים; קיבלת מדבקה של כוכב.",
+"line": "ספרת 2 תפוחים ו קיבלת מדבקה של כוכב.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: ספרת 2 תפוחים; קיבלת מדבקה של כוכב.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: ספרת 2 תפוחים; קיבלת מדבקה של כוכב.",
+"line": "ספרת 2 תפוחים  קיבלת מדבקה של כוכב",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you counted 2 apples; you got a star sticker.",
+"line": "you counted 2 apples.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you counted 2 apples; you got a star sticker.",
+"line": "you counted 2 apples ו you got a star sticker.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you counted 2 apples; you got a star sticker.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you counted 2 apples; you got a star sticker.",
+"line": "you counted 2 apples  you got a star sticker",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: קוף; קיבלת מדבקה של אריה; האכלת את הפינגווין בדג.",
+"line": "אמרת עם פוקי: קוף.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: קוף; קיבלת מדבקה של אריה; האכלת את הפינגווין בדג.",
+"line": "אמרת עם פוקי: קוף ו האכלת את הפינגווין בדג.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: קוף; קיבלת מדבקה של אריה; האכלת את הפינגווין בדג.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: קוף; קיבלת מדבקה של אריה; האכלת את הפינגווין בדג.",
+"line": "אמרת עם פוקי: קוף  קיבלת מדבקה של אריה  האכלת את הפינגווין בדג",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you said \"monkey\" with Puki; you got a lion sticker; you fed the penguin some fish.",
+"line": "you said \"monkey\" with Puki.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you said \"monkey\" with Puki; you got a lion sticker; you fed the penguin some fish.",
+"line": "you said \"monkey\" with Puki ו you fed the penguin some fish.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you said \"monkey\" with Puki; you got a lion sticker; you fed the penguin some fish.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you said \"monkey\" with Puki; you got a lion sticker; you fed the penguin some fish.",
+"line": "you said \"monkey\" with Puki  you got a lion sticker  you fed the penguin some fish",
+"named": 3
+},
+{
+"input": "סיכום לפני השינה. היום: קיבלת מדבקה של אריה; האכלת את הפרה בעשב; אמרת עם פוקי: אריה.",
+"line": "קיבלת מדבקה של אריה.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: קיבלת מדבקה של אריה; האכלת את הפרה בעשב; אמרת עם פוקי: אריה.",
+"line": "קיבלת מדבקה של אריה ו אמרת עם פוקי: אריה.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: קיבלת מדבקה של אריה; האכלת את הפרה בעשב; אמרת עם פוקי: אריה.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: קיבלת מדבקה של אריה; האכלת את הפרה בעשב; אמרת עם פוקי: אריה.",
+"line": "קיבלת מדבקה של אריה  האכלת את הפרה בעשב  אמרת עם פוקי: אריה",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you got a lion sticker; you fed the cow some grass; you said \"lion\" with Puki.",
+"line": "you got a lion sticker.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you got a lion sticker; you fed the cow some grass; you said \"lion\" with Puki.",
+"line": "you got a lion sticker ו you said \"lion\" with Puki.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you got a lion sticker; you fed the cow some grass; you said \"lion\" with Puki.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you got a lion sticker; you fed the cow some grass; you said \"lion\" with Puki.",
+"line": "you got a lion sticker  you fed the cow some grass  you said \"lion\" with Puki",
+"named": 3
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הצבע ורוד; מצאת את הג׳ירפה במחבואים.",
+"line": "מצאת את הצבע ורוד.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הצבע ורוד; מצאת את הג׳ירפה במחבואים.",
+"line": "מצאת את הצבע ורוד ו מצאת את הג׳ירפה במחבואים.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הצבע ורוד; מצאת את הג׳ירפה במחבואים.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: מצאת את הצבע ורוד; מצאת את הג׳ירפה במחבואים.",
+"line": "מצאת את הצבע ורוד  מצאת את הג׳ירפה במחבואים",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you found the color pink; you found the giraffe hiding.",
+"line": "you found the color pink.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you found the color pink; you found the giraffe hiding.",
+"line": "you found the color pink ו you found the giraffe hiding.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you found the color pink; you found the giraffe hiding.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you found the color pink; you found the giraffe hiding.",
+"line": "you found the color pink  you found the giraffe hiding",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: נעליים; שמת את העיגול במקום.",
+"line": "אמרת עם פוקי: נעליים.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: נעליים; שמת את העיגול במקום.",
+"line": "אמרת עם פוקי: נעליים ו שמת את העיגול במקום.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: נעליים; שמת את העיגול במקום.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: נעליים; שמת את העיגול במקום.",
+"line": "אמרת עם פוקי: נעליים  שמת את העיגול במקום",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you said \"shoes\" with Puki; you put the circle in its place.",
+"line": "you said \"shoes\" with Puki.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you said \"shoes\" with Puki; you put the circle in its place.",
+"line": "you said \"shoes\" with Puki ו you put the circle in its place.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you said \"shoes\" with Puki; you put the circle in its place.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you said \"shoes\" with Puki; you put the circle in its place.",
+"line": "you said \"shoes\" with Puki  you put the circle in its place",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: ירח; מצאת את הצבע אדום; הלבשת את הדובי.",
+"line": "אמרת עם פוקי: ירח.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: ירח; מצאת את הצבע אדום; הלבשת את הדובי.",
+"line": "אמרת עם פוקי: ירח ו הלבשת את הדובי.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: ירח; מצאת את הצבע אדום; הלבשת את הדובי.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: אמרת עם פוקי: ירח; מצאת את הצבע אדום; הלבשת את הדובי.",
+"line": "אמרת עם פוקי: ירח  מצאת את הצבע אדום  הלבשת את הדובי",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you said \"moon\" with Puki; you found the color red; you dressed the teddy.",
+"line": "you said \"moon\" with Puki.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you said \"moon\" with Puki; you found the color red; you dressed the teddy.",
+"line": "you said \"moon\" with Puki ו you dressed the teddy.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you said \"moon\" with Puki; you found the color red; you dressed the teddy.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you said \"moon\" with Puki; you found the color red; you dressed the teddy.",
+"line": "you said \"moon\" with Puki  you found the color red  you dressed the teddy",
+"named": 3
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת ציור; קיבלת מדבקה של ג׳ירפה; ספרת 3 דגים.",
+"line": "ציירת ציור.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת ציור; קיבלת מדבקה של ג׳ירפה; ספרת 3 דגים.",
+"line": "ציירת ציור ו ספרת 3 דגים.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת ציור; קיבלת מדבקה של ג׳ירפה; ספרת 3 דגים.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: ציירת ציור; קיבלת מדבקה של ג׳ירפה; ספרת 3 דגים.",
+"line": "ציירת ציור  קיבלת מדבקה של ג׳ירפה  ספרת 3 דגים",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you drew a picture; you got a giraffe sticker; you counted 3 fish.",
+"line": "you drew a picture.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you drew a picture; you got a giraffe sticker; you counted 3 fish.",
+"line": "you drew a picture ו you counted 3 fish.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you drew a picture; you got a giraffe sticker; you counted 3 fish.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you drew a picture; you got a giraffe sticker; you counted 3 fish.",
+"line": "you drew a picture  you got a giraffe sticker  you counted 3 fish",
+"named": 3
+},
+{
+"input": "סיכום לפני השינה. היום: הלבשת את הדובי; מצאת את הברווז במחבואים; מצאת את הצבע כחול.",
+"line": "הלבשת את הדובי.",
+"named": 1
+},
+{
+"input": "סיכום לפני השינה. היום: הלבשת את הדובי; מצאת את הברווז במחבואים; מצאת את הצבע כחול.",
+"line": "הלבשת את הדובי ו מצאת את הצבע כחול.",
+"named": 2
+},
+{
+"input": "סיכום לפני השינה. היום: הלבשת את הדובי; מצאת את הברווז במחבואים; מצאת את הצבע כחול.",
+"line": "לילה טוב",
+"named": 0
+},
+{
+"input": "סיכום לפני השינה. היום: הלבשת את הדובי; מצאת את הברווז במחבואים; מצאת את הצבע כחול.",
+"line": "הלבשת את הדובי  מצאת את הברווז במחבואים  מצאת את הצבע כחול",
+"named": 3
+},
+{
+"input": "Bedtime recap. Today: you dressed the teddy; you found the duck hiding; you found the color blue.",
+"line": "you dressed the teddy.",
+"named": 1
+},
+{
+"input": "Bedtime recap. Today: you dressed the teddy; you found the duck hiding; you found the color blue.",
+"line": "you dressed the teddy ו you found the color blue.",
+"named": 2
+},
+{
+"input": "Bedtime recap. Today: you dressed the teddy; you found the duck hiding; you found the color blue.",
+"line": "Good night",
+"named": 0
+},
+{
+"input": "Bedtime recap. Today: you dressed the teddy; you found the duck hiding; you found the color blue.",
+"line": "you dressed the teddy  you found the duck hiding  you found the color blue",
+"named": 3
+}
+]
+}

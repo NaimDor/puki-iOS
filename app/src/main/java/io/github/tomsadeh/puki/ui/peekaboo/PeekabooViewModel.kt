@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.peekaboo
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -50,6 +52,7 @@ class PeekabooViewModel(application: Application) : AndroidViewModel(application
         if (spot != s.spot) return false
         _state.value = s.copy(found = true, stars = s.stars + 1)
         session.star()
+        DayLog.record(RecapContent.found(s.animal))
         return true
     }
 

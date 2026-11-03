@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.animals
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -103,6 +105,7 @@ class AnimalGardenViewModel(application: Application) : AndroidViewModel(applica
                 totalStarsEarned = newStars
             )
             session.star()
+            DayLog.record(RecapContent.fed(currentState.currentAnimal))
         } else {
             session.slip()
         }

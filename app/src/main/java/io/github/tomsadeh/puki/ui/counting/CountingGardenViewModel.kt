@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.counting
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -108,6 +110,7 @@ class CountingGardenViewModel(application: Application) : AndroidViewModel(appli
 
     private fun complete(state: CountingState): CountingState {
         session.star()
+        if (state.currentRound.targetNumber > 1) DayLog.record(RecapContent.counted(state.currentRound))
         return state.copy(phase = CountingPhase.DONE, totalStarsEarned = state.totalStarsEarned + 1)
     }
 

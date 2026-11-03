@@ -1,5 +1,6 @@
 package io.github.tomsadeh.puki
 
+import io.github.tomsadeh.puki.data.DayLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +30,7 @@ class PukiApplication : Application() {
         super.onCreate()
         settingsRepository = SettingsRepository(this)
         progressRepository = ProgressRepository(this)
+        DayLog.init(this)  // (what she did today, for Puki's bedtime recap)
         // Left by older versions, like reports.jsonl and the pack folder (see Companion)
         appScope.launch(Dispatchers.IO) { runCatching { settingsRepository.forgetPcBrain() } }
     }

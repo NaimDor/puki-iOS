@@ -1,8 +1,12 @@
 package io.github.tomsadeh.puki.ui.canvas
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import io.github.tomsadeh.puki.data.content.LookContent
+import io.github.tomsadeh.puki.data.content.LookFacts
 import io.github.tomsadeh.puki.data.content.englishLetters
 import io.github.tomsadeh.puki.data.content.hebrewLetters
 import io.github.tomsadeh.puki.data.models.Language
@@ -94,6 +98,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.asAndroidBitmap
+import kotlin.math.atan2
+import kotlin.math.abs
+import kotlin.math.PI
 
 // Six pots on one side, three more under the brushes on the other
 private val leftColors = listOf(
@@ -101,6 +110,8 @@ private val leftColors = listOf(
     Color(0xFF66BB6A), Color(0xFFAB47BC), Color(0xFFFF9800)
 )
 private val rightColors = listOf(Color(0xFFF48FB1), Color(0xFF8D6E63), Color(0xFF424242))
+/** Each pot's color by name, for Puki's eyes (LookContent). */
+private val colorIds = (leftColors + rightColors).zip(listOf("red", "blue", "yellow", "green", "purple", "orange", "pink", "brown", "black")).toMap()
 
 /** Thin and fat brushes, as stroke widths in dp. */
 private val brushWidths = listOf(10f, 28f)
@@ -144,17 +155,27 @@ class DrawingViewModel : ViewModel() {
     var marks by mutableIntStateOf(0)  // strokes, stamps and fills so far: what Puki looks out for
     var lastLooked by mutableIntStateOf(0)
     val art = ArtLayer()
+    // What Puki's eyes go by (LookContent): how much of each paint, which stickers, and each stroke's shape
+    val paintUsed = mutableMapOf<String, Float>()
+    val stickers = mutableMapOf<String, Int>()
+    val strokeShapes = mutableListOf<StrokeShape>()
 
     fun noted(stroke: DrawPath) {
         lastStroke = stroke
         strokeCount++
         marks++
+        if (stroke.erase) return
+        val shape = StrokeShape.of(stroke)
+        strokeShapes += shape
+        colorIds[stroke.color]?.let { paintUsed[it] = (paintUsed[it] ?: 0f) + (shape.length + stroke.strokeWidth) * stroke.strokeWidth }
     }
 
     fun clearStrokes() {
         art.clearStrokes()
         lastStroke = null
         strokeCount = 0
+        strokeShapes.clear()
+        paintUsed.clear()
     }
 }
 
@@ -242,6 +263,7 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
         val icon = drawing.stampOrder[drawing.nextStamp % drawing.stampOrder.size]
         drawing.nextStamp++
         stamps.add(Stamp(icon, offset, stampSize, (offset.x * 7 + offset.y * 13) % 30f - 15f))
+        stampId(icon)?.let { drawing.stickers[it] = (drawing.stickers[it] ?: 0) + 1 }
         drawing.marks++
         if (stamps.size > LOOSE_STAMPS) {
             val oldest = stamps.removeAt(0)
@@ -256,7 +278,9 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
 
     /** The eraser at [at] lifts off any sticker it touches (they sit on top of the paint). */
     fun eraseStampsAt(at: Offset) {
-        stamps.removeAll { (it.center - at).getDistance() < it.size * 0.45f + brushSize / 2 }
+        val gone = stamps.filter { (it.center - at).getDistance() < it.size * 0.45f + brushSize / 2 }
+        stamps.removeAll(gone)
+        for (s in gone) stampId(s.icon)?.let { drawing.stickers[it] = ((drawing.stickers[it] ?: 1) - 1).coerceAtLeast(0) }
     }
 
     // A white sweep across the paper, and the page is clean behind it
@@ -269,6 +293,7 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
             drawing.clearStrokes()
             drawing.marks = 0
             stamps.clear()
+            drawing.stickers.clear()
             fills.clear()
             currentPath.clear()
             repaintFills()
@@ -432,6 +457,7 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
                                         shape >= 0 -> {
                                             fills[shape] = drawing.selectedColor
                                             drawing.marks++
+                                            colorIds[drawing.selectedColor]?.let { drawing.paintUsed[it] = (drawing.paintUsed[it] ?: 0f) + paperSize.width * paperSize.height / 12 }
                                             repaintFills()  // the strokes already there stay on top
                                             sfxPlayer.play(Sfx.POP, 0.8f)
                                         }
@@ -531,10 +557,31 @@ fun FreeCanvasScreen(onBack: () -> Unit, drawing: DrawingViewModel = viewModel(a
                     looking = true
                     drawing.lastLooked = drawn
                     scope.launch {
-                        // Drawn here (the stickers' painters belong to this thread), compressed in the background
+                        // What's on the paper, as the studio knows it: Puki says only that, never what it might show
                         val bitmap = snapshot(canvasSize, density) { drawArtwork(art, pageShapes, stamps, stampPainters) }
-                        val png = withContext(Dispatchers.Default) { bitmap.toPng() }
-                        companion.look(png)
+                        val cover = withContext(Dispatchers.Default) { coverOf(bitmap) }
+                        val page = coloringPages[drawing.pageIndex]
+                        val turn = drawing.letterTurn.coerceAtLeast(0)
+                        val letter = (page as? TracePage)?.takeIf { !it.numbers }?.let {
+                            val he = hebrewLetters.getOrNull(turn % hebrewLetters.size)
+                            val en = englishLetters.getOrNull(turn % englishLetters.size)
+                            if (he != null && en != null) he.hebrewLetter to en.englishLetter else null
+                        }
+                        val facts = LookFacts(
+                            page = when { page is ColoringPage -> page.id; letter != null -> "trace"; else -> "blank" },
+                            letter = letter,
+                            colors = drawing.paintUsed.entries.sortedByDescending { it.value }.take(4).map { it.key },
+                            stamps = drawing.stickers.filterValues { it > 0 }.entries.sortedByDescending { it.value }.take(3).map { it.key to it.value },
+                            cover = when { cover < 0.2f -> 0; cover < 0.55f -> 1; else -> 2 },
+                            strokes = StrokeShape.kindOf(drawing.strokeShapes, paperSize.width),
+                        )
+                        if (facts.colors.isNotEmpty()) {  // (the brain learned drawings with paint on them)
+                            DayLog.record(RecapContent.drew(io.github.tomsadeh.puki.data.content.level3Colors.firstOrNull { it.id == facts.colors[0] }))
+                            val x = LookContent.describe(facts)
+                            val english = language == Language.ENGLISH
+                            companion.line("look", if (english) x.en else x.he,
+                                present = if (english) x.presentEn else x.presentHe, absent = if (english) x.absentEn else x.absentHe)
+                        }
                         looking = false
                     }
                 }
@@ -746,4 +793,59 @@ private fun ToolPlate(selected: Boolean, index: Int, size: Dp, onClick: () -> Un
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { content() }
+}
+
+/** The studio's stickers by name, for Puki's eyes (LookContent.STAMPS, in the same order as stampIcons). */
+private fun stampId(icon: Int): String? = stampIcons.indexOf(icon).takeIf { it >= 0 }?.let { LookContent.STAMPS.keys.elementAt(it) }
+
+/** How much of the paper isn't paper any more (0..1): a grid of samples off the snapshot. */
+private fun coverOf(bitmap: androidx.compose.ui.graphics.ImageBitmap): Float {
+    val b = bitmap.asAndroidBitmap()
+    val paper = PaperColor.toArgb()
+    var painted = 0
+    for (y in 0 until 40) for (x in 0 until 60) {
+        val c = b.getPixel(x * (b.width - 1) / 59, y * (b.height - 1) / 39)
+        val d = abs(android.graphics.Color.red(c) - android.graphics.Color.red(paper)) +
+            abs(android.graphics.Color.green(c) - android.graphics.Color.green(paper)) +
+            abs(android.graphics.Color.blue(c) - android.graphics.Color.blue(paper))
+        if (d > 60) painted++
+    }
+    return painted / 2400f
+}
+
+/** A stroke's length (px), how much it turned on the way (radians) and its width: what kind of marks she makes. */
+class StrokeShape(val length: Float, val turning: Float, val width: Float) {
+    companion object {
+        fun of(stroke: DrawPath): StrokeShape {
+            var length = 0f
+            var turning = 0f
+            var heading: Float? = null
+            for (i in 1 until stroke.path.size) {
+                val d = stroke.path[i] - stroke.path[i - 1]
+                if (d.getDistance() < 2f) continue
+                length += d.getDistance()
+                val h = atan2(d.y, d.x)
+                heading?.let { last ->
+                    var t = h - last
+                    while (t > PI) t -= (2 * PI).toFloat()
+                    while (t < -PI) t += (2 * PI).toFloat()
+                    turning += abs(t)
+                }
+                heading = h
+            }
+            return StrokeShape(length, turning, stroke.strokeWidth)
+        }
+
+        /** LookContent.STROKES: 0 dots, 1 long lines, 2 round scribbles, 3 short lines; null with no strokes. */
+        fun kindOf(shapes: List<StrokeShape>, paperWidth: Float): Int? {
+            if (shapes.isEmpty()) return null
+            fun median(f: (StrokeShape) -> Float) = shapes.map(f).sorted()[shapes.size / 2]
+            return when {
+                median { it.length } < median { it.width } * 1.5f -> 0
+                median { it.turning } > 2 * PI -> 2
+                median { it.length } > paperWidth * 0.35f -> 1
+                else -> 3
+            }
+        }
+    }
 }

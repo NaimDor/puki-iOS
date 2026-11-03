@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.components
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -124,6 +126,7 @@ fun RoundCompleteSheet(
         val sticker = nextSticker(progress.rewardedStars, progress.totalStars)
         repository.markRewarded(sticker?.starsRequired ?: progress.totalStars)
         earned = sticker
+        sticker?.let { DayLog.record(RecapContent.sticker(it.name)) }
         showContent = true
         showConfetti = !calm
         voicePlayer.play(voicePlayer.personalKey("voice_round_done", language), language)

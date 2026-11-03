@@ -1,5 +1,7 @@
 package io.github.tomsadeh.puki.ui.common
 
+import io.github.tomsadeh.puki.data.content.RecapContent
+import io.github.tomsadeh.puki.data.DayLog
 import io.github.tomsadeh.puki.data.ProgressRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -29,5 +31,6 @@ class GameSession(
 
     fun finish(rounds: Int) {
         scope.launch { progress.recordSession(island, rounds, mistakes) }
+        DayLog.record(RecapContent.FIXED[island])  // (the games that are one thing all along: baked a cake, danced)
     }
 }
