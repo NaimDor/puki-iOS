@@ -204,7 +204,7 @@ voice_lines = [
     ("voice_island_words", "Words", "מילים."),
     ("voice_island_echo", "Echo Puki", "תוכי מחקה."),
     ("voice_island_myday", "My Day", "היום שלי."),
-    ("voice_island_say", "Say it with Puki", "מדברים עם פוקי."),
+    ("voice_island_say", "Puki's corner", "הפינה של פוקי."),
 
     # --- Game prompts ---
     ("voice_prompt_whos_hungry", "Who's hungry?", "מי רוצה לאכול?"),
@@ -495,7 +495,7 @@ PHONEMES = {
     "voice_food_corn_he": "zˈe tˈiʁas.",
     "voice_instrument_tambourine_he": "zˈe tˈof miʁjˈam.",
     "voice_instrument_xylophone_he": "zˈe ksilofˈon.",
-    "voice_island_say_he": "medabʁˈim ʔˈim pˈuki.",
+    "voice_island_say_he": "hapinˈa ʃˈel pˈuki.",
     "voice_music_listen_he_f": "takʃˈivi vetizkeʁˈi!",
     "voice_peekaboo_he": "kukˈu!",
     "voice_praise_4_he": "wˈaw, metsujˈan!",

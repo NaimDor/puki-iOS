@@ -110,7 +110,7 @@ val allIslands = listOf(
     ),
     IslandDef(
         id = "say",
-        name = BilingualText("מדברים עם פוקי", "Say it with Puki"),
+        name = BilingualText("הפינה של פוקי", "Puki's corner"),  // (his brain games; without the brain, Say it with Puki)
         route = Routes.CORNER,
         color = Color(0xFF81D4FA),
         drawableRes = R.drawable.ic_companion_parrot_talk,
