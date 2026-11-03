@@ -53,7 +53,6 @@ import io.github.tomsadeh.puki.ui.components.idleBob
 import io.github.tomsadeh.puki.ui.components.popIn
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeoutOrNull
 
 /** The places and things the app has pictures for (the sea, the forest, the playground and a balloon wait for art). */
 private val PLACE_ART = mapOf("farm" to R.drawable.ic_island_animals, "hill" to R.drawable.ic_word_mountain, "garden" to R.drawable.ic_island_counting)
@@ -86,8 +85,12 @@ fun StoryGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack) {
     var tap by remember { mutableStateOf<CompletableDeferred<String>?>(null) }
     var done by remember { mutableStateOf(false) }
 
+    val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as io.github.tomsadeh.puki.PukiApplication
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val session = remember { io.github.tomsadeh.puki.ui.common.GameSession("story", app.progressRepository, scope) }
     LaunchedEffect(Unit) {
         if (companion?.awaitReady() != true) { onBack(); return@LaunchedEffect }
+        companion.setScene("בסיפור עם פוקי: סיפור על ${hero.name.he}.", "In the story with Puki: a little ${hero.name.en.lowercase()} goes for a walk.")
         val soFar = mutableListOf<String>()
         val offered = mutableMapOf<Int, List<String>>()  // (what she didn't pick mustn't turn up in the story)
         var place = PLACE_ART.keys.random()
@@ -107,7 +110,20 @@ fun StoryGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack) {
                 offered[s] = options.map { it.id }
                 val pick = CompletableDeferred<String>().also { tap = it }
                 choices = options
-                val id = withTimeoutOrNull(15_000) { pick.await() } ?: options.random().id
+                // Puki asks, and asks again when she's quiet; only after a long while (not counting a pause) does he pick
+                val ask = when (s) {
+                    1 -> if (english) "Where shall we go?" else "לאן נלך?"
+                    2 -> if (english) "Who shall we meet?" else "את מי נפגוש?"
+                    else -> if (english) "What shall we find?" else "מה נמצא?"
+                }
+                companion.speakAndWait(ask)
+                var waited = 0L
+                while (!pick.isCompleted && waited < 40_000) {
+                    delay(250)
+                    if (!paused.value) waited += 250
+                    if (waited > 0 && waited % 12_000 == 0L) companion.speakAndWait(ask)
+                }
+                val id = if (pick.isCompleted) pick.await() else options.random().id
                 tap = null
                 choices = emptyList()
                 sfxPlayer.play(Sfx.POP)
@@ -119,7 +135,7 @@ fun StoryGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack) {
             }
             if (s == StoryContent.STEPS - 1) picture = hero.drawableRes
             val plan = StoryContent.Plan(hero, place, friend, thing)
-            val said = companion?.line("story_next", StoryContent.input(plan, english, soFar.takeLast(3), s),
+            val said = companion.line("story_next", StoryContent.input(plan, english, soFar, s),
                 pick = StoryContent.pickWord(plan, english, s) ?: "", absent = StoryContent.notPicked(plan, english, s, offered))
             if (said == null) {
                 if (s == 0) { onBack(); return@LaunchedEffect }  // (no story at all: nothing to finish)
@@ -130,28 +146,34 @@ fun StoryGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack) {
             delay(700)
         }
         delay(1200)
+        session.star()  // (a story told to the end: its star, counted like any game's)
+        session.finish(StoryContent.STEPS)
         done = true
     }
 
     GameBackground(scene = Scene.TREEHOUSE) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             GameTopBar(onBack = onBack, roundIndex = step, totalRounds = StoryContent.STEPS, starsEarned = null)
-            Column(modifier = Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            val pictureSize = minOf(220.dp, maxHeight * 0.38f)
+            val bubbleSize = minOf(140.dp, maxHeight * 0.26f)
+            Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 AnimatedContent(targetState = picture, label = "story_picture") { art ->
-                    Image(painterResource(art), contentDescription = null, modifier = Modifier.popIn(key = art).idleBob(amount = 0.5f).size(220.dp))
+                    Image(painterResource(art), contentDescription = null, modifier = Modifier.popIn(key = art).idleBob(amount = 0.5f).size(pictureSize))
                 }
                 Spacer(Modifier.height(12.dp))
                 // What Puki said, for the grown-up reading along
                 if (sentence.isNotEmpty()) Text(sentence, style = MaterialTheme.typography.titleLarge, color = EarthBrown, textAlign = TextAlign.Center,
                     modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.85f)).padding(horizontal = 20.dp, vertical = 8.dp))
                 Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(48.dp), modifier = Modifier.height(140.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(48.dp), modifier = Modifier.height(bubbleSize)) {
                     for (c in choices) Box(
-                        modifier = Modifier.size(140.dp).shadow(8.dp, CircleShape).clip(CircleShape).background(Color.White)
+                        modifier = Modifier.size(bubbleSize).shadow(8.dp, CircleShape).clip(CircleShape).background(Color.White)
                             .clickable(remember { MutableInteractionSource() }, indication = null) { tap?.complete(c.id) },
                         contentAlignment = Alignment.Center
-                    ) { Image(painterResource(c.art), contentDescription = null, modifier = Modifier.size(100.dp)) }
+                    ) { Image(painterResource(c.art), contentDescription = c.id, modifier = Modifier.fillMaxSize(0.7f)) }
                 }
+            }
             }
         }
         if (done) RoundCompleteSheet(starsEarned = 1, onContinue = onPlayAgain, onHome = onBack, calm = true)

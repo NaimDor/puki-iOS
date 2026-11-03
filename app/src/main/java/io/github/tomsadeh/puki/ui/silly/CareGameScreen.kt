@@ -1,5 +1,9 @@
 package io.github.tomsadeh.puki.ui.silly
 
+import io.github.tomsadeh.puki.ui.components.TalkingParrotImage
+import io.github.tomsadeh.puki.ui.components.noticeTouches
+import io.github.tomsadeh.puki.ui.components.hintGlow
+import io.github.tomsadeh.puki.ui.components.rememberHelp
 import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -134,6 +138,8 @@ fun CareGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack, viewMod
     var choosing by remember { mutableStateOf(false) }
     var tap by remember { mutableStateOf<CompletableDeferred<String>?>(null) }
     var confetti by remember { mutableStateOf(false) }
+    var problemLine by remember { mutableStateOf("") }  // (what's wrong, said again when she's quiet)
+    val speaking by (companion?.speaking ?: remember { MutableStateFlow(false) }).collectAsStateWithLifecycle()
 
     var ready by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {
@@ -142,12 +148,19 @@ fun CareGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack, viewMod
     }
 
     val round = state.round
+    // Quiet for a while: Puki says what's wrong again; two gifts that don't help, and one that does glows
+    val help = rememberHelp(state.roundIndex, active = choosing, missesCounted = false) {
+        if (problemLine.isNotEmpty()) scope.launch { companion?.speakAndWait(problemLine) }
+    }
     LaunchedEffect(state.roundIndex, ready) {
         if (round == null || ready != true) return@LaunchedEffect
         given = emptySet()
+        problemLine = ""
+        val who = round.patient.he ?: "פוקי"
+        companion?.setScene("במשחק הטיפול: ${CareContent.le(who)} צריך עזרה.", "In the caring game: ${round.patient.en ?: "Puki"} needs help.")
         delay(700)
         awaitUnpaused(paused)
-        companion?.line("care", CareContent.input(english, round.patient, round.problem, null))
+        problemLine = companion?.line("care", CareContent.input(english, round.patient, round.problem, null)) ?: ""
         while (true) {
             awaitUnpaused(paused)
             val pick = CompletableDeferred<String>().also { tap = it }
@@ -159,6 +172,7 @@ fun CareGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack, viewMod
             sfxPlayer.play(Sfx.POP)
             scope.launch { patientReaction.hop() }
             val helped = CareContent.helps(round.patient, round.problem, gift)
+            if (!helped) help.missed()
             if (helped) {
                 sfxPlayer.play(Sfx.SUCCESS)
                 confetti = true
@@ -183,16 +197,18 @@ fun CareGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack, viewMod
             if (round != null) BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 val big = minOf(300.dp, maxHeight - 150.dp)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(
-                        painterResource(PATIENT_ART.getValue(round.patient.id)), contentDescription = null,
-                        modifier = Modifier.popIn(key = state.roundIndex).idleBob(amount = 0.5f).reaction(patientReaction).size(big)
-                    )
+                    val patientModifier = Modifier.popIn(key = state.roundIndex).idleBob(amount = 0.5f).reaction(patientReaction).size(big)
+                    if (round.patient.id == "puki") TalkingParrotImage(talking = speaking, modifier = patientModifier)
+                    else Image(painterResource(PATIENT_ART.getValue(round.patient.id)), contentDescription = round.patient.en, modifier = patientModifier)
                     Spacer(Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
                         for (gift in round.gifts) {
                             val gone = gift in given
+                            val helps = CareContent.helps(round.patient, round.problem, gift)
                             Box(
                                 modifier = Modifier
+                                    .hintGlow(help.showHint && helps && !gone)
+                                    .noticeTouches(help)
                                     .size(110.dp)
                                     .alpha(if (gone) 0.25f else 1f)
                                     .shadow(6.dp, CircleShape)
@@ -200,7 +216,7 @@ fun CareGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack, viewMod
                                     .background(Color.White)
                                     .clickable(remember { MutableInteractionSource() }, indication = null, enabled = choosing && !gone) { tap?.complete(gift) },
                                 contentAlignment = Alignment.Center
-                            ) { Image(painterResource(GIFT_ART.getValue(gift)), contentDescription = null, modifier = Modifier.size(78.dp)) }
+                            ) { Image(painterResource(GIFT_ART.getValue(gift)), contentDescription = CareContent.ITEMS[gift]?.second, modifier = Modifier.size(78.dp)) }
                         }
                     }
                 }
