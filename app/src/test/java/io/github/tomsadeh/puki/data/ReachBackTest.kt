@@ -7,8 +7,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.LocalDate
-import java.time.ZoneId
 
 /** Reaching back against the PC brain's words (reach.json, from brain/memory.py on the trainer's reach_back rows). */
 class ReachBackTest {
@@ -26,23 +24,20 @@ class ReachBackTest {
     }
 
     @Test
-    fun anEarlierMomentOfTheSameGameIsFound() {
-        val today = LocalDate.of(2026, 11, 3)
-        fun at(daysAgo: Long, hour: Int) = today.minusDays(daysAgo).atTime(hour, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val now = at(0, 18)
+    fun anEarlierMomentOfThisSessionIsFound() {
+        val now = 10_000_000L
+        fun minutesAgo(m: Int) = now - m * 60_000L
         val history = listOf(
-            Moment(at(1, 10), "במשחק הצללים מצאו של מי הצל: תרנגולת!", "In the shadow game they found whose shadow it was: the chicken!", "animals"),
-            Moment(at(0, 9), "במשחק הצבעים בחרו שחור, אבל חיפשנו חום.", "x", "colors"),
-            Moment(at(2, 9), "ספרו 5 פרפרים!", "The child counted 5 butterflies!", "counting"),
+            Moment(minutesAgo(12), "במשחק הצללים מצאו של מי הצל: תרנגולת!", "In the shadow game they found whose shadow it was: the chicken!", "animals"),
+            Moment(minutesAgo(9), "במשחק הצבעים בחרו שחור, אבל חיפשנו חום.", "x", "colors"),
+            Moment(minutesAgo(6), "ספרו 5 פרפרים!", "The child counted 5 butterflies!", "counting"),
+            Moment(minutesAgo(1), "ספרו 4 תפוחים!", "The child counted 4 apples!", "counting"),
         )
-        val shadow = ReachBack.related("במשחק הצללים מצאו של מי הצל: ברווז!", "animals", history, now, today)
-        assertNotNull(shadow)
-        assertEquals("אתמול", shadow!!.first.first)
-        assertEquals("קודם היום", ReachBack.related("במשחק הצבעים בחרו חום, אבל חיפשנו ירוק.", "colors", history, now, today)!!.first.first)
-        assertEquals("לפני יומיים", ReachBack.related("ספרו 3 דגים!", "counting", history, now, today)!!.first.first)
-        // Another game, or just now: nothing to reach back to
-        assertNull(ReachBack.related("במשחק הצללים מצאו של מי הצל: ברווז!", "peekaboo", history, now, today))
-        assertNull(ReachBack.related("במשחק הצללים מצאו של מי הצל: ברווז!", "animals", history, at(1, 10) + 60_000, today.minusDays(1)))
+        assertEquals("קודם היום", ReachBack.related("במשחק הצללים מצאו של מי הצל: ברווז!", "animals", history, now)!!.first.first)
+        assertNotNull(ReachBack.related("במשחק הצבעים בחרו חום, אבל חיפשנו ירוק.", "colors", history, now))
+        // The butterflies, not the apples of a minute ago (that's "just now")
+        assertEquals("ספרו 5 פרפרים!", ReachBack.related("ספרו 3 דגים!", "counting", history, now)!!.second.he)
+        assertNull(ReachBack.related("במשחק הצללים מצאו של מי הצל: ברווז!", "peekaboo", history, now))
     }
 
     @Test

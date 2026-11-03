@@ -5,7 +5,7 @@ data class Moment(val t: Long, val he: String, val en: String, val game: String 
 
 /**
  * Puki reaching back ("like the cow yesterday!"): which earlier moment a new one links to, said as the brain
- * learned it (train/build.py: the same game, from an earlier session: "קודם היום", "אתמול", "לפני יומיים"),
+ * learned it (train/build.py: the same game, "קודם היום"; only within this session, by the parent's wish),
  * and the check his line must pass: it names the earlier thing. The words are the PC brain's
  * (brain/memory.py _content_words); ReachBackTest checks them against it.
  */
@@ -54,26 +54,18 @@ object ReachBack {
     }
 
     /**
-     * An earlier moment to reach back to for [he] in [game] (its screen): from an earlier session (not the last
-     * 20 minutes, at most two days back), in the same game, and of the same kind or about the same thing; with when
-     * it was, as the brain learned it (Hebrew, English). Null when there's none.
+     * An earlier moment of this session to reach back to for [he] in [game] (its screen): a few minutes back at
+     * least, in the same game, and of the same kind or about the same thing; with when it was, as the brain learned
+     * it ("קודם היום", earlier today). Null when there's none. (Only this session's moments: MomentMemory keeps
+     * nothing between sessions.)
      */
-    fun related(he: String, game: String, history: List<Moment>, nowMs: Long, today: java.time.LocalDate,
-                ignore: Set<String> = emptySet()): Pair<Pair<String, String>, Moment>? {
+    fun related(he: String, game: String, history: List<Moment>, nowMs: Long, ignore: Set<String> = emptySet()): Pair<Pair<String, String>, Moment>? {
         if (game.isEmpty()) return null
         val words = contentWords(he, ignore)
         val shape = skeleton(he)
         for (m in history.asReversed()) {
-            if (m.t > nowMs - SESSION_GAP_MS || m.he == he || m.game != game) continue
-            if (!(words.any { it in contentWords(m.he, ignore) } || skeleton(m.he) == shape)) continue
-            val day = java.time.Instant.ofEpochMilli(m.t).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-            val when_ = when (java.time.temporal.ChronoUnit.DAYS.between(day, today)) {
-                0L -> "קודם היום" to "earlier today"
-                1L -> "אתמול" to "yesterday"
-                2L -> "לפני יומיים" to "2 days ago"
-                else -> null
-            } ?: continue
-            return when_ to m
+            if (m.t > nowMs - GAP_MS || m.he == he || m.game != game) continue
+            if (words.any { it in contentWords(m.he, ignore) } || skeleton(m.he) == shape) return ("קודם היום" to "earlier today") to m
         }
         return null
     }
@@ -84,5 +76,6 @@ object ReachBack {
         return contentWords(line).any { it in only }
     }
 
-    const val SESSION_GAP_MS = 20 * 60_000L
+    /** How long ago a moment must be to be "before" (not the one just now). */
+    const val GAP_MS = 4 * 60_000L
 }
