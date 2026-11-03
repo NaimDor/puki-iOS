@@ -87,7 +87,7 @@ fun StoryGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack) {
     var done by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        companion?.wake()
+        if (companion?.awaitReady() != true) { onBack(); return@LaunchedEffect }
         val soFar = mutableListOf<String>()
         val offered = mutableMapOf<Int, List<String>>()  // (what she didn't pick mustn't turn up in the story)
         var place = PLACE_ART.keys.random()
@@ -121,7 +121,10 @@ fun StoryGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack) {
             val plan = StoryContent.Plan(hero, place, friend, thing)
             val said = companion?.line("story_next", StoryContent.input(plan, english, soFar.takeLast(3), s),
                 pick = StoryContent.pickWord(plan, english, s) ?: "", absent = StoryContent.notPicked(plan, english, s, offered))
-            if (said == null) break  // (no sentence that names her pick: the story ends here, gently)
+            if (said == null) {
+                if (s == 0) { onBack(); return@LaunchedEffect }  // (no story at all: nothing to finish)
+                break  // (no sentence that names her pick: the story ends here, gently)
+            }
             soFar += said
             sentence = said
             delay(700)

@@ -194,7 +194,13 @@ fun PukiNavGraph(navController: NavHostController) {
             SayItScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SAY))
         }
         composable(Routes.CORNER) {
-            if (companion?.brain == null) SayItScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SAY))
+            // Puki's brain games need his brain, and a reader for the game's language (the parent picks them)
+            val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as io.github.tomsadeh.puki.PukiApplication
+            val language = io.github.tomsadeh.puki.ui.common.LocalLanguage.current
+            val voices = androidx.compose.runtime.remember(language, companion?.brain) {
+                if (language == io.github.tomsadeh.puki.data.models.Language.ENGLISH) app.deviceModels.hasEnglish() else app.deviceModels.hasHebrew()
+            }
+            if (companion?.brain == null || !voices) SayItScreen(onBack = safeBack, onPlayAgain = playAgain(Routes.SAY))
             else DoorChooserScreen(onBack = safeBack, scene = Scene.PLAYGROUND, doors = listOf(
                 imageDoor(BilingualText("מדברים עם פוקי", "Say it with Puki"), Color(0xFF81D4FA), R.drawable.ic_companion_parrot_talk) { safeNavigate(Routes.SAY) },
                 imageDoor(BilingualText("פוקי המבולבל", "Silly Puki"), Color(0xFFFFCC80), R.drawable.ic_companion_parrot, badge = "?!") { safeNavigate(Routes.SILLY) },

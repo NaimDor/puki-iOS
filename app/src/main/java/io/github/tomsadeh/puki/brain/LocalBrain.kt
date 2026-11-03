@@ -132,12 +132,14 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                     "/say" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
                         val lang = if (req.optString("lang") == "en") "en" else "he"
+                        if (!speaks(lang)) return ByteArray(0)
                         val situation = req.optString("situation").take(300)
                         // A tap on Puki comes as the scene with "say something short and cute" (Companion.chat)
                         val task = if (situation.startsWith("לחצו על התוכי") || situation.startsWith("The child tapped")) "tap" else "moment"
                         reply(line(brains, task, situation, lang), lang, voice)
                     }
                     "/line" -> {
+                        if (!speaks(if (JSONObject(String(body ?: ByteArray(0))).optString("lang") == "en") "en" else "he")) return ByteArray(0)
                         // A game's own task (Silly Puki, looking at a drawing): its input as trained, and the check its
                         // line must pass: say the real answer or not (Silly Puki), name only what's there (a drawing)
                         val req = JSONObject(String(body ?: ByteArray(0)))
@@ -165,6 +167,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
                         val lang = if (req.optString("lang") == "en") "en" else "he"
+                        if (!speaks(lang)) return ByteArray(0)
                         val text = req.optString("text").take(200).trim()
                         // 0, NaN or a huge number would break the voice
                         val speed = req.optDouble("speed", 0.92).let { if (it.isFinite()) it.coerceIn(0.5, 1.5) else 0.92 }.toFloat()
@@ -173,6 +176,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                     "/listen" -> {
                         // She talked to Puki: the careful reply if it needs one (Safety), else his answer
                         val lang = if (query["lang"]?.firstOrNull() == "en") "en" else "he"
+                        if (!speaks(lang)) return ByteArray(0)
                         val heard = ears().transcribe(body ?: ByteArray(0))
                         heardNow.set(heard)
                         val guarded = Safety.guardedReply(heard, lang, persona.girl, query["game"]?.firstOrNull()?.take(40) ?: "",
@@ -250,6 +254,9 @@ class LocalBrain(private val models: DeviceModels) : Brain {
         if (prepared.none { it in '֐'..'׿' }) return ByteArray(0)  // nothing Hebrew to say
         return voice.speakPhonemes(beak.phonemize(prepared, persona.girl), speed)
     }
+
+    /** Whether Puki can voice [lang] here: its reader was downloaded (the parent picks the languages). */
+    private fun speaks(lang: String) = if (lang == "en") models.hasEnglish() else models.hasHebrew()
 
     /** Beak, loaded now if Hebrew was added after the brain woke. */
     private fun hebrewReader(): Beak? {

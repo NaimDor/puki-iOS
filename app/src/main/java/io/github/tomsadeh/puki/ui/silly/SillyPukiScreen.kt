@@ -186,8 +186,13 @@ fun SillyPukiScreen(
     var micAsked by remember { mutableStateOf(false) }
     val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { micAsked = true }
     val hasMic = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    // His brain, once, before the first round (the island opens the game when it's on; it may still be waking)
+    var ready by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {
-        companion?.wake()
+        ready = companion?.awaitReady() == true
+        if (ready != true) onBack()
+    }
+    LaunchedEffect(Unit) {
         if (!hasMic) askMic.launch(Manifest.permission.RECORD_AUDIO) else micAsked = true
     }
 
@@ -199,13 +204,11 @@ fun SillyPukiScreen(
     }
 
     val item = state.item
-    LaunchedEffect(state.roundIndex, micAsked) {
-        if (item == null || !micAsked) return@LaunchedEffect
+    LaunchedEffect(state.roundIndex, micAsked, ready) {
+        if (item == null || !micAsked || ready != true) return@LaunchedEffect
         val truth = if (english) item.truthEn else item.truthHe
         delay(600)
         item.nameKey?.let { say(it) }
-        // His brain may still be waking (the island opens the game when it's on): give it a moment
-        withTimeoutOrNull(20_000) { while (companion?.isReady != true) delay(300) }
         awaitUnpaused(paused)
         val silly = companion?.line("silly", if (english) item.en else item.he, truth, mustSay = false)
         if (silly == null) {

@@ -23,17 +23,29 @@ object DayLog {
         file = File(context.filesDir, "day.json")
     }
 
-    /** The parent's setting: keep today's things in a file (and read back what's there), or not (and delete it). */
+    private val restored = mutableSetOf<DayEvent>()
+
+    /** The parent's setting: keep today's things in a file (and read back what's there), or not (and delete the file,
+     *  and forget what came back from it: off means this session only). */
     @Synchronized
     fun keep(on: Boolean) {
-        if (on == keep) return
-        keep = on
-        if (!on) { file?.delete(); return }
+        if (!on) {
+            file?.delete()  // (always: a file left from before, too)
+            events.removeAll(restored)
+            restored.clear()
+            keep = false
+            return
+        }
+        if (keep) return
+        keep = true
         runCatching {
             val o = JSONObject(file!!.readText())
             if (o.getString("day") == LocalDate.now().toString()) {
                 val a = o.getJSONArray("events")
-                for (i in 0 until a.length()) a.getJSONArray(i).let { DayEvent(it.getString(0), it.getString(1)) }.let { if (it !in events) events.add(0, it) }
+                val back = (0 until a.length()).map { a.getJSONArray(it).let { e -> DayEvent(e.getString(0), e.getString(1)) } }.filter { it !in events }
+                events.addAll(0, back)  // (the file's things came first, in their order)
+                restored += back
+                while (events.size > MAX) events.removeAt(0)
             }
         }
         save()

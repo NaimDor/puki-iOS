@@ -23,17 +23,18 @@ object MomentMemory {
     /** The parent's setting: keep the moments in a file (and read back what's there), or not (and delete it). */
     @Synchronized
     fun keep(on: Boolean) {
-        if (on == keep) return
-        keep = on
         if (!on) {
-            file?.delete()
+            file?.delete()  // (always: a file left from before, too)
             moments.removeAll { it.t < sessionStart }  // (what came back from the file goes too)
+            keep = false
             return
         }
+        if (keep) return
+        keep = true
         runCatching {
             val a = JSONArray(file!!.readText())
             val kept = (0 until a.length()).map { a.getJSONArray(it).let { m -> Moment(m.getLong(0), m.getString(1), m.getString(2), m.optString(3)) } }
-            moments.addAll(0, kept.filter { it.t < sessionStart })
+            moments.addAll(0, kept.filter { it.t < sessionStart && it.t > System.currentTimeMillis() - KEEP_MS })
         }
         save()
     }

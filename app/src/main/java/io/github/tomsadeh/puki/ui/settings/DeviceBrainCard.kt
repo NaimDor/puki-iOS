@@ -68,19 +68,37 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
                 Text(BilingualText("מוריד… ${(p * 100).toInt()}%", "Downloading… ${(p * 100).toInt()}%").resolve(language),
                     style = MaterialTheme.typography.bodyMedium, color = EarthBrown)
             }
-            !ready -> Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(GrassGreen)
-                    .clickable { viewModel.downloadDeviceBrain(langs) }
-                    .padding(14.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(BilingualText("הורדה ($missing)", "Download ($missing)").resolve(language),
-                    style = MaterialTheme.typography.titleMedium, color = CloudWhite)
-            }
             else -> {
+                // What the pick still needs (a whole brain, or one more language's reader)
+                if (!ready) Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(GrassGreen)
+                        .clickable { viewModel.downloadDeviceBrain(langs) }
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(BilingualText("הורדה ($missing)", "Download ($missing)").resolve(language),
+                        style = MaterialTheme.typography.titleMedium, color = CloudWhite)
+                }
+                // The rest whenever there's a brain on the device (or memory kept, so it can always be turned off)
+                if (models.ready() || settings.rememberBetween) BrainControls(viewModel, size)
+            }
+        }
+        viewModel.downloadError?.let {
+            Text(BilingualText("ההורדה נעצרה: $it. אפשר ללחוץ שוב כדי להמשיך.", "The download stopped: $it. Tap again to carry on.").resolve(language),
+                style = MaterialTheme.typography.bodyMedium, color = EarthBrown)
+        }
+    }
+}
+
+/** Thinking on the device, remembering between sessions, and removing it all. */
+@Composable
+private fun BrainControls(viewModel: SettingsViewModel, size: String) {
+    val language = LocalLanguage.current
+    val settings = LocalAppSettings.current
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(BilingualText("לחשוב במכשיר הזה", "Think on this device").resolve(language),
@@ -105,12 +123,6 @@ fun DeviceBrainCard(viewModel: SettingsViewModel) {
                     style = MaterialTheme.typography.bodyMedium, color = EarthBrown.copy(alpha = 0.7f),
                     modifier = Modifier.clickable { viewModel.removeDeviceBrain() }.padding(vertical = 4.dp)
                 )
-            }
-        }
-        viewModel.downloadError?.let {
-            Text(BilingualText("ההורדה נעצרה: $it. אפשר ללחוץ שוב כדי להמשיך.", "The download stopped: $it. Tap again to carry on.").resolve(language),
-                style = MaterialTheme.typography.bodyMedium, color = EarthBrown)
-        }
     }
 }
 

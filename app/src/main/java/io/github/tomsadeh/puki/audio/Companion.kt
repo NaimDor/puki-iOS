@@ -181,6 +181,22 @@ class Companion(
         wake()
     }
 
+    /**
+     * Waits (up to [ms]) for the brain to be ready, waking it: true once it is, false if it can't be (switched off,
+     * failed to load) or isn't by then. The brain games call it once before they start, not every round.
+     */
+    suspend fun awaitReady(ms: Long = 25_000): Boolean {
+        if (isReady) return true
+        wake()
+        return withTimeoutOrNull(ms) {
+            while (!isReady) {
+                if (_status.value == CompanionStatus.OFF && wakeJob?.isActive != true) return@withTimeoutOrNull false
+                delay(250)
+            }
+            true
+        } == true
+    }
+
     /** Checks on the brain and wakes it if needed. Cheap to call on every game screen. */
     fun wake() {
         if (!enabled || backgrounded || brain == null || wakeJob?.isActive == true || isReady) return

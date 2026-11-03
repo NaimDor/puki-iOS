@@ -121,6 +121,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun removeDeviceBrain() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             settingsRepository.updateBrainOnDevice(false)
+            settingsRepository.updateRememberBetween(false)  // (and what Puki remembered goes with him)
             runCatching { app.localBrain.close() }
             app.deviceModels.delete()
         }

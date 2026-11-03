@@ -135,11 +135,15 @@ fun CareGameScreen(onBack: () -> Unit, onPlayAgain: () -> Unit = onBack, viewMod
     var tap by remember { mutableStateOf<CompletableDeferred<String>?>(null) }
     var confetti by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { companion?.wake() }
+    var ready by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(Unit) {
+        ready = companion?.awaitReady() == true
+        if (ready != true) onBack()
+    }
 
     val round = state.round
-    LaunchedEffect(state.roundIndex) {
-        if (round == null) return@LaunchedEffect
+    LaunchedEffect(state.roundIndex, ready) {
+        if (round == null || ready != true) return@LaunchedEffect
         given = emptySet()
         delay(700)
         awaitUnpaused(paused)
