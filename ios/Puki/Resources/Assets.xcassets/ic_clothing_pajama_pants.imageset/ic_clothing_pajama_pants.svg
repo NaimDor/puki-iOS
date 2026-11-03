@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <path d="M26,12 L74,12 L82,90 L58,90 L50,40 L42,90 L18,90 Z" fill="#9575CD"/>
+  <path d="M28,10 L72,10 A3,3 0 0,1 75,13 L75,17 A3,3 0 0,1 72,20 L28,20 A3,3 0 0,1 25,17 L25,13 A3,3 0 0,1 28,10 Z" fill="#7E57C2"/>
+  <path d="M50,15 Q42,24 42,28" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M50,15 Q58,24 58,28" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19,82 L41.3,82 L42,90 L18,90 Z" fill="#7E57C2"/>
+  <path d="M58.8,82 L81,82 L82,90 L58,90 Z" fill="#7E57C2"/>
+  <path d="M35.00,34.50 L36.45,38.00 L40.23,38.30 L37.35,40.76 L38.23,44.45 L35.00,42.48 L31.77,44.45 L32.65,40.76 L29.77,38.30 L33.55,38.00 Z" fill="#FFEB3B"/>
+  <path d="M66.00,38.50 L67.45,42.00 L71.23,42.30 L68.35,44.76 L69.23,48.45 L66.00,46.48 L62.77,48.45 L63.65,44.76 L60.77,42.30 L64.55,42.00 Z" fill="#FFEB3B"/>
+  <path d="M30.00,61.50 L31.19,64.36 L34.28,64.61 L31.93,66.63 L32.65,69.64 L30.00,68.03 L27.35,69.64 L28.07,66.63 L25.72,64.61 L28.81,64.36 Z" fill="#FFEB3B"/>
+  <path d="M70.00,63.50 L71.19,66.36 L74.28,66.61 L71.93,68.63 L72.65,71.64 L70.00,70.03 L67.35,71.64 L68.07,68.63 L65.72,66.61 L68.81,66.36 Z" fill="#FFEB3B"/>
+</svg>

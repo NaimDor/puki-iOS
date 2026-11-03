@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <path d="M30,40 Q26,20 40,16 L48,30 Q52,36 46,42 Z" fill="#42A5F5"/>
+  <path d="M48,40 Q56,14 68,22 Q76,28 70,40 Z" fill="#EF5350"/>
+  <path d="M64,40 L78,26 L84,32 L76,42 Z" fill="#FFCA28"/>
+  <path d="M18,44 L82,44 L76,90 L24,90 Z" fill="#FFB74D"/>
+  <path d="M22,56 L78,56 M23,68 L77,68 M24,80 L76,80" fill="none" stroke="#F57C00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36,46 L37,90 M50,46 L50,90 M64,46 L63,90" fill="none" stroke="#F57C00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18,36 L82,36 A6,6 0 0,1 88,42 L88,42 A6,6 0 0,1 82,48 L18,48 A6,6 0 0,1 12,42 L12,42 A6,6 0 0,1 18,36 Z" fill="#FB8C00"/>
+  <path d="M25,39 L31,39 A3,3 0 0,1 34,42 L34,42 A3,3 0 0,1 31,45 L25,45 A3,3 0 0,1 22,42 L22,42 A3,3 0 0,1 25,39 Z" fill="#E65100"/>
+  <path d="M69,39 L75,39 A3,3 0 0,1 78,42 L78,42 A3,3 0 0,1 75,45 L69,45 A3,3 0 0,1 66,42 L66,42 A3,3 0 0,1 69,39 Z" fill="#E65100"/>
+  <path d="M17,38 L19,38 A1,1 0 0,1 20,39 L20,39 A1,1 0 0,1 19,40 L17,40 A1,1 0 0,1 16,39 L16,39 A1,1 0 0,1 17,38 Z" fill="#FFFFFF" fill-opacity="0.4"/>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "ic_clothing_pajama_pants.svg",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "preserves-vector-representation": true
+  }
+}

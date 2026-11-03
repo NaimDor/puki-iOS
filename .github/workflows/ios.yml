@@ -1,0 +1,36 @@
+# Builds the iOS app and runs its unit tests on every push that touches it.
+name: iOS
+
+on:
+  push:
+    paths: ["ios/**", "app/src/main/res/**", "app/src/main/java/io/github/tomsadeh/puki/brain/Safety.kt", ".github/workflows/ios.yml"]
+  pull_request:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: The safety word lists match Safety.kt
+        run: python3 ios/scripts/sync_safety_swift.py --check
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen
+      - name: Build and test
+        run: |
+          cd ios
+          SIM=$(xcrun simctl list devices available | grep -m1 -oE 'iPad[^(]*\(([0-9A-F-]{36})\)' | grep -oE '[0-9A-F-]{36}')
+          echo "simulator: $SIM"
+          status=0
+          xcodebuild -project Puki.xcodeproj -scheme Puki -destination "id=$SIM" \
+            CODE_SIGNING_ALLOWED=NO test > build.log 2>&1 || status=$?
+          grep -E "error:|Test Suite|Test Case.*failed|Executed|\*\* (BUILD|TEST)" build.log | sort -u | head -300 || true
+          exit $status
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log
+          path: ios/build.log

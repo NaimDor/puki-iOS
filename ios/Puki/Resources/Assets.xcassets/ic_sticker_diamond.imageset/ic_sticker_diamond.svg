@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <path d="M28,16 L72,16 L92,40 L50,90 L8,40 Z" fill="#4FC3F7" stroke="#0288D1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8,40 L28,16 L30,40 Z" fill="#81D4FA"/>
+  <path d="M28,16 L50,16 L30,40 Z" fill="#B3E5FC"/>
+  <path d="M50,16 L30,40 L70,40 Z" fill="#E1F5FE"/>
+  <path d="M50,16 L72,16 L70,40 Z" fill="#B3E5FC"/>
+  <path d="M72,16 L92,40 L70,40 Z" fill="#29B6F6"/>
+  <path d="M8,40 L30,40 L50,90 Z" fill="#29B6F6"/>
+  <path d="M30,40 L70,40 L50,90 Z" fill="#4FC3F7"/>
+  <path d="M70,40 L92,40 L50,90 Z" fill="#0288D1"/>
+  <path d="M28,16 L72,16 L92,40 L50,90 L8,40 Z" fill="none" stroke="#0277BD" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8,40 L92,40" fill="none" stroke="#0277BD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36,22 L37.3,26.7 L42,28 L37.3,29.3 L36,34 L34.7,29.3 L30,28 L34.7,26.7 Z" fill="#FFFFFF"/>
+</svg>

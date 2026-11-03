@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <path d="M7,26 Q6,7 24,7 Q42,7 41,26 L42,41 Q37,45 34,38 L14,38 Q11,45 6,41Z" fill="#C0682F"/>
+  <path d="M6.3,27 A3.2,3.2 0 1,1 12.7,27 A3.2,3.2 0 1,1 6.3,27 Z" fill="#FFCC80"/>
+  <path d="M35.3,27 A3.2,3.2 0 1,1 41.7,27 A3.2,3.2 0 1,1 35.3,27 Z" fill="#FFCC80"/>
+  <path d="M9,26 A15,15 0 1,1 39,26 A15,15 0 1,1 9,26 Z" fill="#FFCC80"/>
+  <path d="M9.5,23 Q11,10 24,10 Q37,10 38.5,23 Q31,15 24,18 Q17,15 9.5,23Z" fill="#C0682F"/>
+  <path d="M17,26 A2,2 0 1,1 21,26 A2,2 0 1,1 17,26 Z" fill="#4E342E"/>
+  <path d="M27,26 A2,2 0 1,1 31,26 A2,2 0 1,1 27,26 Z" fill="#4E342E"/>
+  <path d="M12.6,31 A2.4,2.4 0 1,1 17.4,31 A2.4,2.4 0 1,1 12.6,31 Z" fill="#FF8A80" fill-opacity="0.6"/>
+  <path d="M30.6,31 A2.4,2.4 0 1,1 35.4,31 A2.4,2.4 0 1,1 30.6,31 Z" fill="#FF8A80" fill-opacity="0.6"/>
+  <path d="M19.5,32 Q24,36 28.5,32" fill="none" stroke="#8D6E63" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34,9 L41,4.5 L41,13.5Z M34,9 L27,4.5 L27,13.5Z" fill="#EC407A"/>
+  <path d="M31.8,9 A2.2,2.2 0 1,1 36.2,9 A2.2,2.2 0 1,1 31.8,9 Z" fill="#D81B60"/>
+</svg>

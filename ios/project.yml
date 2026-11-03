@@ -1,0 +1,80 @@
+# The iOS app's Xcode project, for XcodeGen (brew install xcodegen; then `xcodegen` in this folder).
+name: Puki
+options:
+  bundleIdPrefix: io.github.tomsadeh
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.9.6"
+    CURRENT_PROJECT_VERSION: "96"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+packages:
+  OnnxRuntime:
+    url: https://github.com/microsoft/onnxruntime-swift-package-manager
+    exactVersion: 1.20.0
+targets:
+  Puki:
+    type: application
+    platform: iOS
+    sources:
+      - path: Puki/Sources
+      - path: Puki/Resources/Assets.xcassets
+      - path: Puki/Resources/Audio
+        type: folder
+        buildPhase: resources
+      - path: Puki/Resources/licenses.txt
+        buildPhase: resources
+      - path: Puki/Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    dependencies:
+      - package: OnnxRuntime
+        product: onnxruntime
+    info:
+      path: Puki/Info.plist
+      properties:
+        CFBundleDisplayName: Puki
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: he
+        CFBundleLocalizations: [he, en]
+        LSRequiresIPhoneOS: true
+        UILaunchScreen:
+          UIColorName: LaunchSky
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: true
+        UIViewControllerBasedStatusBarAppearance: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        NSMicrophoneUsageDescription: "Puki listens when your child talks to him or answers out loud. Recordings stay on this device and are never kept. / פוקי מקשיב כשהילד מדבר אליו. ההקלטות נשארות במכשיר ולא נשמרות."
+        NSPhotoLibraryAddUsageDescription: "Saves your child's drawings to your photos when the camera in the drawing studio is tapped. / שומר את הציורים בתמונות."
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.tomsadeh.puki
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        ENABLE_PREVIEWS: true
+  PukiTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [PukiTests]
+    dependencies:
+      - target: Puki
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Puki.app/Puki
+schemes:
+  Puki:
+    build:
+      targets:
+        Puki: all
+        PukiTests: [test]
+    test:
+      targets: [PukiTests]

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <g transform="translate(50 50) rotate(15) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFC107" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(45) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(75) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFC107" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(105) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(135) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFC107" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(165) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(195) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFC107" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(225) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(255) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFC107" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(285) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(315) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFC107" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(50 50) rotate(345) translate(-50 -50)">
+    <path d="M50,50 Q60,30 50,7 Q40,30 50,50 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <path d="M31,50 A19,19 0 1,1 69,50 A19,19 0 1,1 31,50 Z" fill="#795548"/>
+  <path d="M36,50 A14,14 0 1,1 64,50 A14,14 0 1,1 36,50 Z" fill="#5D4037"/>
+  <path d="M42.2,45 A1.8,1.8 0 1,1 45.8,45 A1.8,1.8 0 1,1 42.2,45 Z" fill="#8D6E63"/>
+  <path d="M50.2,43 A1.8,1.8 0 1,1 53.8,43 A1.8,1.8 0 1,1 50.2,43 Z" fill="#8D6E63"/>
+  <path d="M55.2,50 A1.8,1.8 0 1,1 58.8,50 A1.8,1.8 0 1,1 55.2,50 Z" fill="#8D6E63"/>
+  <path d="M48.2,52 A1.8,1.8 0 1,1 51.8,52 A1.8,1.8 0 1,1 48.2,52 Z" fill="#8D6E63"/>
+  <path d="M41.2,54 A1.8,1.8 0 1,1 44.8,54 A1.8,1.8 0 1,1 41.2,54 Z" fill="#8D6E63"/>
+  <path d="M51.2,58 A1.8,1.8 0 1,1 54.8,58 A1.8,1.8 0 1,1 51.2,58 Z" fill="#8D6E63"/>
+  <path d="M44.2,60 A1.8,1.8 0 1,1 47.8,60 A1.8,1.8 0 1,1 44.2,60 Z" fill="#8D6E63"/>
+  <path d="M40,44 A4,4 0 1,1 48,44 A4,4 0 1,1 40,44 Z" fill="#FFFFFF" fill-opacity="0.3"/>
+</svg>

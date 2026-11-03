@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <path d="M20,32 Q14,42 18,52" fill="none" stroke="#64B5F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M11,26 Q4,42 9,58" fill="none" stroke="#64B5F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(50 70) rotate(12) translate(-50 -70)">
+    <path d="M37,54 L33,22 M47,51 L47,15 M57,52 L61,19 M65,57 L73,32 M32,67 L17,52" fill="none" stroke="#E6A85C" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M28,63 A22,23 0 1,1 72,63 A22,23 0 1,1 28,63 Z" fill="#E6A85C"/>
+    <path d="M39,78 L61,78 L61,94 L39,94Z" fill="#E6A85C"/>
+    <path d="M37,54 L33,22 M47,51 L47,15 M57,52 L61,19 M65,57 L73,32 M32,67 L17,52" fill="none" stroke="#FFCC80" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M30.5,63 A19.5,20.5 0 1,1 69.5,63 A19.5,20.5 0 1,1 30.5,63 Z" fill="#FFCC80"/>
+    <path d="M41.5,78 L58.5,78 L58.5,92 L41.5,92Z" fill="#FFCC80"/>
+    <path d="M36,88 L64,88 L64,99 L36,99Z" fill="#42A5F5"/>
+  </g>
+</svg>

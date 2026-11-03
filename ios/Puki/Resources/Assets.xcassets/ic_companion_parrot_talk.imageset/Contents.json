@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "ic_companion_parrot_talk.svg",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "preserves-vector-representation": true
+  }
+}

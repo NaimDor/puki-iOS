@@ -1,0 +1,15 @@
+{
+  "images": [
+    {
+      "filename": "ic_count_hibiscus.svg",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "preserves-vector-representation": true
+  }
+}
