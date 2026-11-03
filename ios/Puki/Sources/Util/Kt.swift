@@ -34,9 +34,9 @@ extension String {
     }
     func removePrefix(_ p: String) -> String { hasPrefix(p) ? String(dropFirst(p.count)) : self }
     func removeSuffix(_ p: String) -> String { hasSuffix(p) ? String(dropLast(p.count)) : self }
-    func take(_ n: Int) -> String { String(prefix(max(0, n))) }
-    func drop(_ n: Int) -> String { String(dropFirst(max(0, n))) }
-    func takeLast(_ n: Int) -> String { String(suffix(max(0, n))) }
+    func take(_ n: Int) -> String { String(prefix(Swift.max(0, n))) }
+    func drop(_ n: Int) -> String { String(dropFirst(Swift.max(0, n))) }
+    func takeLast(_ n: Int) -> String { String(suffix(Swift.max(0, n))) }
     func trimmed() -> String { trimmingCharacters(in: .whitespacesAndNewlines) }
     /** Kotlin's replaceFirstChar { it.uppercase() }. */
     var capitalizedFirst: String { isEmpty ? self : prefix(1).uppercased() + dropFirst() }
@@ -108,9 +108,9 @@ struct KRegex {
 
 extension Array {
     func getOrNull(_ i: Int) -> Element? { i >= 0 && i < count ? self[i] : nil }
-    func take(_ n: Int) -> [Element] { Array(prefix(max(0, n))) }
-    func drop(_ n: Int) -> [Element] { Array(dropFirst(max(0, n))) }
-    func takeLast(_ n: Int) -> [Element] { Array(suffix(max(0, n))) }
+    func take(_ n: Int) -> [Element] { Array(prefix(Swift.max(0, n))) }
+    func drop(_ n: Int) -> [Element] { Array(dropFirst(Swift.max(0, n))) }
+    func takeLast(_ n: Int) -> [Element] { Array(suffix(Swift.max(0, n))) }
 }
 
 extension Array where Element: Hashable {
@@ -145,4 +145,38 @@ struct OrderedMap<K: Hashable, V> {
     var values: [V] { keys.map { dict[$0]! } }
     var entries: [(K, V)] { keys.map { ($0, dict[$0]!) } }
     func contains(_ k: K) -> Bool { dict[k] != nil }
+}
+
+/** Kotlin's CompletableDeferred, for a value one part of a game waits on and another gives. */
+@MainActor
+final class Deferred<T> {
+    private var result: T?
+    private var waiters: [CheckedContinuation<T?, Never>] = []
+    private(set) var isCompleted = false
+
+    @discardableResult
+    func complete(_ v: T) -> Bool {
+        if isCompleted { return false }
+        isCompleted = true
+        result = v
+        let w = waiters
+        waiters = []
+        w.forEach { $0.resume(returning: v) }
+        return true
+    }
+
+    /** The value, or nil after `timeoutMs` (withTimeoutOrNull { await() }). */
+    func wait(timeoutMs: Int) async -> T? {
+        if isCompleted { return result }
+        return await withCheckedContinuation { (c: CheckedContinuation<T?, Never>) in
+            waiters.append(c)
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(timeoutMs)) { [weak self] in
+                guard let self, !self.isCompleted else { return }
+                self.isCompleted = true
+                let w = self.waiters
+                self.waiters = []
+                w.forEach { $0.resume(returning: nil) }
+            }
+        }
+    }
 }

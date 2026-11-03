@@ -181,3 +181,35 @@ final class VoicePlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func release() { stop() }
 }
+
+extension VoicePlayer {
+    /** Plays a line and returns when it's done (or after `timeoutMs`, so a lost line can't freeze a game). */
+    func say(_ key: String, _ language: Language, timeoutMs: Int = 15_000) async {
+        await waitFor(timeoutMs) { done in self.play(key, language, onComplete: done) }
+    }
+
+    func praise(_ language: Language, timeoutMs: Int = 15_000) async {
+        await waitFor(timeoutMs) { done in self.playPraise(language, onComplete: done) }
+    }
+
+    func playSequenceAndWait(_ keys: [String], _ language: Language, timeoutMs: Int = 20_000) async {
+        await waitFor(timeoutMs) { done in self.playSequence(keys, language, onAllComplete: done) }
+    }
+
+    private func waitFor(_ timeoutMs: Int, _ start: (@escaping () -> Void) -> Void) async {
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                var finished = false
+                let finish = {
+                    if finished { return }
+                    finished = true
+                    c.resume()
+                }
+                start { finish() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(timeoutMs)) { finish() }
+            }
+        } onCancel: {
+            Task { @MainActor in self.stop() }
+        }
+    }
+}

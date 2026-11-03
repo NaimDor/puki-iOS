@@ -12,16 +12,6 @@ private struct Stub: View {
     }
 }
 
-struct DanceScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "dance", onBack: onBack) } }
-struct SpinningDiscoBall: View { var body: some View { Circle().fill(Color.gray) } }
-struct WordGardenScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "words", onBack: onBack) } }
-struct SayItScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "say", onBack: onBack) } }
-struct SillyPukiScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "silly", onBack: onBack) } }
-struct CareGameScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "care", onBack: onBack) } }
-struct StoryGameScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "story", onBack: onBack) } }
-struct PeekabooScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "peekaboo", onBack: onBack) } }
-struct EchoScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "echo", onBack: onBack) } }
-struct MyDayScreen: View { let onRoomClick: (Route) -> Void; let onBack: () -> Void; var body: some View { Stub(name: "myday", onBack: onBack) } }
 struct BathTimeScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "bath", onBack: onBack) } }
 struct BrushyBrushyScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "brush", onBack: onBack) } }
 struct TidyUpScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "tidy", onBack: onBack) } }
