@@ -31,8 +31,8 @@ class PukiApplication : Application() {
         super.onCreate()
         settingsRepository = SettingsRepository(this)
         progressRepository = ProgressRepository(this)
-        DayLog.init(this)  // (what she did today, for Puki's bedtime recap)
-        MomentMemory.init(this)  // (the last few days' game moments, for reaching back to one)
+        DayLog.init(this)  // (this session: what she did, for the bedtime recap; never saved)
+        MomentMemory.init(this)  // (this session: game moments to reach back to; never saved)
         // Left by older versions, like reports.jsonl and the pack folder (see Companion)
         appScope.launch(Dispatchers.IO) { runCatching { settingsRepository.forgetPcBrain() } }
     }
