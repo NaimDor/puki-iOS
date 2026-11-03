@@ -20,5 +20,5 @@ again, and because the recordists deserve the thanks.
 | Lion | Lion raring-sound1TamilNadu178 | https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg | Public domain |
 | Chicken | Chickens demanding food | https://commons.wikimedia.org/wiki/File:Chickens_demanding_food.ogg | Public domain |
 
-The giraffe and the penguin are still spoken lines: real recordings of them aren't sounds a toddler
-would recognise.
+The giraffe and the penguin have no recording: what they really sound like isn't something a toddler
+would recognise, and Puki imitating them didn't fit, so Puki says a little fact about each instead.

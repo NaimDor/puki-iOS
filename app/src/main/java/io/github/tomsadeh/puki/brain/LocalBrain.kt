@@ -228,7 +228,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                      earlier: String = ""): String? {
         repeat(tries) {
             val raw = brains.line(task, lang, persona.girl, input, earlier = earlier) ?: return@repeat
-            persona.clean(withName(raw), lang)?.takeIf { Safety.replyOk(it) && accept(it) }?.let { persona.said(it); return it }
+            persona.clean(withName(raw), lang)?.takeIf { Safety.replyOk(it) && !SOUND_WORDS.containsMatchIn(it) && accept(it) }?.let { persona.said(it); return it }
             Log.i(TAG, "a line didn't pass the filter; trying again")  // (not what it said: it may be about her)
         }
         return null
@@ -283,6 +283,8 @@ class LocalBrain(private val models: DeviceModels) : Brain {
 
     private companion object {
         const val TAG = "PukiBrain"
+        /** Puki imitating sounds ("קוואק!", "squawk", "דינג") doesn't fit the rest of the game: such a line is written again. */
+        val SOUND_WORDS = Regex("(?i)קוואק|squawk|דינג")
         /** The tasks a game may ask for by name (/line); moment, tap and talk have their own routes. */
         val GAME_TASKS = setOf("silly", "silly_fix", "look", "recap", "reach_back", "care", "story_next")
     }
