@@ -1,5 +1,8 @@
 package io.github.tomsadeh.puki.audio
 
+import kotlin.random.Random
+import io.github.tomsadeh.puki.data.content.ReachBack
+import io.github.tomsadeh.puki.data.MomentMemory
 import android.content.Context
 import io.github.tomsadeh.puki.brain.Brain
 import io.github.tomsadeh.puki.data.models.Language
@@ -205,9 +208,27 @@ class Companion(
      * Has the parrot say something about what happened ([he] or [en], in the app's language);
      * runs [fallback] instead if it's not available or doesn't answer in time.
      */
-    fun react(he: String, en: String, fallback: () -> Unit = {}) = react(pick(he, en), fallback)
+    fun react(he: String, en: String, fallback: () -> Unit = {}) {
+        // A game moment (not a tap on Puki): remembered for a few days, and now and then one from an earlier
+        // session of the same game is worth reaching back to ("like the cow yesterday!", ReachBack)
+        val tap = he.startsWith("לחצו על התוכי")
+        val link = if (tap) null else reachBack(he)
+        if (!tap) MomentMemory.record(he, en, game)
+        val earlier = link?.let { (whenSaid, m) -> if (language == Language.ENGLISH) "${whenSaid.second}: ${m.en}" else "${whenSaid.first}: ${m.he}" }
+        react(pick(he, en), fallback, earlier)
+    }
 
-    private fun react(situation: String, fallback: () -> Unit) {
+    private var lastReachBack = 0L
+
+    /** An earlier moment to link [he] to, about one time in three when there is one, and not twice in three minutes. */
+    private fun reachBack(he: String): Pair<Pair<String, String>, io.github.tomsadeh.puki.data.content.Moment>? {
+        val now = System.currentTimeMillis()
+        if (now - lastReachBack < 3 * 60_000L || Random.nextInt(3) != 0) return null
+        val names = childName.split(' ').filter { it.length >= 2 }.flatMap { ReachBack.forms(it) }.toSet()
+        return ReachBack.related(he, game, MomentMemory.history(), now, java.time.LocalDate.now(), names)?.also { lastReachBack = now }
+    }
+
+    private fun react(situation: String, fallback: () -> Unit, earlier: String? = null) {
         // Already writing a line: no second request behind it (taps would pile up, each answered late);
         // a moment that has its own recorded line plays that instead
         if (!isReady || _thinking.value) {
@@ -218,6 +239,8 @@ class Companion(
             return
         }
         scope.launch {
+            // Reaching back if there's a link and a line names it; else the moment's own line
+            if (earlier != null && line("reach_back", situation, earlier = earlier) != null) return@launch
             _thinking.value = true
             val said = try { say(situation) } finally { _thinking.value = false }
             if (!said) fallback()
@@ -258,14 +281,14 @@ class Companion(
      * line that passed, too slow): the game plays its own then.
      */
     suspend fun line(task: String, input: String, truth: String = "", mustSay: Boolean? = null,
-                     present: List<String> = emptyList(), absent: List<String> = emptyList()): String? {
+                     present: List<String> = emptyList(), absent: List<String> = emptyList(), earlier: String = ""): String? {
         if (!isReady) return null
         _thinking.value = true
         val (audio, text) = try {
             withContext(Dispatchers.IO) {
                 val body = JSONObject().put("task", task).put("input", input).put("lang", lang()).put("truth", truth)
                     .put("mustSay", when (mustSay) { true -> "yes"; false -> "no"; null -> "" })
-                    .put("present", org.json.JSONArray(present)).put("absent", org.json.JSONArray(absent)).toString()
+                    .put("present", org.json.JSONArray(present)).put("absent", org.json.JSONArray(absent)).put("earlier", earlier).toString()
                 // (what he said is read on this thread, right after the request: see Brain.lastSaid)
                 request("POST", "/line", body.toByteArray(Charsets.UTF_8), timeoutMs = 9000) to brain?.lastSaid()?.text
             }

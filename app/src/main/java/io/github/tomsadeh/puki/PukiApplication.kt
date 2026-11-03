@@ -1,5 +1,6 @@
 package io.github.tomsadeh.puki
 
+import io.github.tomsadeh.puki.data.MomentMemory
 import io.github.tomsadeh.puki.data.DayLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +32,7 @@ class PukiApplication : Application() {
         settingsRepository = SettingsRepository(this)
         progressRepository = ProgressRepository(this)
         DayLog.init(this)  // (what she did today, for Puki's bedtime recap)
+        MomentMemory.init(this)  // (the last few days' game moments, for reaching back to one)
         // Left by older versions, like reports.jsonl and the pack folder (see Companion)
         appScope.launch(Dispatchers.IO) { runCatching { settingsRepository.forgetPcBrain() } }
     }

@@ -1,5 +1,6 @@
 package io.github.tomsadeh.puki.brain
 
+import io.github.tomsadeh.puki.data.content.ReachBack
 import io.github.tomsadeh.puki.data.content.RecapContent
 import ai.onnxruntime.OrtEnvironment
 import android.util.Log
@@ -147,14 +148,16 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         val present = req.optJSONArray("present")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
                         val absent = req.optJSONArray("absent")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
                         val input = req.optString("input").take(400)
+                        val earlier = req.optString("earlier").take(300)
                         val accept: (String) -> Boolean = when {
+                            task == "reach_back" -> { l -> ReachBack.namesEarlier(l, input, earlier) }  // (it names the earlier thing)
                             task == "recap" -> { l -> RecapContent.eventsNamed(l, input) >= 2 }  // (two of the day's things, or more)
                             present.isNotEmpty() -> { l -> LookContent.ok(l, present, absent) }
                             truth.isEmpty() || mustSay.isEmpty() -> { _ -> true }
                             mustSay == "yes" -> { l -> SillyContent.saysTruth(l, truth) }
                             else -> { l -> !SillyContent.saysTruth(l, truth) }
                         }
-                        reply(line(brains, task, input, lang, tries = 4, accept = accept), lang, voice)
+                        reply(line(brains, task, input, lang, tries = 4, accept = accept, earlier = earlier), lang, voice)
                     }
                     "/speak" -> {
                         val req = JSONObject(String(body ?: ByteArray(0)))
@@ -213,9 +216,10 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     }
 
     /** A line from Brains for [input] that passes Puki's filter (and the game's [accept]), or null. */
-    private fun line(brains: Brains, task: String, input: String, lang: String, tries: Int = 3, accept: (String) -> Boolean = { true }): String? {
+    private fun line(brains: Brains, task: String, input: String, lang: String, tries: Int = 3, accept: (String) -> Boolean = { true },
+                     earlier: String = ""): String? {
         repeat(tries) {
-            val raw = brains.line(task, lang, persona.girl, input) ?: return@repeat
+            val raw = brains.line(task, lang, persona.girl, input, earlier = earlier) ?: return@repeat
             persona.clean(withName(raw), lang)?.takeIf { Safety.replyOk(it) && accept(it) }?.let { persona.said(it); return it }
             Log.i(TAG, "a line didn't pass the filter; trying again")  // (not what it said: it may be about her)
         }
@@ -268,6 +272,6 @@ class LocalBrain(private val models: DeviceModels) : Brain {
     private companion object {
         const val TAG = "PukiBrain"
         /** The tasks a game may ask for by name (/line); moment, tap and talk have their own routes. */
-        val GAME_TASKS = setOf("silly", "silly_fix", "look", "recap")
+        val GAME_TASKS = setOf("silly", "silly_fix", "look", "recap", "reach_back")
     }
 }

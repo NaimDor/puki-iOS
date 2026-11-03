@@ -39,15 +39,16 @@ class Brains(private val env: OrtEnvironment, dir: File, threads: Int = 4) {
         digits = "0123".associate { d -> d.toString() to bpe.encode(" $d").single() }
     }
 
-    /** The prompt, as train/fmt.py writes it. */
-    private fun prompt(task: String, lang: String, girl: Boolean, input: String) =
-        "lang: $lang\nchild: ${if (girl) "girl" else "boy"}\ntask: $task\ninput: $input\npuki:"
+    /** The prompt, as train/fmt.py writes it (with the earlier moment, for reach_back). */
+    private fun prompt(task: String, lang: String, girl: Boolean, input: String, earlier: String? = null) =
+        "lang: $lang\nchild: ${if (girl) "girl" else "boy"}\ntask: $task\ninput: $input\n" +
+            (if (earlier.isNullOrEmpty()) "" else "earlier: $earlier\n") + "puki:"
 
     /** Puki's line for [input] (null if it came out empty): temperature 0.5, top-p 0.9. (0.5 beat 0.7 in a blind A/B,
      *  train/ab.py, 43 to 16 of 250, with as many different lines.) */
-    fun line(task: String, lang: String, girl: Boolean, input: String, maxNew: Int = 48, random: Random = Random): String? {
+    fun line(task: String, lang: String, girl: Boolean, input: String, maxNew: Int = 48, random: Random = Random, earlier: String? = null): String? {
         val out = ArrayList<Int>()
-        generate(bpe.encode(prompt(task, lang, girl, input)), maxNew) { logits ->
+        generate(bpe.encode(prompt(task, lang, girl, input, earlier)), maxNew) { logits ->
             sample(logits, 0.5f, 0.9f, random).takeIf { it != eot }?.also { out += it }
         }
         return bpe.decode(out.toIntArray()).trim().ifEmpty { null }
