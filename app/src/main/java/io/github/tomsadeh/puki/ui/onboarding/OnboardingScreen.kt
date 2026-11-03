@@ -141,7 +141,7 @@ fun OnboardingScreen(settings: AppSettings, viewModel: SettingsViewModel = viewM
             if (settings.companionEnabled && DeviceModels.OFFERED && remember { DeviceModels.capable(context) }) {
                 val progress by viewModel.deviceModels.progress.collectAsState()
                 val langs = viewModel.deviceModels.languagesFor(settings.brainLanguages, lang)
-                val size = io.github.tomsadeh.puki.ui.settings.sizeText(viewModel.deviceModels.missingBytes(langs))
+                val size = io.github.tomsadeh.puki.ui.settings.sizeText(viewModel.deviceModels.missingBytes(langs).takeIf { it > 0 } ?: viewModel.deviceModels.totalBytes(langs))
                 Column(
                     modifier = Modifier
                         .widthIn(max = 520.dp)

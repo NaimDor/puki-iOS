@@ -1,5 +1,6 @@
 package io.github.tomsadeh.puki.brain
 
+import io.github.tomsadeh.puki.audio.Companion as Parrot
 import io.github.tomsadeh.puki.data.content.ReachBack
 import io.github.tomsadeh.puki.data.content.RecapContent
 import ai.onnxruntime.OrtEnvironment
@@ -60,7 +61,9 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                 v = BlueVoice(env, models.file("voice"), models.file("voice/noa.json"), null, threads = 4)
                 // Hebrew's reader if it was downloaded (the parent picks the languages); English's loads when first needed
                 k = if (models.hasHebrew()) Beak(env, models.file(DeviceModels.BEAK)) else null
-                k?.let { v.voice(it.phonemize("שלום", girl = true)) }  // warms up the voice before the first real line
+                // Warms up the voice before the first real line, with whichever reader there is
+                k?.let { v.voice(it.phonemize("שלום", girl = true)) }
+                    ?: if (models.hasEnglish()) EnglishBeak(env, models.file(DeviceModels.BEAK_EN)).also { beakEn = it }.let { v.voice(it.phonemize("hello")) } else null
                 b = Brains(env, models.file(DeviceModels.BRAINS))
                 synchronized(lifecycle) {
                     if (gen != generation) error("switched off while loading")
@@ -135,7 +138,7 @@ class LocalBrain(private val models: DeviceModels) : Brain {
                         if (!speaks(lang)) return ByteArray(0)
                         val situation = req.optString("situation").take(300)
                         // A tap on Puki comes as the scene with "say something short and cute" (Companion.chat)
-                        val task = if (situation.startsWith("לחצו על התוכי") || situation.startsWith("The child tapped")) "tap" else "moment"
+                        val task = if (situation.startsWith(Parrot.TAP_HE) || situation.startsWith(Parrot.TAP_EN)) "tap" else "moment"
                         reply(line(brains, task, situation, lang), lang, voice)
                     }
                     "/line" -> {

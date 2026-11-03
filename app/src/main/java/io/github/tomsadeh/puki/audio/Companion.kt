@@ -227,7 +227,7 @@ class Companion(
     fun react(he: String, en: String, fallback: () -> Unit = {}) {
         // A game moment (not a tap on Puki): remembered for this session (or longer, if the parent chose), and now
         // and then an earlier one of the same game is worth reaching back to ("like the cow before!", ReachBack)
-        val tap = he.startsWith("לחצו על התוכי")
+        val tap = he.startsWith(TAP_HE)
         val link = if (tap) null else reachBack(he)
         if (!tap) MomentMemory.record(he, en, game)
         val earlier = link?.let { (whenSaid, m) -> if (language == Language.ENGLISH) "${whenSaid.second}: ${m.en}" else "${whenSaid.first}: ${m.he}" }
@@ -268,8 +268,8 @@ class Companion(
 
     /** The child tapped the parrot. */
     fun chat() = react(
-        "לחצו על התוכי כדי שידבר. $scene תגיד משהו חמוד וקצר על זה.",
-        "The child tapped you so you'd talk. $scene Say something short and cute about it."
+        "$TAP_HE כדי שידבר. $scene תגיד משהו חמוד וקצר על זה.",
+        "$TAP_EN you so you'd talk. $scene Say something short and cute about it."
     )
 
     /** The child held the parrot and talked; [wav] is the recording, for the brain's ears. */
@@ -558,6 +558,9 @@ class Companion(
     }
 
     internal companion object {
+        /** How a tap on Puki begins (LocalBrain tells it from a game moment by this). */
+        const val TAP_HE = "לחצו על התוכי"
+        const val TAP_EN = "The child tapped"
         const val LISTEN_MILLIS = 3500L
         const val WORD_LISTEN_MILLIS = 4000L  // toddlers take a moment to start
         const val ANSWER_LISTEN_MILLIS = 4000L

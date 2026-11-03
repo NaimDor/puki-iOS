@@ -1,5 +1,6 @@
 package io.github.tomsadeh.puki.brain
 
+import kotlinx.coroutines.sync.withLock
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
@@ -112,7 +113,9 @@ class DeviceModels(context: Context) {
     val progress: StateFlow<Float?> = _progress
 
     /** Downloads what [langs] needs, and frees a language's reader that the parent no longer picked. */
-    suspend fun download(langs: BrainLanguages) = withContext(Dispatchers.IO) {
+    private val downloadLock = kotlinx.coroutines.sync.Mutex()
+
+    suspend fun download(langs: BrainLanguages) = downloadLock.withLock { withContext(Dispatchers.IO) {
         try {
             downloading = models(langs)
             _progress.value = downloadedBytes().toFloat() / totalBytes(langs)
@@ -131,7 +134,7 @@ class DeviceModels(context: Context) {
         } finally {
             _progress.value = null
         }
-    }
+    } }
 
     /** Frees the space again (parent settings). */
     fun delete() {

@@ -52,6 +52,7 @@ fun imageDoor(label: BilingualText, color: Color, drawable: Int, badge: String? 
 @Composable
 fun DoorChooserScreen(onBack: () -> Unit, scene: Scene, doors: List<Door>) {
     val language = LocalLanguage.current
+    val sfx = io.github.tomsadeh.puki.ui.common.LocalSfxPlayer.current
     GameBackground(scene = scene, withCompanion = false) {  // (the doors show Puki already; the corner one would cover a label)
         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             GameTopBar(onBack = onBack, roundIndex = 0, totalRounds = 0, starsEarned = null)
@@ -64,7 +65,10 @@ fun DoorChooserScreen(onBack: () -> Unit, scene: Scene, doors: List<Door>) {
             ) {
                 for (door in doors) Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClick = door.onTap)
+                    modifier = Modifier.clickable(remember { MutableInteractionSource() }, indication = null) {
+                        sfx.play(io.github.tomsadeh.puki.audio.Sfx.POP)
+                        door.onTap()
+                    }
                 ) {
                     Box(
                         modifier = Modifier.size(size).idleBob(amount = 0.6f).shadow(10.dp, CircleShape).clip(CircleShape).background(door.color),

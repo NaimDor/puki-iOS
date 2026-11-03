@@ -9,11 +9,12 @@ package io.github.tomsadeh.puki.brain
  *  - POST /wake             start loading the models
  *  - POST /say              {"situation", "lang"} -> a line about it, spoken (audio)
  *  - POST /speak            {"text", "lang", "speed"} -> that text, spoken (audio)
- *  - POST /look?lang=       a PNG drawing -> a line about it, spoken (audio)
+ *  - POST /line             {"task", "input", "lang", and the task's check: "truth"+"mustSay", "present"/"absent",
+ *                           "earlier", "pick"} -> a line for a game's own task (Silly Puki, a drawing, the bedtime
+ *                           recap, reaching back, helping friends, the story), spoken (audio); [Brain.lastSaid] has its text
  *  - POST /listen?lang=&context=   a WAV of the child -> a spoken answer (audio)
  *  - POST /repeat?lang=&target=&alt=   a WAV -> {"heard", "match"} (Say it with Puki)
  *  - POST /hear?lang=&hint=        a WAV -> {"heard"} (answering a game out loud, see [SpokenAnswer])
- *  - POST /story            {"played", "icons", "lang"} -> {"sentences": [{"text", "icon"}]}
  *
  * Every POST also carries ?name=&gender= (the child, from the app's settings).
  */
