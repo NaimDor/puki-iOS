@@ -12,11 +12,6 @@ private struct Stub: View {
     }
 }
 
-struct AnimalGardenScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "animals", onBack: onBack) } }
-struct ColorSplashScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "colors", onBack: onBack) } }
-struct ShapePlaygroundScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "shapes", onBack: onBack) } }
-struct CountingGardenScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "counting", onBack: onBack) } }
-struct MusicMeadowScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "music", onBack: onBack) } }
 struct DanceScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "dance", onBack: onBack) } }
 struct SpinningDiscoBall: View { var body: some View { Circle().fill(Color.gray) } }
 struct WordGardenScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "words", onBack: onBack) } }

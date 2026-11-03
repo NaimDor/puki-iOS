@@ -195,3 +195,32 @@ func drawTwinkle(_ d: DrawScope, _ c: CGPoint, _ r: CGFloat, _ color: Color, _ s
         s.drawPath(path, color)
     }
 }
+
+/** A ReactionState for each thing on screen this round (Compose's remember(round) { associate { ReactionState() } }). */
+@MainActor
+final class ReactionBank: ObservableObject {
+    private var states: [String: ReactionState] = [:]
+    private var round: AnyHashable?
+    func callAsFunction(_ id: String) -> ReactionState {
+        if let s = states[id] { return s }
+        let s = ReactionState()
+        states[id] = s
+        return s
+    }
+    /** A new round: fresh reactions. */
+    func reset(for key: AnyHashable) {
+        if round == key { return }
+        round = key
+        states = [:]
+        objectWillChange.send()
+    }
+}
+
+/** A value SwiftUI animates frame by frame, handed to `content` (Compose's animateFloatAsState read in a draw). */
+struct Tweened<Content: View>: View, Animatable {
+    var t: CGFloat
+    let content: (CGFloat) -> Content
+    init(_ t: CGFloat, @ViewBuilder _ content: @escaping (CGFloat) -> Content) { self.t = t; self.content = content }
+    var animatableData: CGFloat { get { t } set { t = newValue } }
+    var body: some View { content(t) }
+}

@@ -8,7 +8,7 @@ struct PukiApp: App {
         AudioSetup.configure()
     }
 
-    var body: some Scene {
+    var body: some SwiftUI.Scene {
         WindowGroup {
             RootView(settingsRepo: app.settingsRepository)
                 .environmentObject(app)
