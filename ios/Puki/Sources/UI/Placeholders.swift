@@ -12,8 +12,6 @@ private struct Stub: View {
     }
 }
 
-struct CakeScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "cake", onBack: onBack) } }
-struct CarWashScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "carwash", onBack: onBack) } }
 struct BedtimeRoutineScreen: View { let onBack: () -> Void; let onPlayAgain: () -> Void; var body: some View { Stub(name: "bedtime", onBack: onBack) } }
 struct FreeCanvasScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "canvas", onBack: onBack) } }
 struct SettingsScreen: View { let onBack: () -> Void; var body: some View { Stub(name: "settings", onBack: onBack) } }
