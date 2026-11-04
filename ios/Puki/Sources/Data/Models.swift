@@ -73,8 +73,8 @@ struct GameProgress: Equatable {
 
 /** How parents reach Puki's publisher on the App Store (set with ios/scripts/set_support_email.py). */
 enum Contact {
-    static let email = "SUPPORT_EMAIL"
-    static let reportEmail = "SUPPORT_EMAIL"
+    static let email = "naimslabs@gmail.com"
+    static let reportEmail = "naimslabs@gmail.com"
 }
 
 /** [count] things to pick from, in a random order: [target] and others from [pool], no doubles. */
