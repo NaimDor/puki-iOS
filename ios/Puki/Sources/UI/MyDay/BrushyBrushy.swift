@@ -147,6 +147,8 @@ struct BrushyBrushyScreen: View {
                 lastDrag = nil
                 moved = false
             })
+        // Touches land on the drawing as it is: the face doesn't mirror in Hebrew
+        .environment(\.layoutDirection, .leftToRight)
     }
 
     /** Brushing at `p` (fractions of the face): scrubs the teeth near it by `amount`. */

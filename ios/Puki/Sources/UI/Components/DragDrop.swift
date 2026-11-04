@@ -91,6 +91,7 @@ struct DragTarget<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @EnvironmentObject private var dd: DragDropState
+    @Environment(\.layoutDirection) private var dir
     @State private var offset: CGSize = .zero
     @State private var dragDelta: CGSize = .zero
     @State private var lift: CGFloat = 1
@@ -108,7 +109,9 @@ struct DragTarget<Content: View>: View {
                 .scaleEffect(lift * (0.35 + 0.65 * land))
                 .opacity(Double(land))
                 .offset(x: shake)
-                .offset(x: offset.width + dragDelta.width, y: offset.height + dragDelta.height)
+                // The offsets are the finger's, on the screen (like Android's absoluteOffset), but SwiftUI mirrors an
+                // offset in a right-to-left layout: in Hebrew the piece went the other way from the finger
+                .offset(x: (dir == .rightToLeft ? -1 : 1) * (offset.width + dragDelta.width), y: offset.height + dragDelta.height)
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
                         .onChanged { v in changed(v) }
