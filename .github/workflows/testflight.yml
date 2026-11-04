@@ -1,4 +1,5 @@
-# Builds a signed release and uploads it to App Store Connect (TestFlight). Run it by hand from the Actions tab.
+# Builds a signed release and uploads it to App Store Connect (TestFlight). Run it by hand from the Actions tab
+# (once this file is on main), or push a tag starting with ios-v.
 #
 # Needs three repository secrets, from an App Store Connect API key (Users and Access -> Integrations, role Admin,
 # so Xcode can make the distribution certificate and profile itself):
@@ -9,6 +10,8 @@ name: TestFlight
 
 on:
   workflow_dispatch:
+  push:
+    tags: ["ios-v*"]  # or push a tag like ios-v0.9.6
 
 jobs:
   upload:
