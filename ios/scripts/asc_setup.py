@@ -95,6 +95,8 @@ def age_rating(app):
             attrs[k] = "NONE"
         elif k in AGE_YES:
             attrs[k] = True
+        elif k == "socialMedia":
+            attrs[k] = False
         elif isinstance(v, bool) or k in ("unrestrictedWebAccess", "gambling", "lootBox", "advertising", "messagingAndChat",
                                           "userGeneratedContent", "ageAssurance", "healthOrWellnessTopics"):
             attrs[k] = False
@@ -123,6 +125,13 @@ def price(app):
 
 @step("availability (every territory, and new ones)")
 def availability(app):
+    try:
+        have = call("GET", f"/v1/apps/{app}/appAvailabilityV2")["data"]
+    except RuntimeError:
+        have = None
+    if have:
+        print(f"     already set (new territories: {have['attributes'].get('availableInNewTerritories')})")
+        return
     territories, url, params = [], "/v1/territories", {"limit": 200}
     territories = [t["id"] for t in call("GET", url, params=params)["data"]]
     refs = [{"type": "territoryAvailabilities", "id": f"${{t{i}}}"} for i in range(len(territories))]
