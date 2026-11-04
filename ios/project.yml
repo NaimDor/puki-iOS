@@ -63,7 +63,12 @@ targets:
   PukiTests:
     type: bundle.unit-test
     platform: iOS
-    sources: [PukiTests]
+    sources:
+      - path: PukiTests
+      # The trainer's fixtures, shared with Android's unit tests (one source of truth)
+      - path: ../app/src/test/resources
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: Puki
     settings:
