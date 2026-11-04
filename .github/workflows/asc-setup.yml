@@ -1,0 +1,24 @@
+# Fills App Store Connect's forms for Puki with ios/scripts/asc_setup.py (categories, age rating, price,
+# availability, content rights, review contact and notes, the build). It never submits for review.
+name: App Store Connect setup
+
+on:
+  push:
+    branches: [claude/dazzling-faraday-untz5o]
+    paths: ["ios/scripts/asc_setup.py", "ios/fastlane/metadata/review_information/**", ".github/workflows/asc-setup.yml"]
+    tags: ["ios-setup-*"]
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pyjwt cryptography requests
+      - name: Fill the forms
+        env:
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: python3 ios/scripts/asc_setup.py
