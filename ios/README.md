@@ -34,3 +34,21 @@ CI (`.github/workflows/ios.yml`) builds the app and runs `PukiTests` on a simula
 Privacy is the same as on Android: no network but the model download a parent asks for, nothing about the
 child in logs (errors are logged by type), what the child said kept in memory only, and the same safety nets
 (`Safety.swift`, `Persona.swift`) in front of every model line.
+
+## Uploading to TestFlight / the App Store
+
+`.github/workflows/testflight.yml` archives a signed release on GitHub's macOS runner and uploads it to App
+Store Connect. Run it by hand from the Actions tab (TestFlight → Run workflow). The bundle ID is
+`io.github.naimdor.puki` and the team is `DA3SQCMQ26`.
+
+Before the first run:
+
+1. In App Store Connect, create the app (My Apps → +) with bundle ID `io.github.naimdor.puki` (register the ID
+   under Certificates, Identifiers & Profiles first if it isn't offered).
+2. Create an API key under Users and Access → Integrations → App Store Connect API, with the **Admin** role
+   (so Xcode can create the distribution certificate and profile on its own). Download the `.p8` once.
+3. In the GitHub repo, add the secrets `ASC_ISSUER_ID`, `ASC_KEY_ID` and `ASC_KEY_P8` (the whole `.p8` text).
+
+Each run's build number is 96 + the run number, so it always goes up. Puki is for children, so in App Store
+Connect pick the Kids category (ages 5 and under), link the privacy policy (`docs/privacy.html`), and answer
+the privacy questions as "Data Not Collected".
