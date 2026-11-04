@@ -17,15 +17,15 @@ concurrency:
 jobs:
   ui:
     name: ${{ matrix.device }} ${{ matrix.part }}
-    # (macos-15 rather than macos-26: GitHub often has no macos-26 Mac free and cancels the job unstarted. Intel Macs
-    # were too slow: the simulator stopped answering mid-run. Xcode 26 is picked below.)
-    runs-on: macos-15
+    # (Intel: GitHub's Apple-silicon Macs are often all taken, and the job is cancelled unstarted. Intel simulators are
+    # slower, so the tests come in eight small parts. Xcode 26 is picked below.)
+    runs-on: macos-15-intel
     timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
         device: [iPad, iPhone]
-        part: [games, everything-else]
+        part: [islands, my-day, screens-and-drags, grown-ups-and-monkey]
     steps:
       - uses: actions/checkout@v4
 
@@ -75,11 +75,13 @@ jobs:
         run: |
           set +e
           cd ios
-          if [ "${{ matrix.part }}" = games ]; then
-            ONLY="-only-testing:PukiUITests/GameTests"
-          else
-            ONLY="-only-testing:PukiUITests/NavigationTests -only-testing:PukiUITests/DragTests -only-testing:PukiUITests/GrownUpTests -only-testing:PukiUITests/MonkeyTests"
-          fi
+          G=PukiUITests/GameTests
+          case "${{ matrix.part }}" in
+            islands) ONLY=""; for t in Animals Animals_English Colors Shapes Shapes_English Counting Words Words_English Peekaboo Music Dance EndCardGoesHome; do ONLY="$ONLY -only-testing:$G/test$t"; done ;;
+            my-day) ONLY=""; for t in Dress BrushTeeth Table Tidy Tidy_English Cake CarWash Bath Bedtime; do ONLY="$ONLY -only-testing:$G/test$t"; done ;;
+            screens-and-drags) ONLY="-only-testing:PukiUITests/NavigationTests -only-testing:PukiUITests/DragTests" ;;
+            *) ONLY="-only-testing:PukiUITests/GrownUpTests -only-testing:PukiUITests/MonkeyTests" ;;
+          esac
           xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
             -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY \
             CODE_SIGNING_ALLOWED=NO test-without-building > test.log 2>&1
