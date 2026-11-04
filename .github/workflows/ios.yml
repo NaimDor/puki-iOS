@@ -9,11 +9,16 @@ on:
 
 jobs:
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: The safety word lists match Safety.kt
         run: python3 ios/scripts/sync_safety_swift.py --check
+      - name: Use Xcode 26 (App Store Connect takes only builds from its SDK)
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X"; fi
+          xcodebuild -version
       - name: Generate the Xcode project
         run: |
           brew install xcodegen
