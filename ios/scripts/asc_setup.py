@@ -35,6 +35,33 @@ def read(name):
     return open(p, encoding="utf-8").read().strip() if os.path.exists(p) else ""
 
 
+META = os.path.join(ROOT, "fastlane/metadata")
+
+
+@step("app names in each language (before fastlane adds a language, so it doesn't copy a taken name)")
+def names(app):
+    info = editable_app_info(app)
+    have = {l["attributes"]["locale"]: l for l in call("GET", f"/v1/appInfos/{info['id']}/appInfoLocalizations")["data"]}
+    print("     languages now:", ", ".join(f"{k}={v['attributes'].get('name')!r}" for k, v in have.items()))
+    for locale in sorted(os.listdir(META)):
+        name_file = os.path.join(META, locale, "name.txt")
+        if not os.path.exists(name_file):
+            continue
+        name = open(name_file, encoding="utf-8").read().strip()
+        attrs = {"name": name}
+        for key, f in (("subtitle", "subtitle.txt"), ("privacyPolicyUrl", "privacy_url.txt")):
+            fp = os.path.join(META, locale, f)
+            if os.path.exists(fp):
+                attrs[key] = open(fp, encoding="utf-8").read().strip()
+        if locale in have:
+            call("PATCH", f"/v1/appInfoLocalizations/{have[locale]['id']}", {"data": {"type": "appInfoLocalizations",
+                                                                              "id": have[locale]["id"], "attributes": attrs}})
+        else:
+            call("POST", "/v1/appInfoLocalizations", {"data": {"type": "appInfoLocalizations", "attributes": {"locale": locale, **attrs},
+                "relationships": {"appInfo": {"data": {"type": "appInfos", "id": info["id"]}}}}})
+        print(f"     {locale}: {name}")
+
+
 @step("content rights (uses third-party content, with the rights)")
 def content_rights(app):
     call("PATCH", f"/v1/apps/{app}", {"data": {"type": "apps", "id": app,
@@ -170,7 +197,7 @@ def main():
         sys.exit(f"no app with bundle ID {BUNDLE} in App Store Connect")
     app = apps[0]["id"]
     print(f"app: {apps[0]['attributes']['name']} ({app})", flush=True)
-    for f in (content_rights, categories, age_rating, price, availability, review, build):
+    for f in (names, content_rights, categories, age_rating, price, availability, review, build):
         f(app)
     print()
     print("Still to do in the website: App Privacy -> Get Started -> 'No, we do not collect data' -> Save -> Publish.")
