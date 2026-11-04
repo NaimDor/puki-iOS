@@ -63,22 +63,14 @@ def editable_app_info(app):
     return infos[0]
 
 
-@step("categories (Kids, 5 and under; Education)")
+@step("categories (Education; Games, Family)")
 def categories(app):
-    cats = call("GET", "/v1/appCategories", params={"filter[platforms]": "IOS", "limit": 200, "include": "subcategories",
-                                                    "limit[subcategories]": 50})
-    ids = [c["id"] for c in cats["data"]]
-    subs = [c["id"] for c in cats.get("included", []) if c["type"] == "appCategories"]
-    print("     categories:", ", ".join(ids))
-    kids = next(c for c in ids if "KIDS" in c)
-    band = next(s for s in subs if s.startswith(kids) and "5" in s)
-    edu = next(c for c in ids if c == "EDUCATION")
+    # Apple has no separate Kids category any more: "made for kids" is the age rating's age band (below)
     info = editable_app_info(app)
     call("PATCH", f"/v1/appInfos/{info['id']}", {"data": {"type": "appInfos", "id": info["id"], "relationships": {
-        "primaryCategory": {"data": {"type": "appCategories", "id": kids}},
-        "primarySubcategoryOne": {"data": {"type": "appCategories", "id": band}},
-        "secondaryCategory": {"data": {"type": "appCategories", "id": edu}}}}})
-    print(f"     primary {kids} / {band}, secondary {edu}")
+        "primaryCategory": {"data": {"type": "appCategories", "id": "EDUCATION"}},
+        "secondaryCategory": {"data": {"type": "appCategories", "id": "GAMES"}},
+        "secondarySubcategoryOne": {"data": {"type": "appCategories", "id": "GAMES_FAMILY"}}}}})
 
 
 # Puki has none of these: an enum answer is NONE, a yes/no answer is no (a parental control, the time limit, is yes)
@@ -95,6 +87,8 @@ def age_rating(app):
     decl = call("GET", f"/v1/appInfos/{info['id']}/ageRatingDeclaration")["data"]
     attrs = {}
     for k, v in decl["attributes"].items():
+        if "Override" in k or "Classification" in k or k.endswith("Url"):
+            continue  # (Apple's own overrides and other countries' ratings: not ours to set)
         if k == "kidsAgeBand":
             attrs[k] = "FIVE_AND_UNDER"
         elif k in AGE_ENUM_NONE:
@@ -109,6 +103,7 @@ def age_rating(app):
     skipped = sorted(set(decl["attributes"]) - set(attrs))
     if skipped:
         print("     left as they are:", ", ".join(f"{k}={decl['attributes'][k]!r}" for k in skipped))
+    print("     set:", json.dumps(attrs))
     call("PATCH", f"/v1/ageRatingDeclarations/{decl['id']}", {"data": {"type": "ageRatingDeclarations", "id": decl["id"],
                                                                        "attributes": attrs}})
 

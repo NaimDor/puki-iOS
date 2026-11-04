@@ -27,7 +27,7 @@ What's automated, and the forms only you can fill in App Store Connect (appstore
 
 **App Information**
 - Primary language: Hebrew (or English). Add the other one under Localizations if fastlane didn't.
-- Category: **Kids**, age band **5 and Under**. Secondary category: **Education**.
+- Category: **Education**, secondary **Games → Family** (set by the setup workflow). Apple has no separate Kids category any more: the age rating's age band (**5 and Under**) is what makes it a kids app.
 - Content rights: **Yes, it contains third-party content, and I have the rights**: it's MIT-licensed code by Tom
   Sadeh, and the voice and speech models are used under their licenses (the list is in the app: Settings →
   Licenses, and in `ios/Puki/Resources/licenses.txt`).
