@@ -42,6 +42,15 @@ jobs:
           name: app-store-screenshots
           path: shots
 
+      - name: Small previews in the log (for reviewing without the artifact)
+        run: |
+          mkdir -p previews
+          for f in shots/en-US/iphone_*.png shots/he/ipad_*.png; do
+            n=$(echo "$f" | tr '/' '_' | sed 's/\.png$/.jpg/')
+            sips -s format jpeg -s formatOptions 60 -Z 640 "$f" --out "previews/$n" >/dev/null
+            echo "PREVIEW-BEGIN $n"; base64 -i "previews/$n" | tr -d '\n'; echo; echo "PREVIEW-END"
+          done
+
   upload:
     needs: screenshots
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/ios-store-')
