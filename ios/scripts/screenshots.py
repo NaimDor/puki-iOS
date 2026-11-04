@@ -12,7 +12,7 @@ import json, os, subprocess, sys, time
 BUNDLE = "com.naimdor.puki"
 SCREENS = ["hub", "animals", "colors", "counting", "peekaboo", "music", "myday/kitchen", "myday/bath"]
 LOCALES = {"en-US": "en", "he": "he"}
-ROTATE = 90  # degrees clockwise: the simulator captures in portrait, the game is landscape
+ROTATE = 270  # degrees clockwise: the simulator captures in portrait, the game is landscape
 
 
 def run(*args, check=True):
@@ -43,6 +43,17 @@ def main():
         run("xcrun", "simctl", "boot", udid, check=False)
         run("xcrun", "simctl", "bootstatus", udid, "-b")
         run("xcrun", "simctl", "install", udid, app)
+        if tag == "ipad":
+            # An upright iPad shows a landscape-only game letterboxed: turn the simulated iPad on its side
+            # (the Simulator app's Rotate Left, Cmd+Left), as a child holds it
+            run("open", "-a", "Simulator", "--args", "-CurrentDeviceUDID", udid, check=False)
+            time.sleep(12)
+            run("osascript", "-e", 'tell application "Simulator" to activate', check=False)
+            time.sleep(2)
+            out_rot = subprocess.run(["osascript", "-e", 'tell application "System Events" to key code 123 using command down'],
+                                     capture_output=True, text=True)
+            print(f"  rotate: {out_rot.returncode} {out_rot.stderr.strip()}", flush=True)
+            time.sleep(3)
         run("xcrun", "simctl", "privacy", udid, "grant", "all", BUNDLE, check=False)
         for locale, lang in LOCALES.items():
             os.makedirs(os.path.join(out, locale), exist_ok=True)
