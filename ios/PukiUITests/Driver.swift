@@ -198,9 +198,17 @@ final class Driver {
         let all = nodes()
         let shown = Set(visible(all).map { "\($0.id)@\($0.frame)" })
         var lines = ["diag: \(why); screen \(screen); window \(app.windows.firstMatch.frame)"]
+        // Whether a finger at each one's middle reaches it, or something else is on top
+        var hittable: [String: Bool] = [:]
+        for id in Set(all.map(\.id)) where id != "route" {
+            for e in app.descendants(matching: .any).matching(identifier: id).allElementsBoundByIndex where e.exists {
+                hittable["\(id)@\(e.frame)"] = e.isHittable
+            }
+        }
         for n in all where n.id != "route" {
             let f = n.frame
-            lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value)")
+            let hit = hittable["\(n.id)@\(f)"].map { $0 ? "hittable" : "covered" } ?? "?"
+            lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value) \(hit)")
         }
         print(lines.joined(separator: "\n"))
         let a = XCTAttachment(string: lines.joined(separator: "\n"))

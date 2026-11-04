@@ -89,7 +89,7 @@ struct ColorSplashScreen: View {
                         Scatter(seed: sessionSeed + state.roundIndex, rtl: dir == .rightToLeft) {
                             ForEach(Array(state.colorChoices.enumerated()), id: \.element.id) { i, color in
                                 let right = color.id == state.targetColor.id
-                                ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right) { pick(color) }
+                                ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right, right: right) { pick(color) }
                                     .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, i)))
                                     .hintGlow(help.showHint && right)
                                     .reaction(reactions(color.id))
@@ -195,6 +195,7 @@ private struct ColorBlob: View {
     let color: Color
     let height: CGFloat
     let popped: Bool
+    var right = false
     let onClick: () -> Void
     var body: some View {
         let light = lerp(color, .white, 0.4), dark = lerp(color, .black, 0.25), rim = lerp(color, .black, 0.35)
@@ -240,5 +241,6 @@ private struct ColorBlob: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onClick)
         .testID("choice")
+        .testValue(right ? "right" : "")
     }
 }

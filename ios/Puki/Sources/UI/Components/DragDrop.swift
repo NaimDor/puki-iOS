@@ -11,16 +11,21 @@ final class DragDropState: ObservableObject {
     var draggedSize: CGSize = .zero
     @Published var isDragging = false
 
-    private var dropZones: [String: CGRect] = [:]
-    /** Who put each zone there. When a step or round rebuilds the screen, the new copy of a zone can appear before the
-     *  old one goes; the old one's leaving must not take the new one's place away (the game then had nowhere to drop). */
-    private var owners: [String: UUID] = [:]
+    /** Each zone's copies, newest last. When a step or round rebuilds the screen, the leaving copy can register its zone
+     *  after the new copy did (it renders the new state once on its way out); its leaving must not take the zone away
+     *  (the game then had nowhere to drop). So every copy keeps its own entry and the zone is the newest one left. */
+    private var copies: [String: [(owner: UUID, bounds: CGRect)]] = [:]
+    private var dropZones: [String: CGRect] { copies.compactMapValues { $0.last?.bounds } }
 
-    func registerDropZone(_ id: String, _ bounds: CGRect, owner: UUID) { dropZones[id] = bounds; owners[id] = owner }
+    func registerDropZone(_ id: String, _ bounds: CGRect, owner: UUID) {
+        var list = copies[id] ?? []
+        if let i = list.firstIndex(where: { $0.owner == owner }) { list[i].bounds = bounds } else { list.append((owner, bounds)) }
+        copies[id] = list
+    }
     func unregisterDropZone(_ id: String, owner: UUID) {
-        guard owners[id] == owner else { return }
-        dropZones.removeValue(forKey: id)
-        owners.removeValue(forKey: id)
+        guard var list = copies[id] else { return }
+        list.removeAll { $0.owner == owner }
+        copies[id] = list.isEmpty ? nil : list
     }
     func hasZone(_ id: String) -> Bool { dropZones[id] != nil }
 
