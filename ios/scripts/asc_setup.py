@@ -8,27 +8,13 @@ The App Privacy answers ("Data Not Collected") aren't in Apple's API: those stay
 Each step reports what it did and carries on if one fails, so one run shows everything left to do.
 """
 import json, os, sys, time
-import jwt, requests
+import requests
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from asc_api import call, editable_version, BUNDLE
 
-BUNDLE = "com.naimdor.puki"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REVIEW = os.path.join(ROOT, "fastlane/metadata/review_information")
-API = "https://api.appstoreconnect.apple.com"
 problems = []
-
-
-def token():
-    now = int(time.time())
-    return jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": now, "exp": now + 1100, "aud": "appstoreconnect-v1"},
-                      os.environ["ASC_KEY_P8"].strip() + "\n", algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"]})
-
-
-def call(method, path, body=None, params=None):
-    r = requests.request(method, API + path, params=params, json=body,
-                         headers={"Authorization": f"Bearer {token()}", "Content-Type": "application/json"}, timeout=60)
-    if r.status_code >= 400:
-        raise RuntimeError(f"{method} {path} -> {r.status_code}: {r.text[:1500]}")
-    return r.json() if r.text else {}
 
 
 def step(name):
@@ -142,14 +128,6 @@ def availability(app):
                                                                       "territoryAvailabilities": {"data": refs}}},
                                            "included": included})
     print(f"     {len(territories)} territories")
-
-
-def editable_version(app):
-    vs = call("GET", f"/v1/apps/{app}/appStoreVersions", params={"filter[platform]": "IOS", "limit": 10})["data"]
-    for v in vs:
-        if v["attributes"]["appStoreState"] in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED"):
-            return v
-    raise RuntimeError("no version being prepared: " + ", ".join(f"{v['attributes']['versionString']}={v['attributes']['appStoreState']}" for v in vs))
 
 
 @step("App Review contact and notes")

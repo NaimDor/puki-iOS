@@ -12,6 +12,7 @@ struct PukiApp: App {
         WindowGroup {
             RootView(settingsRepo: app.settingsRepository)
                 .environmentObject(app)
+                .storeFrame()
                 .statusBarHidden(true)
                 .persistentSystemOverlays(.hidden)
                 .preferredColorScheme(.light)

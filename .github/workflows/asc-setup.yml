@@ -5,7 +5,7 @@ name: App Store Connect setup
 on:
   push:
     branches: [claude/dazzling-faraday-untz5o]
-    paths: ["ios/scripts/asc_setup.py", "ios/fastlane/metadata/review_information/**", ".github/workflows/asc-setup.yml"]
+    paths: ["ios/scripts/asc_setup.py", "ios/scripts/asc_api.py", "ios/fastlane/metadata/review_information/**", ".github/workflows/asc-setup.yml"]
     tags: ["ios-setup-*"]
   workflow_dispatch:
 

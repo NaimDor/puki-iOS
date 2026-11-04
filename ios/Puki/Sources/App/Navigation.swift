@@ -33,6 +33,15 @@ final class Router: ObservableObject {
         if let r = UserDefaults.standard.string(forKey: "PukiScreenshot").flatMap(Route.init(rawValue:)), r != .hub {
             stack = [Entry(route: .hub), Entry(route: r)]
         }
+        // The preview video: on through the islands by itself
+        if ScreenshotMode.tour {
+            Task { [weak self] in
+                for (route, seconds) in ScreenshotMode.tourStops {
+                    await MainActor.run { self?.stack = route == .hub ? [Entry(route: .hub)] : [Entry(route: .hub), Entry(route: route)] }
+                    try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                }
+            }
+        }
         #endif
     }
     var current: Route { stack.last!.route }

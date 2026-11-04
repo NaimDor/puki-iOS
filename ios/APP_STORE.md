@@ -8,7 +8,8 @@ What's automated, and the forms only you can fill in App Store Connect (appstore
 |---|---|
 | The build (signed, uploaded to TestFlight) | `.github/workflows/testflight.yml`, a tag `ios-v…` |
 | Name, subtitle, description, keywords, promotional text, support and privacy URLs, copyright, review notes (Hebrew and English) | `ios/fastlane/metadata/` |
-| Screenshots: iPhone 6.9" and iPad 13", Hebrew and English, 8 screens each | `ios/scripts/screenshots.py`, made by `.github/workflows/appstore.yml` |
+| Screenshots: iPhone 6.9" and iPad 13", Hebrew and English, 8 screens each, under a headline (the first one is what search results show) | `ios/scripts/screenshots.py`, made by `.github/workflows/appstore.yml` |
+| App preview videos: 29 s, iPhone and iPad, Hebrew and English (the game touring its islands by itself) | `ios/scripts/screenshots.py`, `previews.sh`, uploaded by `asc_previews.py` |
 | Uploading the texts and screenshots | `.github/workflows/appstore.yml` (Actions tab once on main, or a tag `ios-store-…`) |
 | Support page and privacy policy | `ios/site/`, published by `.github/workflows/pages.yml` to https://naimdor.github.io/puki-iOS/ |
 | Export compliance ("no non-exempt encryption") | `ITSAppUsesNonExemptEncryption = NO` in the app |

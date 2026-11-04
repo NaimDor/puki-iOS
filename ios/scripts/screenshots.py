@@ -11,6 +11,16 @@ import json, os, subprocess, sys, time
 
 BUNDLE = "com.naimdor.puki"
 SCREENS = ["hub", "animals", "colors", "counting", "peekaboo", "music", "myday/kitchen", "myday/bath"]
+# The headline over each screenshot (the first is the one search results show)
+CAPTIONS = {
+    "en": ["Gentle games for toddlers", "Feed the animals, learn their names", "Find the colors, tap or say it",
+           "Count along with Puki", "Who's hiding in the barn?", "Make music, then dance",
+           "My Day: bake, bathe, brush", "No ads. No tracking. Ever."],
+    "he": ["משחקים רכים לפעוטות", "מאכילים את החיות ולומדים שמות", "מוצאים צבעים, בלחיצה או בקול",
+           "סופרים יחד עם פוקי", "מי מתחבא באסם?", "מנגנים, ואז רוקדים",
+           "היום שלי: אופים, מתרחצים, מצחצחים", "בלי פרסומות. בלי מעקב. אף פעם."],
+}
+TOUR_SECONDS = 30
 LOCALES = {"en-US": "en", "he": "he"}
 ROTATE = 270  # degrees clockwise: the simulator captures in portrait, the game is landscape
 
@@ -59,7 +69,7 @@ def main():
             os.makedirs(os.path.join(out, locale), exist_ok=True)
             for i, screen in enumerate(SCREENS, 1):
                 run("xcrun", "simctl", "launch", "--terminate-running-process", udid, BUNDLE,
-                    "-PukiScreenshot", screen, "-PukiLang", lang)
+                    "-PukiScreenshot", screen, "-PukiLang", lang, "-PukiCaption", CAPTIONS[lang][i - 1])
                 time.sleep(9 if i == 1 else 7)  # the round's prompt, pop-ins and Puki settling
                 path = os.path.join(out, locale, f"{tag}_{i:02d}_{screen.replace('/', '-')}.png")
                 run("xcrun", "simctl", "io", udid, "screenshot", path)
@@ -68,6 +78,18 @@ def main():
                 if h > w:
                     run("sips", "-r", str(ROTATE), path)
                 print(f"  {locale} {screen}: {path} ({max(w, h)}x{min(w, h)})", flush=True)
+            # The preview video: the game walking through its islands by itself (raw, made App Store-ready later)
+            os.makedirs(out + "-previews-raw", exist_ok=True)
+            video = os.path.join(out + "-previews-raw", f"{tag}_{locale}.mov")
+            run("xcrun", "simctl", "terminate", udid, BUNDLE, check=False)
+            rec = subprocess.Popen(["xcrun", "simctl", "io", udid, "recordVideo", "--codec=h264", "--force", video],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(3)
+            run("xcrun", "simctl", "launch", udid, BUNDLE, "-PukiScreenshot", "hub", "-PukiLang", lang, "-PukiTour", "1")
+            time.sleep(TOUR_SECONDS + 2)
+            rec.send_signal(2)  # SIGINT: the recording is finished and saved
+            rec.wait(timeout=60)
+            print(f"  {locale} preview: {video} ({os.path.getsize(video) // 1000} KB)", flush=True)
         run("xcrun", "simctl", "shutdown", udid, check=False)
 
 
