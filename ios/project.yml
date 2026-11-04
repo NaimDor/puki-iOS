@@ -1,7 +1,7 @@
 # The iOS app's Xcode project, for XcodeGen (brew install xcodegen; then `xcodegen` in this folder).
 name: Puki
 options:
-  bundleIdPrefix: io.github.naimdor
+  bundleIdPrefix: com.naimdor
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -55,7 +55,7 @@ targets:
         LSApplicationCategoryType: public.app-category.education
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.naimdor.puki
+        PRODUCT_BUNDLE_IDENTIFIER: com.naimdor.puki
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true

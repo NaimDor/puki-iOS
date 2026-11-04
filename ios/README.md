@@ -39,11 +39,11 @@ child in logs (errors are logged by type), what the child said kept in memory on
 
 `.github/workflows/testflight.yml` archives a signed release on GitHub's macOS runner and uploads it to App
 Store Connect. Run it by hand from the Actions tab (TestFlight → Run workflow). The bundle ID is
-`io.github.naimdor.puki` and the team is `DA3SQCMQ26`.
+`com.naimdor.puki` and the team is `DA3SQCMQ26`.
 
 Before the first run:
 
-1. In App Store Connect, create the app (My Apps → +) with bundle ID `io.github.naimdor.puki` (register the ID
+1. In App Store Connect, create the app (My Apps → +) with bundle ID `com.naimdor.puki` (register the ID
    under Certificates, Identifiers & Profiles first if it isn't offered).
 2. Create an API key under Users and Access → Integrations → App Store Connect API, with the **Admin** role
    (so Xcode can create the distribution certificate and profile on its own). Download the `.p8` once.

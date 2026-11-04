@@ -4,7 +4,7 @@ import os
 import OnnxRuntimeBindings
 #endif
 
-private let log = Logger(subsystem: "io.github.naimdor.puki", category: "PukiBrain")
+private let log = Logger(subsystem: "com.naimdor.puki", category: "PukiBrain")
 
 /**
  * Puki's brain on this device, all of it Puki's own models but the voice: answers the game's requests (see Brain)
