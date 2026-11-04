@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Puki the parrot">
+  <path d="M58,70 Q66,86 60,97 Q54,88 52,74Z" fill="#E53935"/>
+  <path d="M53,72 Q56,90 48,97 Q45,86 47,73Z" fill="#1E88E5"/>
+  <path d="M62,68 Q74,82 72,94 Q64,86 57,72Z" fill="#FDD835"/>
+  <path d="M30,60 A22,25 0 1,1 74,60 A22,25 0 1,1 30,60Z" fill="#43A047"/>
+  <path d="M35,66 A13,16 0 1,1 61,66 A13,16 0 1,1 35,66Z" fill="#C5E1A5"/>
+  <path d="M60,44 Q78,52 72,74 Q64,80 58,70 Q56,56 60,44Z" fill="#2E7D32"/>
+  <path d="M64,58 Q72,64 68,74" fill="none" stroke="#1B5E20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24,88 L80,88" fill="none" stroke="#8D6E63" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M39.5,86 A4.5,3.5 0 1,1 48.5,86 A4.5,3.5 0 1,1 39.5,86Z" fill="#FB8C00"/>
+  <path d="M51.5,86 A4.5,3.5 0 1,1 60.5,86 A4.5,3.5 0 1,1 51.5,86Z" fill="#FB8C00"/>
+  <path d="M25,30 A19,19 0 1,1 63,30 A19,19 0 1,1 25,30Z" fill="#4CAF50"/>
+  <path d="M44,12 Q42,2 50,4 Q48,9 49,13Z" fill="#E53935"/>
+  <path d="M48,13 Q52,4 58,8 Q53,11 52,15Z" fill="#FB8C00"/>
+  <path d="M40,13 Q34,5 40,3 Q41,8 44,12Z" fill="#FDD835"/>
+  <path d="M31,20 A7,4 0 1,1 45,20 A7,4 0 1,1 31,20Z" fill="#FFFFFF" fill-opacity="0.3"/>
+  <path d="M45,38 A5,5 0 1,1 55,38 A5,5 0 1,1 45,38Z" fill="#FF8A80" fill-opacity="0.8"/>
+  <path d="M31.5,28 A8.5,8.5 0 1,1 48.5,28 A8.5,8.5 0 1,1 31.5,28Z" fill="#FFFFFF"/>
+  <path d="M33,28.5 A5.5,5.5 0 1,1 44,28.5 A5.5,5.5 0 1,1 33,28.5Z" fill="#3E2723"/>
+  <path d="M34.8,26.5 A2,2 0 1,1 38.8,26.5 A2,2 0 1,1 34.8,26.5Z" fill="#FFFFFF"/>
+  <path d="M39.5,30.5 A1,1 0 1,1 41.5,30.5 A1,1 0 1,1 39.5,30.5Z" fill="#FFFFFF"/>
+  <path d="M30,36 Q24,40 27,44 Q31,43 35,40Z" fill="#E65100"/>
+  <path d="M34,26 Q18,26 18,36 Q22,38 26,38 Q30,37 35,38Z" fill="#FFB300"/>
+  <path d="M24,29 A3,1.5 0 1,1 30,29 A3,1.5 0 1,1 24,29Z" fill="#FFFFFF" fill-opacity="0.45"/>
+</svg>

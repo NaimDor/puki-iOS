@@ -17,6 +17,32 @@ final class AppModel: ObservableObject {
 
     init() {
         companion = Companion(voicePlayer: voice)
+        Self.keepOffBackups()
+        #if DEBUG
+        // Screenshot mode (debug builds only): `-PukiScreenshot <route> -PukiLang en|he` skips the welcome screen
+        let d = UserDefaults.standard
+        if d.string(forKey: "PukiScreenshot") != nil {
+            settingsRepository.updateLanguage(d.string(forKey: "PukiLang") == "en" ? .english : .hebrew)
+            settingsRepository.updateGender(d.string(forKey: "PukiGender") == "boy" ? .boy : .girl)
+            settingsRepository.updateTimeLimit(0)
+            settingsRepository.updateCompanionEnabled(true)
+            settingsRepository.updateAnswersOutLoud(false)  // (no microphone prompt in the pictures)
+            settingsRepository.setOnboardingDone()
+        }
+        #endif
+    }
+
+    /**
+     * The brain, the lines with the child's name and what Puki remembers live in Application Support: kept out of
+     * iCloud and computer backups, as on Android, so they never leave the device.
+     */
+    private static func keepOffBackups() {
+        let fm = FileManager.default
+        guard var dir = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? dir.setResourceValues(values)
     }
 
     var brain: LocalBrain {

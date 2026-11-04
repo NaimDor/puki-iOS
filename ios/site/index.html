@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puki for iPhone and iPad · פוקי</title>
+<meta name="description" content="Puki: gentle Hebrew and English games for toddlers, with a friendly parrot. Help and contact.">
+<link rel="icon" href="puki.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --sand: #fff3e0; --ink: #3e2723; --muted: #6d5d57; --grass: #2e7d32; --shadow: 0 8px 24px rgba(62, 39, 35, 0.10); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: "Rubik", system-ui, "Segoe UI", Arial, sans-serif; color: var(--ink); background: var(--sand); line-height: 1.65; font-size: 17px; }
+  html[data-lang="he"] [lang="en"], html[data-lang="en"] [lang="he"] { display: none !important; }
+  a { color: #0277bd; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
+  header { background: linear-gradient(180deg, #87ceeb, #e1f5fe); padding: 18px 0 28px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; text-decoration: none; color: var(--ink); }
+  .brand img { width: 44px; height: 44px; }
+  .lang { font: inherit; font-size: 15px; font-weight: 500; border: 2px solid rgba(62, 39, 35, 0.15); background: rgba(255, 255, 255, 0.7); color: var(--ink); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+  h1 { font-size: clamp(28px, 4vw, 40px); margin: 26px 0 4px; }
+  .date { color: var(--muted); margin: 0; }
+  main { padding: 26px 0 40px; }
+  .short { background: #fff; border: 2px solid #c8e6c9; border-radius: 22px; padding: 16px 22px; box-shadow: var(--shadow); }
+  .short ul { margin: 6px 0; padding-inline-start: 22px; }
+  .short li::marker { color: var(--grass); }
+  h2 { font-size: 22px; margin: 30px 0 6px; }
+  p, li { margin: 6px 0; }
+  code { background: #f3ece4; border-radius: 6px; padding: 1px 6px; font-size: 0.92em; direction: ltr; unicode-bidi: embed; }
+  footer { padding: 22px 0 34px; color: var(--muted); font-size: 15px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <a class="brand" href="./"><img src="puki.svg" alt=""> <span lang="he">פוקי</span><span lang="en">Puki</span></a>
+      <button class="lang" id="lang" type="button"><span lang="he">English</span><span lang="en">עברית</span></button>
+    </div>
+    <h1><span lang="he">פוקי ל-iPhone ול-iPad</span><span lang="en">Puki for iPhone and iPad</span></h1>
+    <p class="date"><span lang="he">עודכן ב-4 בנובמבר 2026</span><span lang="en">Updated 4 November 2026</span></p>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <p><span lang="he">פוקי הוא עולם משחקים רך לפעוטות (בערך בגילים 2 עד 4), בעברית ובאנגלית, עם תוכי חברותי. בלי פרסומות, בלי רכישות ובלי מעקב.</span>
+      <span lang="en">Puki is a gentle game world for toddlers (about 2 to 4), in Hebrew and English, with a friendly parrot. No ads, no purchases and no tracking.</span></p>
+    <h2><span lang="he">עזרה</span><span lang="en">Help</span></h2>
+    <ul>
+      <li><span lang="he">ההגדרות להורים: לוחצים לחיצה ארוכה (שתי שניות) על גלגל השיניים במפה, ואז על המספר שכתוב במילים.</span><span lang="en">Parent settings: press and hold the gear on the map for two seconds, then tap the number written in words.</span></li>
+      <li><span lang="he">כדי שפוקי ידבר באמת: בהגדרות, "פוקי במכשיר הזה" ← הורדה (פעם אחת, כחצי GB, עדיף ב-Wi-Fi).</span><span lang="en">To make Puki really talk: in the settings, "Puki on this device" → Download (once, about half a GB, Wi-Fi is best).</span></li>
+      <li><span lang="he">פוקי אמר משהו לא בסדר? בהגדרות, תחת "מלשין לרנינג", מסמנים את המשפט ושולחים לנו.</span><span lang="en">Puki said something wrong? In the settings, under "What Puki said", flag the line and send it to us.</span></li>
+    </ul>
+    <h2><span lang="he">יצירת קשר</span><span lang="en">Contact</span></h2>
+    <p><span lang="he">כותבים ל-<a href="mailto:SUPPORT_EMAIL">SUPPORT_EMAIL</a>. אנחנו עונים בהקדם.</span>
+      <span lang="en">Write to <a href="mailto:SUPPORT_EMAIL">SUPPORT_EMAIL</a>. We answer as soon as we can.</span></p>
+    <p><span lang="he">פוקי נוצר על ידי תום שדה (<a href="https://github.com/TomSadeh/puki">קוד המקור</a>). הגרסה ל-iPhone ול-iPad: <a href="https://github.com/NaimDor/puki-iOS">github.com/NaimDor/puki-iOS</a>. <a href="privacy.html">מדיניות הפרטיות</a>.</span>
+      <span lang="en">Puki was made by Tom Sadeh (<a href="https://github.com/TomSadeh/puki">source code</a>). The iPhone and iPad version: <a href="https://github.com/NaimDor/puki-iOS">github.com/NaimDor/puki-iOS</a>. <a href="privacy.html">Privacy policy</a>.</span></p>
+
+  </div>
+</main>
+<footer>
+  <div class="wrap"><a href="./"><span lang="he">פוקי ל-iPhone ול-iPad</span><span lang="en">Puki for iPhone and iPad</span></a> · <a href="privacy.html"><span lang="he">פרטיות</span><span lang="en">Privacy</span></a></div>
+</footer>
+<script>
+  const root = document.documentElement;
+  function setLang(lang) {
+    root.dataset.lang = lang;
+    root.lang = lang;
+    root.dir = lang === "he" ? "rtl" : "ltr";
+    try { localStorage.setItem("puki-lang", lang); } catch (e) {}
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("puki-lang"); } catch (e) {}
+  setLang(saved || "he");
+  document.getElementById("lang").addEventListener("click", () => setLang(root.dataset.lang === "he" ? "en" : "he"));
+</script>
+</body>
+</html>

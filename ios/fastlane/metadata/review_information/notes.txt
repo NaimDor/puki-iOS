@@ -1,0 +1,7 @@
+Puki is a game for toddlers (ages 2 to 4) in Hebrew and English. No account or login is needed.
+
+Parent gate: the settings (gear, top corner of the map) open after a two-second press and hold, then tapping the number written in words. Mail links, the brain download and every other grown-up option are behind it.
+
+Optional on-device AI: in the settings, "Puki on this device" downloads small ONNX models once (about 0.5 GB, from Hugging Face). They run entirely on the device; nothing the child says or does is sent anywhere. Without the download, the parrot uses recorded lines and every game works. The microphone is used only when the child holds the parrot to talk or answers a question out loud; recordings are never stored.
+
+The app collects no data and contains no ads, analytics or third-party SDKs. It is open source (MIT): https://github.com/NaimDor/puki-iOS

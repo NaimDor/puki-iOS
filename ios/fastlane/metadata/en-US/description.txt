@@ -1,0 +1,29 @@
+Puki is a gentle game world for toddlers (about 2 to 4), in Hebrew and English, with a friendly parrot who cheers them on.
+
+FREE, NO STRINGS
+No price, no in-app purchases, no subscriptions, no "full version" and no ads. Nothing ever stops the fun to ask for money. Puki is open source (MIT), created by Tom Sadeh, a parent who got tired of toddler games that do.
+
+THE GAMES
+• Animal Garden: feed each animal the right food, or find whose shadow it is
+• Colors, Shapes, Counting and Letters, with spoken prompts
+• Music: drum, xylophone, tambourine and maracas, and a dance party
+• My Day: bath, meals, getting dressed, tidying up, brushing teeth, baking a cake, the car wash and bedtime
+• A drawing studio with coloring pages and letters to trace, and a sticker album that fills up with stars
+• Peekaboo barn: find the hiding animal by its sound
+• Echo Puki: say anything and Puki says it back in a silly parrot voice
+• Say it with Puki: a picture, a word, and the child says it back
+
+MADE FOR TODDLERS
+No reading needed, big tap targets, and no failing: a wrong answer gets a gentle shake and "let's try again". Hebrew instructions match the child (girl or boy). When the time limit the parents set is up, there's no countdown: evening falls, Puki yawns, waves goodbye, and the music fades.
+
+PUKI CAN TALK (OPTIONAL)
+Turn on Puki's brain in the parent settings and he comes alive: he says something new about what the child just did, listens when the child talks to him, and lets the child answer a game's question out loud ("blue!") instead of tapping. His brain runs on the iPhone or iPad itself: small models, two of them trained just for him, with no internet and no cloud. It's a one-time download of about half a GB, for devices with 3 GB of memory or more. For now the brain speaks Hebrew. Without it, Puki uses his recorded voice and every game works.
+
+KEPT ON A SHORT LEASH
+Puki's lines are short and written for a toddler. If the child mentions hurt, fear or a big question, Puki gives a fixed, gentle answer that points to mommy or daddy. Every line he writes is checked, and a line that fails is replaced by a recorded one. Parents can see the latest lines Puki said and flag anything that isn't right.
+
+PRIVATE BY DESIGN
+No accounts, no ads, no analytics, no tracking. The child's voice, drawings and name never leave the device, and recordings are never kept. Settings sit behind a parent gate.
+
+Source code: https://github.com/NaimDor/puki-iOS
+Puki's models, on Hugging Face: https://huggingface.co/dtsj89

@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: The support email is set
+        run: |
+          if grep -n "SUPPORT_EMAIL" ios/Puki/Sources/Data/Models.swift; then
+            echo "::error::Set the support email first: python3 ios/scripts/set_support_email.py you@example.com"
+            exit 1
+          fi
+
       - name: The safety word lists match Safety.kt
         run: python3 ios/scripts/sync_safety_swift.py --check
 

@@ -1,0 +1,101 @@
+# The App Store listing: screenshots from the simulators (iPhone 6.9" and iPad 13", Hebrew and English), and an
+# upload of the texts (ios/fastlane/metadata) and screenshots to App Store Connect with fastlane deliver.
+#
+# A push that changes the listing only makes the screenshots (download them from the run's artifacts).
+# The upload runs from the Actions tab (once this file is on main) or on a tag starting with ios-store-.
+# It uses the same ASC_* secrets as the TestFlight workflow, and never submits for review.
+name: App Store listing
+
+on:
+  push:
+    branches: [claude/dazzling-faraday-untz5o]
+    paths: ["ios/fastlane/**", ".github/workflows/appstore.yml"]
+    tags: ["ios-store-*"]
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X"; fi
+          xcodebuild -version
+
+      - name: Build for the simulator
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen
+          xcodebuild -project Puki.xcodeproj -scheme Puki -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > build.log 2>&1 \
+            || { grep -E "error:" build.log | head -50; exit 1; }
+
+      - name: Take the screenshots
+        run: python3 ios/scripts/screenshots.py ios/build/Build/Products/Debug-iphonesimulator/Puki.app shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: shots
+
+  upload:
+    needs: screenshots
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/ios-store-')
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The support email is set
+        run: |
+          if grep -rl "SUPPORT_EMAIL" ios/fastlane ios/site ios/Puki/Sources/Data/Models.swift; then
+            echo "::error::Set the support email first: python3 ios/scripts/set_support_email.py you@example.com"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: shots
+
+      - name: The API key
+        env:
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          key = {"key_id": os.environ["ASC_KEY_ID"], "issuer_id": os.environ["ASC_ISSUER_ID"],
+                 "key": os.environ["ASC_KEY_P8"].strip() + "\n", "in_house": False}
+          path = os.path.join(os.environ["RUNNER_TEMP"], "asc.json")
+          with open(path, "w") as f: json.dump(key, f)
+          with open(os.environ["GITHUB_ENV"], "a") as f: f.write(f"ASC_KEY_JSON={path}\n")
+          PY
+
+      - name: Upload the listing
+        run: |
+          fastlane --version >/dev/null 2>&1 || brew install fastlane
+          VERSION=$(grep -E '^\s*MARKETING_VERSION:' ios/project.yml | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "version: $VERSION"
+          fastlane deliver \
+            --api_key_path "$ASC_KEY_JSON" \
+            --app_identifier com.naimdor.puki \
+            --app_version "$VERSION" \
+            --platform ios \
+            --metadata_path ios/fastlane/metadata \
+            --screenshots_path shots \
+            --overwrite_screenshots true \
+            --skip_binary_upload true \
+            --submit_for_review false \
+            --automatic_release false \
+            --run_precheck_before_submit false \
+            --force true
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/asc.json"

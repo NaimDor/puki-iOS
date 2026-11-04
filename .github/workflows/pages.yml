@@ -1,0 +1,47 @@
+# Publishes ios/site (the iOS app's support page and privacy policy) to GitHub Pages:
+#   https://naimdor.github.io/puki-iOS/  and  https://naimdor.github.io/puki-iOS/privacy.html
+# One-time setup: Settings -> Pages -> Source: "GitHub Actions". If the deploy is refused from this branch,
+# Settings -> Environments -> github-pages -> add the branch to the deployment branches.
+name: Pages
+
+on:
+  push:
+    branches: [main, claude/dazzling-faraday-untz5o]
+    paths: ["ios/site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The support email is set
+        id: email
+        run: |
+          if grep -rl "SUPPORT_EMAIL" ios/site; then
+            echo "::warning::Not published yet: set the support email first (python3 ios/scripts/set_support_email.py you@example.com)"
+            echo "set=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "set=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.email.outputs.set == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.email.outputs.set == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ios/site
+      - id: deployment
+        if: steps.email.outputs.set == 'true'
+        uses: actions/deploy-pages@v4

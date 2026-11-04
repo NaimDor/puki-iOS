@@ -71,10 +71,10 @@ struct GameProgress: Equatable {
     var albumSeenStars = 0 // the stars she had when she last opened the album
 }
 
-/** How parents reach Puki's makers. */
+/** How parents reach Puki's publisher on the App Store (set with ios/scripts/set_support_email.py). */
 enum Contact {
-    static let email = "hello@pukiparrot.com"
-    static let reportEmail = "hello+report@pukiparrot.com"
+    static let email = "SUPPORT_EMAIL"
+    static let reportEmail = "SUPPORT_EMAIL"
 }
 
 /** [count] things to pick from, in a random order: [target] and others from [pool], no doubles. */

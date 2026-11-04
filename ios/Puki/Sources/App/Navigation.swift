@@ -26,6 +26,15 @@ final class Router: ObservableObject {
     struct Entry: Identifiable, Equatable { let id = UUID(); let route: Route }
     @Published private(set) var stack: [Entry] = [Entry(route: .hub)]
     private var lastNavAt: Int64 = 0
+
+    init() {
+        #if DEBUG
+        // Screenshot mode (debug builds only): `-PukiScreenshot animals` opens that screen straight away
+        if let r = UserDefaults.standard.string(forKey: "PukiScreenshot").flatMap(Route.init(rawValue:)), r != .hub {
+            stack = [Entry(route: .hub), Entry(route: r)]
+        }
+        #endif
+    }
     var current: Route { stack.last!.route }
 
     /** One navigation at a time: a toddler's double tap inside this window is ignored. */
