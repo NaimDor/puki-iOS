@@ -12,9 +12,17 @@ final class DragDropState: ObservableObject {
     @Published var isDragging = false
 
     private var dropZones: [String: CGRect] = [:]
+    /** Who put each zone there. When a step or round rebuilds the screen, the new copy of a zone can appear before the
+     *  old one goes; the old one's leaving must not take the new one's place away (the game then had nowhere to drop). */
+    private var owners: [String: UUID] = [:]
 
-    func registerDropZone(_ id: String, _ bounds: CGRect) { dropZones[id] = bounds }
-    func unregisterDropZone(_ id: String) { dropZones.removeValue(forKey: id) }
+    func registerDropZone(_ id: String, _ bounds: CGRect, owner: UUID) { dropZones[id] = bounds; owners[id] = owner }
+    func unregisterDropZone(_ id: String, owner: UUID) {
+        guard owners[id] == owner else { return }
+        dropZones.removeValue(forKey: id)
+        owners.removeValue(forKey: id)
+    }
+    func hasZone(_ id: String) -> Bool { dropZones[id] != nil }
 
     /** Where to fly a tapped piece to. */
     func zoneCenter(_ id: String) -> CGPoint? { dropZones[id]?.center }
@@ -49,6 +57,7 @@ struct DropZone<Content: View>: View {
     var highlightColor = Color(argb: 0xFF4CAF50)
     @ViewBuilder let content: () -> Content
     @EnvironmentObject private var dd: DragDropState
+    @State private var me = UUID()
 
     var body: some View {
         let hovered = dd.isDragging && dd.hoveredDropZone() == zoneId
@@ -63,15 +72,16 @@ struct DropZone<Content: View>: View {
                         .position(x: g.size.width / 2, y: g.size.height / 2)
                         .opacity(hovered ? 1 : 0)
                         .animation(.easeInOut(duration: 0.2), value: hovered)
-                        .onAppear { dd.registerDropZone(zoneId, f) }
-                        .onChange(of: f) { _, nf in dd.registerDropZone(zoneId, nf) }
+                        .onAppear { dd.registerDropZone(zoneId, f, owner: me) }
+                        .onChange(of: f) { _, nf in dd.registerDropZone(zoneId, nf, owner: me) }
                         // The same place, a new round with a new name (the animal waiting for food): under its new name
-                        .onChange(of: zoneId) { old, new in dd.unregisterDropZone(old); dd.registerDropZone(new, f) }
+                        .onChange(of: zoneId) { old, new in dd.unregisterDropZone(old, owner: me); dd.registerDropZone(new, f, owner: me) }
                 }
                 .allowsHitTesting(false)
             )
-            .onDisappear { dd.unregisterDropZone(zoneId) }
+            .onDisappear { dd.unregisterDropZone(zoneId, owner: me) }
             .testID("zone.\(zoneId)")
+            .testValue(dd.hasZone(zoneId) ? "ready" : "unregistered")
     }
 }
 
@@ -137,6 +147,7 @@ struct DragTarget<Content: View>: View {
                 .onChange(of: f) { _, nf in frame = nf }
         })
         .testID("piece.\(itemId)")
+        .testValue(dd.isDragging ? "busy:\(dd.draggedItemId ?? "?")" : "")
     }
 
     /** Where it stands now (its home, plus where it's been moved), as a center in window coordinates. */

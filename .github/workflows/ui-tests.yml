@@ -17,8 +17,9 @@ concurrency:
 jobs:
   ui:
     name: ${{ matrix.device }} ${{ matrix.part }}
-    # (Intel Macs: GitHub often has no Apple-silicon ones free, and then cancels the job unstarted)
-    runs-on: macos-15-intel
+    # (macos-15 rather than macos-26: GitHub often has no macos-26 Mac free and cancels the job unstarted. Intel Macs
+    # were too slow: the simulator stopped answering mid-run. Xcode 26 is picked below.)
+    runs-on: macos-15
     timeout-minutes: 150
     strategy:
       fail-fast: false

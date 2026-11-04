@@ -32,9 +32,9 @@ final class Driver {
         if uiTest { args += ["-PukiUITest", "1", "-PukiLang", lang] }
         if let route { args += ["-PukiScreenshot", route] }
         app.launchArguments = args + extra
-        XCUIDevice.shared.orientation = .landscapeLeft
+        // (Only when it isn't already: on a busy machine each turn of the simulator can time out)
+        if !XCUIDevice.shared.orientation.isLandscape { XCUIDevice.shared.orientation = .landscapeLeft }
         app.launch()
-        XCUIDevice.shared.orientation = .landscapeLeft
         if uiTest || !fresh {
             XCTAssertTrue(waitFor { self.route != nil }, "the game didn't start")
         }

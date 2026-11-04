@@ -94,6 +94,11 @@ struct PeekabooScreen: View {
                 ZStack(alignment: .topLeading) {
                     VStack(spacing: 0) {
                         GameTopBar(onBack: onBack, roundIndex: state.roundIndex, totalRounds: state.totalRounds, starsEarned: state.stars)
+                        // Shares of the width, like Android's weights (the barn is the big one). SwiftUI's
+                        // layoutPriority isn't a weight: it gave the barn the whole width, and on an iPad the bush, the
+                        // haystack and the stump had none, so an animal hiding there couldn't be found.
+                        GeometryReader { row in
+                        let unit = row.size.width / HidingSpot.allCases.map { $0 == .barn ? 1.35 : 1 }.reduce(0, +)
                         HStack(alignment: .bottom, spacing: 0) {
                             ForEach(HidingSpot.allCases, id: \.self) { spot in
                                 let here = spot == state.spot
@@ -101,10 +106,10 @@ struct PeekabooScreen: View {
                                          show: here && state.found ? 1 : here && peeking ? 0.35 : 0,
                                          hint: here && help.showHint && !state.found, hiding: here && !state.found,
                                          reaction: foundReaction, butterflyKey: butterflyFrom == spot ? butterflyKey : 0) { tap(spot) }
-                                    // The barn is the big one
-                                    .frame(maxWidth: .infinity)
-                                    .layoutPriority(spot == .barn ? 1.35 : 1)
+                                    .frame(width: unit * (spot == .barn ? 1.35 : 1))
                             }
+                        }
+                        .frame(maxHeight: .infinity)
                         }
                         .frame(maxHeight: .infinity)
                         .padding(.horizontal, 8)
