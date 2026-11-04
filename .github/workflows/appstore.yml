@@ -9,7 +9,7 @@ name: App Store listing
 on:
   push:
     branches: [claude/dazzling-faraday-untz5o]
-    paths: ["ios/fastlane/**", ".github/workflows/appstore.yml"]
+    paths: ["ios/fastlane/**", "ios/scripts/screenshots.py", ".github/workflows/appstore.yml"]
     tags: ["ios-store-*"]
   workflow_dispatch:
 
