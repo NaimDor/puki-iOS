@@ -10,7 +10,7 @@ on:
   push:
     branches: [claude/dazzling-faraday-untz5o]
     paths: ["ios/fastlane/metadata/*/**", "ios/fastlane/metadata/*.txt", "ios/scripts/screenshots.py", "ios/scripts/previews.sh",
-            "ios/scripts/asc_previews.py", "ios/Puki/Sources/App/ScreenshotMode.swift", ".github/workflows/appstore.yml"]
+            "ios/scripts/asc_previews.py", "ios/scripts/hide_island.py", "ios/Puki/Sources/App/ScreenshotMode.swift", ".github/workflows/appstore.yml"]
     tags: ["ios-store-*"]
   workflow_dispatch:
 
@@ -42,6 +42,12 @@ jobs:
 
       - name: Take the screenshots
         run: python3 ios/scripts/screenshots.py ios/build/Build/Products/Debug-iphonesimulator/Puki.app shots
+
+      - name: Paint the simulator's Dynamic Island out of the iPhone screenshots
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pil"
+          "$RUNNER_TEMP/pil/bin/pip" install -q pillow
+          "$RUNNER_TEMP/pil/bin/python" ios/scripts/hide_island.py shots
 
       - uses: actions/upload-artifact@v4
         with:
