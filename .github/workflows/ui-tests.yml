@@ -1,0 +1,124 @@
+# The whole game played through on simulators, as a child would (ios/PukiUITests): every island and room opens
+# and leads back, every game is played to its end card, real drags in Hebrew and English, the parent check, the
+# settings sticking, the time limit, the welcome screen, and a few minutes of a toddler let loose.
+# iPad and iPhone, each in two parts run side by side. Runs on pushes that touch the iOS app, and by hand.
+name: iOS UI tests
+
+on:
+  push:
+    branches: [claude/dazzling-faraday-untz5o]
+    paths: ["ios/Puki/**", "ios/PukiUITests/**", "ios/project.yml", ".github/workflows/ui-tests.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: ${{ matrix.device }} ${{ matrix.part }}
+    runs-on: macos-26
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [iPad, iPhone]
+        part: [games, everything-else]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X"; fi
+          xcodebuild -version
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen
+
+      - name: Pick and start the simulator
+        run: |
+          SIM=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          family = '${{ matrix.device }}'
+          want = ['iPad Pro 13', 'iPad Pro (12.9', 'iPad Air 13', 'iPad'] if family == 'iPad' else ['iPhone 17 Pro Max', 'iPhone 16 Pro Max', 'iPhone 17 Pro', 'iPhone']
+          d = json.load(sys.stdin)['devices']
+          devs = [x for rt, xs in sorted(d.items(), reverse=True) if 'iOS' in rt for x in xs if x['isAvailable']]
+          for w in want:
+              hit = [x for x in devs if x['name'].startswith(w)]
+              if hit: print(hit[0]['udid']); break
+          ")
+          echo "simulator: $SIM ($(xcrun simctl list devices | grep $SIM))"
+          echo "SIM=$SIM" >> $GITHUB_ENV
+          xcrun simctl boot "$SIM" || true
+          xcrun simctl bootstatus "$SIM" -b
+
+      - name: Build for testing
+        run: |
+          cd ios
+          xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build-for-testing > build.log 2>&1 || { grep -E "error:" build.log | head -60; tail -30 build.log; exit 1; }
+          echo "built"
+
+      - name: Allow the microphone and photos up front (no system questions mid-test)
+        run: |
+          xcrun simctl install "$SIM" ios/build/Build/Products/Debug-iphonesimulator/Puki.app
+          xcrun simctl privacy "$SIM" grant microphone com.naimdor.puki || true
+          xcrun simctl privacy "$SIM" grant photos-add com.naimdor.puki || true
+
+      - name: Run the UI tests
+        run: |
+          set +e
+          cd ios
+          if [ "${{ matrix.part }}" = games ]; then
+            ONLY="-only-testing:PukiUITests/GameTests"
+          else
+            ONLY="-only-testing:PukiUITests/NavigationTests -only-testing:PukiUITests/DragTests -only-testing:PukiUITests/GrownUpTests -only-testing:PukiUITests/MonkeyTests"
+          fi
+          xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
+            -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY \
+            CODE_SIGNING_ALLOWED=NO test-without-building > test.log 2>&1
+          status=$?
+          echo "================ results ================"
+          grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -200
+          echo "========================================="
+          exit $status
+
+      - name: Pictures of how each test ended (for reviewing without the artifact)
+        if: always()
+        run: |
+          [ -d ui.xcresult ] || exit 0
+          mkdir -p shots small
+          xcrun xcresulttool export attachments --path ui.xcresult --output-path shots >/dev/null 2>&1 || true
+          python3 - <<'PY'
+          import json, os, subprocess
+          m = json.load(open("shots/manifest.json")) if os.path.exists("shots/manifest.json") else []
+          n = 0
+          for t in m:
+              test = t.get("testIdentifier", "?")
+              for a in t.get("attachments", []):
+                  f = os.path.join("shots", a.get("exportedFileName", ""))
+                  if not f.endswith((".png", ".jpeg", ".jpg")) or n >= 80: continue
+                  name = (test + "__" + a.get("suggestedHumanReadableName", "shot")).replace("/", "_").replace(" ", "_")
+                  out = os.path.join("small", f"{n:03d}.jpg")
+                  subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "45", "-Z", "560", f, "--out", out], capture_output=True)
+                  if os.path.exists(out):
+                      import base64
+                      print(f"PREVIEW-BEGIN {name[:150]}.jpg")
+                      print(base64.b64encode(open(out, "rb").read()).decode())
+                      print("PREVIEW-END")
+                      n += 1
+          PY
+
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-tests-${{ matrix.device }}-${{ matrix.part }}
+          path: |
+            ui.xcresult
+            ios/test.log
+            ios/build.log
+          retention-days: 7

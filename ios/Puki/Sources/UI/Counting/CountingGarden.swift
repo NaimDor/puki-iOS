@@ -319,6 +319,7 @@ private struct CountedThing: View {
         .reaction(reaction)
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
+        .testID("choice")
         .popIn(index, key: roundIndex)
     }
 }
@@ -340,6 +341,7 @@ private struct NumberCard: View {
             .overlay(RoundedRectangle(cornerRadius: 28).stroke(Color(argb: 0xFF8BC34A), lineWidth: 5))
             .contentShape(Rectangle())
             .onTapGesture(perform: onTap)
+            .testID("choice")
             .hintGlow(hint)
             .reaction(reaction, jumpHeight: 24)
             .popIn(index)

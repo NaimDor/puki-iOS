@@ -61,8 +61,10 @@ struct RoundCompleteSheet: View {
             HStack(spacing: 40) {
                 RoundButton(color: Color(argb: 0xFF66BB6A), label: BilingualText("המשך", "Continue"), index: 0, pulse: buttonsLive,
                             onClick: { if buttonsLive { onContinue() } }) { NextArrow() }
+                    .testID("continue")
                 RoundButton(color: Color(argb: 0xFFFFCA28), label: BilingualText("בית", "Home"), index: 1, pulse: false,
                             onClick: { if buttonsLive { onHome() } }) { Pic("ic_word_house").frame(width: 72, height: 72) }
+                    .testID("home")
                 // Where the new sticker goes, and the way to go and see it
                 if earned != nil, let openAlbum {
                     RoundButton(color: Color(argb: 0xFFB39DDB), label: BilingualText("אלבום", "Album"), index: 2, pulse: false,

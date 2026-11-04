@@ -50,7 +50,7 @@ struct MyDayScreen: View {
                     ForEach(0..<2, id: \.self) { f in
                         HStack(spacing: 20) {
                             ForEach(Array((f == 0 ? upstairs : downstairs).enumerated()), id: \.offset) { i, room in
-                                RoomButton(room: room, index: f * 4 + i, compact: compact) { onRoomClick(room.route) }
+                                RoomButton(room: room, index: f * 4 + i, compact: compact) { onRoomClick(room.route) }.testID("room.\(room.route.rawValue)")
                             }
                         }
                     }

@@ -239,5 +239,6 @@ private struct ColorBlob: View {
         .frame(width: height * 0.68, height: height)
         .contentShape(Rectangle())
         .onTapGesture(perform: onClick)
+        .testID("choice")
     }
 }

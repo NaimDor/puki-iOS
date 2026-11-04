@@ -118,6 +118,7 @@ private struct PageTurn: View {
             .background(Circle().fill(Color(argb: 0xFFFFCA28)).shadow(color: .black.opacity(0.25), radius: 8, y: 3))
             .overlay(Circle().stroke(Color.white, lineWidth: 4))
             .clickable(action: onClick)
+            .testID("tap")
     }
 }
 

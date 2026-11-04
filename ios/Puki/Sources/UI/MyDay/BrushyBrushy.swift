@@ -147,6 +147,7 @@ struct BrushyBrushyScreen: View {
                 lastDrag = nil
                 moved = false
             })
+        .testID("scrub")
         // Touches land on the drawing as it is: the face doesn't mirror in Hebrew
         .environment(\.layoutDirection, .leftToRight)
     }

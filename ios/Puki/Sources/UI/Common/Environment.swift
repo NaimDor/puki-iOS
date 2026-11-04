@@ -21,10 +21,10 @@ final class AppModel: ObservableObject {
         #if DEBUG
         // Screenshot mode (debug builds only): `-PukiScreenshot <route> -PukiLang en|he` skips the welcome screen
         let d = UserDefaults.standard
-        if d.string(forKey: "PukiScreenshot") != nil {
+        if TestLaunch.uiTest {
             settingsRepository.updateLanguage(d.string(forKey: "PukiLang") == "en" ? .english : .hebrew)
             settingsRepository.updateGender(d.string(forKey: "PukiGender") == "boy" ? .boy : .girl)
-            settingsRepository.updateTimeLimit(0)
+            settingsRepository.updateTimeLimit(d.integer(forKey: "PukiTimeLimit"))
             settingsRepository.updateCompanionEnabled(true)
             settingsRepository.updateAnswersOutLoud(false)  // (no microphone prompt in the pictures)
             settingsRepository.setOnboardingDone()

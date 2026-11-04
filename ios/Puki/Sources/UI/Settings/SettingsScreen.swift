@@ -43,6 +43,7 @@ struct SettingsScreen: View {
                             .frame(width: 120, height: 60).background(Capsule().fill(PukiColors.sunYellow))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("settingsBack")
                 }
                 .padding(32)
                 .frame(maxWidth: .infinity)
@@ -174,6 +175,7 @@ private struct ToggleRow: View {
             if let i = checked ? labelOnIcon : labelOffIcon { Pic(i).frame(width: 32, height: 32) }
             Text(checked ? labelOn : labelOff).font(PukiFont.bodyLarge).foregroundColor(PukiColors.earthBrown)
             Toggle("", isOn: Binding(get: { checked }, set: { _ in onToggle() })).labelsHidden().tint(PukiColors.grassGreen)
+                .accessibilityIdentifier("toggle.\(icon)")
         }
     }
 }

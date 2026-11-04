@@ -109,6 +109,7 @@ struct WordGardenScreen: View {
                                     Pic(state.targetLetter.exampleIcon)
                                         .frame(width: pictureSize * 0.82, height: pictureSize * 0.82)
                                         .clickable { tappedPicture() }
+                                        .testID("tap")
                                 }
                                 .popIn(key: state.roundIndex)
                                 Text(state.targetLetter.exampleWord(language)).font(PukiFont.titleLarge).foregroundColor(letterInk)
@@ -170,6 +171,7 @@ struct WordGardenScreen: View {
         .frame(width: blockSize, height: blockSize)
         .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, index)))
         .clickable { tapped(letter, r) }
+        .testID("choice")
         .hintGlow(help.showHint && letter.id == state.targetLetter.id)
         .reaction(r)
         .idleBob(index)

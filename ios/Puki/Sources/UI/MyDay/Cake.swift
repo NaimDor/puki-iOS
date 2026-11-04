@@ -140,6 +140,7 @@ struct CakeScreen: View {
                         spoonAngle = a
                     }
                     .onEnded { _ in spoonAngle = nil; lastAngle = nil })
+                .testID("scrub")
         }
     }
 

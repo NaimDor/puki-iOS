@@ -70,7 +70,7 @@ struct HubScreen: View {
                 .environment(\.layoutDirection, .leftToRight)
             }
             VStack {
-                LiveStarCounter(progress: app.progressRepository, onClick: onStickersClick).padding(.top, 16)
+                LiveStarCounter(progress: app.progressRepository, onClick: onStickersClick).testID("starCounter").padding(.top, 16)
                 Spacer()
             }
             // Settings, top end: a 2-second hold so the child doesn't open it by accident
@@ -122,9 +122,9 @@ private struct CornerButton: View {
             .background(Circle().fill(grown ? Color(argb: 0xFFCFD8DC) : Color(argb: 0xFFFFE082)).shadow(color: .black.opacity(0.25), radius: grown ? 2 : 8, y: 3))
         if let onHold {
             // The gap between the gate and the button leaves room for the ring to show
-            LongPressGate(onUnlocked: onHold) { face.opacity(0.6).padding(6) }.padding(10)
+            LongPressGate(onUnlocked: onHold) { face.opacity(0.6).padding(6) }.testID(icon).padding(10)
         } else {
-            face.clickable(action: onClick).idleBob().padding(12)
+            face.clickable(action: onClick).testID(icon).idleBob().padding(12)
         }
     }
 }

@@ -81,6 +81,7 @@ struct EchoScreen: View {
                         .frame(width: stage, height: stage)
                         .contentShape(Rectangle())
                         .gesture(DragGesture(minimumDistance: 0).onChanged { _ in press() }.onEnded { _ in release() })
+                        .testID("hold")
                     }
                 }
                 .frame(width: g.size.width, height: g.size.height)

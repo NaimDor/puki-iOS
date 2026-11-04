@@ -67,6 +67,7 @@ struct ToolButton<Content: View>: View {
             .background(Circle().fill(color).shadow(color: .black.opacity(0.25), radius: 8, y: 4))
             .clipShape(Circle())
             .clickable(enabled, action: onClick)
+            .testID("tool")
             .hintGlow(hint)
             .idleBob(1)
             .popIn()

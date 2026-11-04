@@ -33,17 +33,18 @@ struct OnboardingScreen: View {
 
                     // Language, and girl/boy (for Hebrew grammar: "תלחצי" / "תלחץ"), on one row
                     HStack(spacing: 12) {
-                        Choice(label: "עברית", selected: settings.language == .hebrew) { repo.updateLanguage(.hebrew) }
-                        Choice(label: "English", selected: settings.language == .english) { repo.updateLanguage(.english) }
+                        Choice(label: "עברית", selected: settings.language == .hebrew) { repo.updateLanguage(.hebrew) }.accessibilityIdentifier("onboarding.he")
+                        Choice(label: "English", selected: settings.language == .english) { repo.updateLanguage(.english) }.accessibilityIdentifier("onboarding.en")
                         Spacer().frame(width: 16)
-                        Choice(label: t("בת", "Girl"), icon: "ic_ui_girl", selected: settings.gender == .girl) { repo.updateGender(.girl) }
-                        Choice(label: t("בן", "Boy"), icon: "ic_ui_boy", selected: settings.gender == .boy) { repo.updateGender(.boy) }
+                        Choice(label: t("בת", "Girl"), icon: "ic_ui_girl", selected: settings.gender == .girl) { repo.updateGender(.girl) }.accessibilityIdentifier("onboarding.girl")
+                        Choice(label: t("בן", "Boy"), icon: "ic_ui_boy", selected: settings.gender == .boy) { repo.updateGender(.boy) }.accessibilityIdentifier("onboarding.boy")
                     }
 
                     // Child's name
                     VStack(alignment: .leading, spacing: 4) {
                         Text(t("איך קוראים לילד/ה?", "What's your child's name?")).font(PukiFont.bodyMedium).foregroundColor(ink)
                         TextField("", text: $name)
+                            .accessibilityIdentifier("onboarding.name")
                             .textFieldStyle(.roundedBorder)
                             .foregroundColor(ink)
                             .focused($nameFocused)
@@ -73,6 +74,7 @@ struct OnboardingScreen: View {
                             .background(Capsule().fill(Color(argb: 0xFF66BB6A)).shadow(color: .black.opacity(0.25), radius: 5, y: 3))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("onboarding.play")
                 }
                 .padding(.horizontal, 28).padding(.vertical, 18)
                 .background(RoundedRectangle(cornerRadius: 28).fill(cream).shadow(color: .black.opacity(0.25), radius: 8, y: 4))

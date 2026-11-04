@@ -59,6 +59,7 @@ struct DoorChooserScreen: View {
                                     .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.92)))
                             }
                             .contentShape(Rectangle())
+                            .testID("door")
                             .onTapGesture {
                                 app.sfx.play(.pop)
                                 door.onTap()

@@ -76,7 +76,28 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         BUNDLE_LOADER: $(TEST_HOST)
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Puki.app/Puki
+  # The whole game played through on a simulator, as a child would (see PukiUITests/Driver.swift)
+  PukiUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: PukiUITests
+    dependencies:
+      - target: Puki
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: Puki
+        PRODUCT_BUNDLE_IDENTIFIER: com.naimdor.puki.uitests
 schemes:
+  PukiUI:
+    build:
+      targets:
+        Puki: all
+        PukiUITests: [test]
+    test:
+      config: Debug
+      targets: [PukiUITests]
   Puki:
     build:
       targets:

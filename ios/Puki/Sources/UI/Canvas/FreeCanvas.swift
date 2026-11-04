@@ -229,6 +229,7 @@ private enum SideItem: Hashable { case pot(Int), brush(Int), stamp, eraser, wipe
                 .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
                 .contentShape(Rectangle())
                 .gesture(paperGesture)
+                .testID("paper")
                 .padding(18)
                 .background(RoundedRectangle(cornerRadius: 22).fill(LinearGradient(colors: [Color(argb: 0xFFC8935B), Color(argb: 0xFFAE7642)], startPoint: .top, endPoint: .bottom))
                     .shadow(color: .black.opacity(0.3), radius: 8, y: 4))
@@ -709,6 +710,7 @@ private struct PaintPot: View {
         .idleBob(index, amount: selected ? 1.4 : 0)
         .contentShape(Rectangle())
         .onTapGesture(perform: onClick)
+        .testID("paint")
     }
 }
 
@@ -733,6 +735,7 @@ private struct ToolPlate<Content: View>: View {
         .idleBob(index + 9, amount: selected ? 1.2 : 0)
         .contentShape(Circle())
         .onTapGesture(perform: onClick)
+        .testID("brush")
     }
 }
 

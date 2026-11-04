@@ -78,6 +78,7 @@ struct GettingDressedScreen: View {
                                         .frame(width: spot.size * s, height: spot.size * s)
                                         .rotationEffect(.degrees(spot.tilt))
                                         .clickable { tapped(item) }
+                                        .testID("choice")
                                         .hintGlow(help.showHint && isNext)
                                         .reaction(reactions(item.id))
                                         .idleBob(item.order, amount: isNext ? 1.4 : 0.4)  // what comes next moves a little more

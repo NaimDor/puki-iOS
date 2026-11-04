@@ -226,6 +226,7 @@ private struct SpotView: View {
             // Only the spot itself: the air above it isn't a wrong guess
             .contentShape(Rectangle())
             .onTapGesture(perform: onTap)
+            .testID("choice")
             .frame(width: g.size.width, height: g.size.height, alignment: .bottom)
         }
         .onAppear { shown = animal }

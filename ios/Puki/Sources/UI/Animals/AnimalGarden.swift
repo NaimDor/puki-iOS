@@ -300,6 +300,7 @@ struct AnimalDisplay: View {
             }
             .frame(width: stage, height: stage)
             .contentShape(Rectangle())
+            .testID("tap")
             .onTapGesture {
                 bouncing = true
                 app.voice.playSequence(["voice_animal_\(animal.id)", "voice_sound_\(animal.id)"], language) { bouncing = false }

@@ -53,6 +53,7 @@ struct GameTopBar: View {
                         .animation(.easeInOut(duration: 0.25), value: roundIndex)
                 }
             }
+            .testID("rounds").accessibilityValue("\(roundIndex)/\(totalRounds)")
             Spacer()
             // Stars; the star hops each time the count goes up
             if let stars = starsEarned {
@@ -67,6 +68,7 @@ struct GameTopBar: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(Capsule().fill(Color.black.opacity(0.22)))
+                .testID("stars").accessibilityValue("\(stars)")
             } else {
                 Spacer().frame(width: 64)
             }
@@ -131,6 +133,7 @@ struct BackButton: View {
         }
         .buttonStyle(SquishButtonStyle())
         .frame(width: 64, height: 64)
+        .testID("back")
     }
 }
 

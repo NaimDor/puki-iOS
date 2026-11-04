@@ -95,6 +95,7 @@ struct NavRoot: View {
             .environment(\.openAlbum, { router.navigate(.stickers, app.sfx) })
             .onChange(of: entry) { _, e in app.companion.game = e.route.rawValue }  // (safety word lists allow a game its own words)
             .onAppear { app.companion.game = entry.route.rawValue }
+            .overlay(alignment: .topLeading) { RouteMarker(route: entry.route.rawValue) }
     }
 
     @ViewBuilder private func screen(_ route: Route) -> some View {

@@ -69,6 +69,7 @@ struct DropZone<Content: View>: View {
                 .allowsHitTesting(false)
             )
             .onDisappear { dd.unregisterDropZone(zoneId) }
+            .testID("zone.\(zoneId)")
     }
 }
 
@@ -124,6 +125,7 @@ struct DragTarget<Content: View>: View {
                 .onAppear { frame = f }
                 .onChange(of: f) { _, nf in frame = nf }
         })
+        .testID("piece.\(itemId)")
     }
 
     /** Where it stands now (its home, plus where it's been moved), as a center in window coordinates. */

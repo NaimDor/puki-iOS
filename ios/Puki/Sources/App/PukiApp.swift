@@ -5,6 +5,9 @@ struct PukiApp: App {
     @StateObject private var app = AppModel()
 
     init() {
+        #if DEBUG
+        TestLaunch.wipeIfFresh()
+        #endif
         AudioSetup.configure()
     }
 

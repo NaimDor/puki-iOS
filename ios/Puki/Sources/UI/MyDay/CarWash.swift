@@ -146,6 +146,7 @@ struct CarWashScreen: View {
                 tool = nil
                 lastDrag = nil
             })
+        .testID("scrub")
         .offset(x: -driveOff * w * 1.6)  // forward, the way its face looks
         .environment(\.layoutDirection, .leftToRight)
     }

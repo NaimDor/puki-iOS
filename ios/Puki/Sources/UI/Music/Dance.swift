@@ -90,6 +90,7 @@ struct DanceScreen: View {
                                             .background(Circle().fill(Color(argb: 0xFFFFCA28)).shadow(color: .black.opacity(0.3), radius: 10, y: 4))
                                             .overlay(Circle().stroke(Color.white, lineWidth: 6))
                                             .clickable { started = true; app.sfx.play(.pop) }
+                                            .testID("play")
                                             .hintGlow(help.showHint)
                                             .idleBob(0, amount: 1.4)
                                             .popIn()
@@ -148,6 +149,7 @@ struct DanceScreen: View {
             .reaction(r)
             .modifier(BobUnless(started: started, index: i))
             .contentShape(Rectangle())
+            .testID("tap")
             .onTapGesture {
                 Task { await r.celebrate() }
                 app.voice.play("voice_sound_\(animal.id)", language)

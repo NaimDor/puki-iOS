@@ -99,6 +99,7 @@ struct IslandButton: View {
                 pressed = false
                 if abs(v.translation.width) < 30 && abs(v.translation.height) < 30 { tapped() }
             })
+        .testID("island.\(island.id)")
         .task(id: called) {
             guard called else { return }
             for _ in 0..<3 {

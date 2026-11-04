@@ -85,6 +85,7 @@ private struct ParentCheck: View {
             Text(BilingualText("להורים: לחצו על המספר", "For grown-ups: tap the number")(language))
                 .font(PukiFont.titleMedium).foregroundColor(Color(argb: 0xFF5D4037))
             Text(numberInWords(target, language)).font(.system(size: 30, weight: .bold, design: .rounded)).foregroundColor(Color(argb: 0xFF5D4037))
+                .testID("parentTarget").accessibilityValue(numberInWords(target, language))
             ForEach(Array(stride(from: 0, to: choices.count, by: 3)), id: \.self) { start in
                 HStack(spacing: 12) {
                     ForEach(choices[start..<min(start + 3, choices.count)], id: \.self) { n in
@@ -94,6 +95,7 @@ private struct ParentCheck: View {
                             .frame(width: 72, height: 72)
                             .background(RoundedRectangle(cornerRadius: 16).fill(Color(argb: 0xFFFFF3E0)))
                             .clickable { picked(n) }
+                            .testID("parentNumber.\(n)")
                     }
                 }
             }
@@ -190,6 +192,7 @@ struct TimeLimitOverlay: View {
                             .padding(.horizontal, 20).padding(.vertical, 10)
                             .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.18)))
                     }
+                    .testID("timeLimitClose")
                     .padding(.bottom, 20)
                 }
             }
@@ -197,6 +200,7 @@ struct TimeLimitOverlay: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {}  // the game underneath can't be played
+        .overlay(alignment: .topTrailing) { Color.clear.frame(width: 1, height: 1).testID("timeLimit").allowsHitTesting(false) }
         .environment(\.ambientHeld, true)
         .task { await run() }
         .onDisappear {

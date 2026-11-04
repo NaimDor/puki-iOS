@@ -111,6 +111,7 @@ struct MusicMeadowScreen: View {
                         InstrumentView(instrument: instrument, index: index, highlighted: state.highlightedInstrument == index,
                                        plays: plays[index], reaction: reactions(instrument.id),
                                        hint: (help.showHint || state.tuneMisses > 0) && state.nextNote == index, compact: compact) { tapped(index) }
+                            .testID("choice").testValue(state.nextNote == index ? "next" : "")
                             // Not all in one line: the middle two a little higher, clear of the play button
                             .offset(y: index == 0 || index == instruments.count - 1 ? 18 : -18)
                             .frame(maxWidth: .infinity)
@@ -293,6 +294,7 @@ struct PlayButton: View {
         .overlay(Circle().stroke(Color.white, lineWidth: 6))
         .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
         .clickable(action: onClick)
+        .testID("play")
         .scaleEffect(pulse)
         .onAppear { withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { pulse = 1.08 } }
     }

@@ -214,7 +214,7 @@ private struct TapArea: View {
     let hint: Bool
     let onTap: () -> Void
     var body: some View {
-        Color.clear.contentShape(Rectangle()).hintGlow(hint).onTapGesture(perform: onTap)
+        Color.clear.contentShape(Rectangle()).hintGlow(hint).onTapGesture(perform: onTap).testID("choice")
     }
 }
 
