@@ -32,6 +32,7 @@ final class Driver {
         if uiTest { args += ["-PukiUITest", "1", "-PukiLang", lang] }
         if let route { args += ["-PukiScreenshot", route] }
         app.launchArguments = args + extra
+        XCUIDevice.shared.orientation = .landscapeLeft
         app.launch()
         XCUIDevice.shared.orientation = .landscapeLeft
         if uiTest || !fresh {
@@ -91,9 +92,10 @@ final class Driver {
     }
 
     func waitRoute(_ r: String, _ seconds: TimeInterval = 10) -> Bool { waitFor(seconds) { self.route == r } }
-    func waitNode(_ id: String, _ seconds: TimeInterval = 10) -> Node? {
+    /** `id` on screen within `seconds`; `anySize` for the invisible markers (route, timeLimit). */
+    func waitNode(_ id: String, _ seconds: TimeInterval = 10, anySize: Bool = false) -> Node? {
         var found: Node?
-        waitFor(seconds) { found = self.visible().first { $0.id == id }; return found != nil }
+        waitFor(seconds) { found = (anySize ? self.nodes() : self.visible()).first { $0.id == id }; return found != nil }
         return found
     }
 

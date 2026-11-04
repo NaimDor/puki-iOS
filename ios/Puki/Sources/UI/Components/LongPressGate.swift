@@ -16,7 +16,6 @@ struct LongPressGate<Content: View>: View {
     @State private var checking = false
     @State private var progress: CGFloat = 0
     @State private var holdTask: Task<Void, Never>?
-    @State private var pressed = false
 
     var body: some View {
         content()
@@ -30,9 +29,15 @@ struct LongPressGate<Content: View>: View {
                 .animation(.linear(duration: 0.1), value: progress)
             )
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in press() }
-                .onEnded { _ in release() })
+            // The system's long press: it says when the press starts and ends, a cancelled one included (a hand-made
+            // pressed flag got stuck when a quick tap's gesture was cancelled, and the gate stopped answering)
+            .onLongPressGesture(minimumDuration: Double(holdDurationMs) / 1000, maximumDistance: 60) {
+                guard uptimeMs() >= lockedUntil else { return }  // (shut for now)
+                progress = 0
+                checking = true
+            } onPressingChanged: { pressing in
+                if pressing { press() } else { release() }
+            }
             .sheet(isPresented: $checking) {
                 ParentCheck { passed in
                     checking = false
@@ -42,24 +47,23 @@ struct LongPressGate<Content: View>: View {
             }
     }
 
+    /** The ring fills while the finger stays down; the long press itself opens the check. */
     private func press() {
-        if pressed { return }
-        pressed = true
+        holdTask?.cancel()
+        progress = 0
         if uptimeMs() < lockedUntil { return }  // (shut for now: the ring doesn't fill)
         holdTask = Task { @MainActor in
             let steps = 15
-            for i in 1...steps {
+            for i in 1..<steps {
                 guard await delay(holdDurationMs / steps) else { return }
                 progress = CGFloat(i) / CGFloat(steps)
             }
-            checking = true
-            progress = 0
         }
     }
 
     private func release() {
-        pressed = false
         holdTask?.cancel()
+        holdTask = nil
         progress = 0
     }
 }

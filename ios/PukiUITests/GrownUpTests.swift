@@ -4,7 +4,7 @@ import XCTest
 final class GrownUpTests: PukiUITestCase {
     func testWelcomeScreenThenTheMap() {
         g.launch(fresh: true, uiTest: false)
-        XCTAssertNotNil(g.waitNode("onboarding.play", 15), "no welcome screen on a new install")
+        XCTAssertTrue(g.app.buttons["onboarding.play"].waitForExistence(timeout: 15), "no welcome screen on a new install")
         g.shot("welcome")
         g.app.buttons["onboarding.en"].tap()
         g.app.buttons["onboarding.boy"].tap()
@@ -64,7 +64,7 @@ final class GrownUpTests: PukiUITestCase {
 
     func testTimeLimitGoodbyeAndParentClose() {
         g.launch(extra: ["-PukiTimeLimit", "1"])
-        XCTAssertNotNil(g.waitNode("timeLimit", 100), "the time limit's goodbye didn't come after a minute")
+        XCTAssertNotNil(g.waitNode("timeLimit", 100, anySize: true), "the time limit's goodbye didn't come after a minute")
         g.pause(8)  // the goodbye: evening, a yawn, a wave
         g.shot("goodbye")
         // The game can't be played under it
