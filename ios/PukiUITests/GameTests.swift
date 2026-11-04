@@ -20,7 +20,9 @@ final class GameTests: PukiUITestCase {
         g.pause(2.5)  // (the end card's buttons wake up after the stars land)
         g.tap("continue")
         let next: String
-        if let i = Self.day.firstIndex(of: route) { next = i + 1 < Self.day.count ? Self.day[i + 1] : "myday" } else { next = route }
+        // (After bedtime it goes back where the day came from: the house, or here the map, since the test opened bedtime
+        // straight from it)
+        if let i = Self.day.firstIndex(of: route) { next = i + 1 < Self.day.count ? Self.day[i + 1] : "hub" } else { next = route }
         XCTAssertTrue(g.waitFor { self.g.route == next && self.g.node("continue") == nil }, "Continue didn't lead to a new \(next) (on \(g.route ?? "nothing"))")
     }
 

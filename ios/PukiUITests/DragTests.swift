@@ -23,7 +23,7 @@ final class DragTests: PukiUITestCase {
             g.drag(piece, to: zone)
             let landed = g.waitFor(6) { (self.g.rounds?.done ?? 0) > before || self.g.node("continue") != nil }
             XCTAssertTrue(landed, "dragging \(piece.id) onto its place didn't put it there (\(lang))")
-            if !landed { g.shot("\(lang) missed \(piece.id)"); return }
+            if !landed { g.shot("\(lang) missed \(piece.id)"); g.describe("\(piece.id) -> \(zone.id) [\(Int(zone.frame.midX)),\(Int(zone.frame.midY))]"); return }
             placed += 1
             g.pause(1.2)
         }

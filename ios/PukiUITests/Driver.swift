@@ -129,7 +129,8 @@ final class Driver {
     /** Rubbing or stirring: a stroke across `n`, on one of a few lines through it. */
     func scrub(_ n: Node) {
         let f = n.frame
-        let ys: [CGFloat] = [0.3, 0.42, 0.5, 0.58, 0.7]
+        // All the way down: the bottom teeth sit low in the face
+        let ys: [CGFloat] = [0.2, 0.3, 0.42, 0.5, 0.58, 0.66, 0.74, 0.82, 0.9]
         let y = f.minY + f.height * ys.randomElement()!
         let ltr = Bool.random()
         let a = CGPoint(x: f.minX + f.width * (ltr ? 0.12 : 0.88), y: y)
@@ -188,7 +189,24 @@ final class Driver {
             moves.randomElement()!()
             pause(0.6)
         }
+        describe("timed out on \(route ?? "?")")
         return false
+    }
+
+    /** What the test sees, in the log and with the results: for working out why a game didn't finish. */
+    func describe(_ why: String) {
+        let all = nodes()
+        let shown = Set(visible(all).map { "\($0.id)@\($0.frame)" })
+        var lines = ["diag: \(why); screen \(screen); window \(app.windows.firstMatch.frame)"]
+        for n in all where n.id != "route" {
+            let f = n.frame
+            lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value)")
+        }
+        print(lines.joined(separator: "\n"))
+        let a = XCTAttachment(string: lines.joined(separator: "\n"))
+        a.name = "what the test saw"
+        a.lifetime = .keepAlways
+        test.add(a)
     }
 
     private func routeIn(_ all: [Node]) -> String? { all.first { $0.id == "route" }?.value }

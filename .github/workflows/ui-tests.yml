@@ -82,7 +82,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO test-without-building > test.log 2>&1
           status=$?
           echo "================ results ================"
-          grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -200
+          grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|diag:|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -400
           echo "========================================="
           exit $status
 

@@ -65,6 +65,8 @@ struct DropZone<Content: View>: View {
                         .animation(.easeInOut(duration: 0.2), value: hovered)
                         .onAppear { dd.registerDropZone(zoneId, f) }
                         .onChange(of: f) { _, nf in dd.registerDropZone(zoneId, nf) }
+                        // The same place, a new round with a new name (the animal waiting for food): under its new name
+                        .onChange(of: zoneId) { old, new in dd.unregisterDropZone(old); dd.registerDropZone(new, f) }
                 }
                 .allowsHitTesting(false)
             )
@@ -102,6 +104,8 @@ struct DragTarget<Content: View>: View {
     @State private var mine = false
     @State private var moved = false
     @State private var frame: CGRect = .zero
+    /** Down while a finger is on the piece; iOS puts it back up even when it cancels the touch (no onEnded then). */
+    @GestureState private var touching = false
 
     var body: some View {
         // The container stays home (it's what's measured); the piece inside moves
@@ -115,10 +119,17 @@ struct DragTarget<Content: View>: View {
                 .offset(x: (dir == .rightToLeft ? -1 : 1) * (offset.width + dragDelta.width), y: offset.height + dragDelta.height)
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .updating($touching) { _, t, _ in t = true }
                         .onChanged { v in changed(v) }
                         .onEnded { v in ended(v) }
                 )
         }
+        // A touch cut short (the system took it, or a second hand): let go of it as if dropped nowhere, or the game
+        // would think a piece is still held and ignore every touch after
+        // (a turn later: a normal drop's onEnded comes first and clears `moved`)
+        .onChange(of: touching) { _, t in if !t { DispatchQueue.main.async { if !touching { cancelled() } } } }
+        // Gone mid-drag (the step moved on under the finger): the same
+        .onDisappear { cancelled() }
         .background(GeometryReader { g in
             let f = g.frame(in: .global)
             Color.clear
@@ -173,6 +184,24 @@ struct DragTarget<Content: View>: View {
         }
         onDragEnd(dropTarget)
         finish(dropTarget)
+    }
+
+    private func cancelled() {
+        // After a normal end ended() has cleared `moved`, and a tapped piece's flight finishes by itself
+        guard moved else { if !isDragging && lift != 1 { settle() }; return }
+        let wasMine = mine
+        moved = false
+        mine = false
+        guard wasMine else { return }
+        isDragging = false
+        if dd.draggedItemId == itemId { dd.reset() }
+        var t = Transaction(animation: nil); t.disablesAnimations = true
+        withTransaction(t) {
+            offset = CGSize(width: offset.width + dragDelta.width, height: offset.height + dragDelta.height)
+            dragDelta = .zero
+        }
+        settle()
+        goHome()
     }
 
     private func settle() { withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) { lift = 1 } }
