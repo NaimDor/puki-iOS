@@ -94,7 +94,7 @@ struct ColorSplashScreen: View {
                                 ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right)
                                     // (where it is on the screen, for the touch catcher below; kept off the view state)
                                     .background(GeometryReader { gp in
-                                        let f = gp.frame(in: .global)
+                                        let f = gp.frame(in: .named("balloons"))
                                         Color.clear.onAppear { balloons.frames[color.id] = f }.onChange(of: f) { _, nf in balloons.frames[color.id] = nf }
                                     })
                                     .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, i)))
@@ -115,11 +115,17 @@ struct ColorSplashScreen: View {
                         .overlay(
                             Color.clear
                                 .contentShape(Rectangle())
-                                .gesture(SpatialTapGesture(coordinateSpace: .global).onEnded { v in
+                                .gesture(SpatialTapGesture(coordinateSpace: .named("balloons")).onEnded { v in
                                     let choices = vm.state.colorChoices
-                                    if let id = balloons.under(v.location, among: Set(choices.map(\.id))), let c = choices.first(where: { $0.id == id }) { pick(c) }
+                                    let id = balloons.under(v.location, among: Set(choices.map(\.id)))
+                                    #if DEBUG
+                                    TouchHub.shared.trace += " caught \(Int(v.location.x)),\(Int(v.location.y)) -> \(id ?? "none") of " +
+                                        choices.map { c in balloons.frames[c.id].map { "\(c.id)@\(Int($0.minX))-\(Int($0.maxX))" } ?? c.id }.joined(separator: " ")
+                                    #endif
+                                    if let id, let c = choices.first(where: { $0.id == id }) { pick(c) }
                                 })
                         )
+                        .coordinateSpace(name: "balloons")
                     }
                 }
                 .padding(16)
