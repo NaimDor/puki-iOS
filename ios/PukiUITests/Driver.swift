@@ -186,6 +186,11 @@ final class Driver {
             // Rubbing and stirring take many strokes
             for s in shown where s.id == "scrub" { for _ in 0..<8 { moves.append { self.scrub(s) } } }
             if moves.isEmpty { pause(0.8); continue }
+            // The end card can come up between the look and the touch, and a touch then lands on its Home button
+            if app.descendants(matching: .any)["continue"].exists { continue }
+            // A debug build marks the answer. A toddler finds it in the end too; going for it now and then keeps a
+            // game with a long, glowing hint from taking an hour on a slow simulator (the wrong ones still get tried)
+            if let right = shown.first(where: { $0.value == "right" }), Bool.random() { tap(right); pause(0.6); continue }
             moves.randomElement()!()
             pause(0.6)
         }
@@ -198,17 +203,16 @@ final class Driver {
         let all = nodes()
         let shown = Set(visible(all).map { "\($0.id)@\($0.frame)" })
         var lines = ["diag: \(why); screen \(screen); window \(app.windows.firstMatch.frame)"]
-        // Whether a finger at each one's middle reaches it, or something else is on top
-        var hittable: [String: Bool] = [:]
-        for id in Set(all.map(\.id)) where id != "route" {
-            for e in app.descendants(matching: .any).matching(identifier: id).allElementsBoundByIndex where e.exists {
-                hittable["\(id)@\(e.frame)"] = e.isHittable
-            }
-        }
         for n in all where n.id != "route" {
             let f = n.frame
-            let hit = hittable["\(n.id)@\(f)"].map { $0 ? "hittable" : "covered" } ?? "?"
-            lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value) \(hit)")
+            lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value)")
+        }
+        // Whether a finger at each one's middle reaches it, or something else is on top
+        for id in Set(all.map(\.id)) where id != "route" {
+            for e in app.descendants(matching: .any).matching(identifier: id).allElementsBoundByIndex where e.exists {
+                let f = e.frame
+                lines.append("diag:   \(id) at [\(Int(f.minX)),\(Int(f.minY))] \((e.value as? String) ?? "") \(e.isHittable ? "hittable" : "covered")")
+            }
         }
         print(lines.joined(separator: "\n"))
         let a = XCTAttachment(string: lines.joined(separator: "\n"))
