@@ -118,10 +118,13 @@ private struct ReadyParrot: View {
                     .animation(.spring(response: 0.4, dampingFraction: 0.4), value: anyListening)
                     .rotationEffect(.degrees(speaking ? Double((bob - 0.5) * 8) : 0), anchor: .bottom)
                     .offset(y: -bob * (speaking ? 10 : 4))
-                    .gesture(DragGesture(minimumDistance: 0).onChanged { _ in press() }.onEnded { _ in release(true) })
             }
             .frame(width: size, height: size)
         }
+        // (the touch outside the redraw, on a still box his size: see OfflineParrot)
+        .frame(width: size, height: size)
+        .contentShape(Rectangle())
+        .gesture(DragGesture(minimumDistance: 0).onChanged { _ in press() }.onEnded { _ in release(true) })
         .onDisappear { recorder.stopInBackground() }
     }
 
@@ -207,13 +210,16 @@ struct OfflineParrot: View {
                     .frame(width: size, height: size)
                     .rotationEffect(.degrees(talking ? Double((bob - 0.5) * 14) : 0), anchor: .bottom)  // a little dance while he talks
                     .offset(y: -bob * (talking ? 14 : 4))
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        #if DEBUG
-                        TouchHub.shared.caught = "parrot (offline) took a touch"
-                        #endif
-                        onTap()
-                    }
+            }
+            // The touch on a still box his size, outside the redraw: a tap gesture inside it took touches far from
+            // him on a phone (over the balloon next to him in Colors, which then never popped)
+            .frame(width: size, height: size)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                #if DEBUG
+                TouchHub.shared.caught = "parrot (offline) took a touch"
+                #endif
+                onTap()
             }
         }
     }
