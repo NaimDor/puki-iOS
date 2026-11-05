@@ -34,8 +34,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device: ${{ fromJSON(inputs.devices || '["iPad", "iPhone"]') }}
-        part: ${{ fromJSON(inputs.parts || '["islands", "my-day", "screens-and-drags", "grown-ups-and-monkey"]') }}
+        device: ${{ fromJSON(inputs.devices || '["iPhone"]') }}  # FOCUS (temporary)
+        part: ${{ fromJSON(inputs.parts || '["islands"]') }}  # FOCUS (temporary)
     steps:
       - uses: actions/checkout@v4
 
@@ -94,9 +94,10 @@ jobs:
             screens-and-drags) ONLY="-only-testing:PukiUITests/NavigationTests -only-testing:PukiUITests/DragTests" ;;
             *) ONLY="-only-testing:PukiUITests/GrownUpTests -only-testing:PukiUITests/MonkeyTests" ;;
           esac
-          if [ -n "${{ inputs.only }}" ]; then ONLY=""; for t in ${{ inputs.only }}; do ONLY="$ONLY -only-testing:$G/test$t"; done; fi
+          FOCUS="Peekaboo"; ITER="-test-iterations 3"  # FOCUS (temporary)
+          if [ -n "${{ inputs.only }}$FOCUS" ]; then ONLY=""; for t in ${{ inputs.only }} $FOCUS; do ONLY="$ONLY -only-testing:$G/test$t"; done; fi
           xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
-            -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY \
+            -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY $ITER \
             CODE_SIGNING_ALLOWED=NO test-without-building 2>&1 | tee test.log \
             | grep --line-buffered -E "Test Case .*(passed|failed)|error: -\[|diag:|trace:|note:" | sed -E 's/^.*Test Case/Test Case/'
           status=${PIPESTATUS[0]}

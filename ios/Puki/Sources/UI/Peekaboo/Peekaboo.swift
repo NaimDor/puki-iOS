@@ -210,6 +210,7 @@ private struct SpotView: View {
     let onTap: () -> Void
     @State private var shown: AnimalDef?
     @State private var wobble = 0.0
+    @State private var taps = 0  // (debug: the touches this spot took, for the UI tests)
 
     var body: some View {
         GeometryReader { g in
@@ -230,8 +231,14 @@ private struct SpotView: View {
             .rotationEffect(.degrees(wobble), anchor: .bottom)
             // Only the spot itself: the air above it isn't a wrong guess
             .contentShape(Rectangle())
-            .onTapGesture(perform: onTap)
+            .onTapGesture {
+                #if DEBUG
+                taps += 1
+                #endif
+                onTap()
+            }
             .testID("choice")
+            .testValue("\(hiding ? "right" : "")|\(spot) taps:\(taps)\(hiding && hint ? " hint" : "")")
             .frame(width: g.size.width, height: g.size.height, alignment: .bottom)
         }
         .onAppear { shown = animal }
