@@ -101,9 +101,10 @@ struct CareGameScreen: View {
                                         .frame(width: 110, height: 110)
                                         .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.2), radius: 6, y: 3))
                                         .opacity(gone ? 0.25 : 1)
+                                        .hintGlow(help.showHint && helps && !gone)
+                                        // (the touch outside the glow: inside its redraw a tap gesture stops taking touches)
                                         .contentShape(Circle())
                                         .onTapGesture { if choosing && !gone { tap?.complete(gift) } }
-                                        .hintGlow(help.showHint && helps && !gone)
                                 }
                             }
                         }

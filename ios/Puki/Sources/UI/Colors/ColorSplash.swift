@@ -90,9 +90,15 @@ struct ColorSplashScreen: View {
                         Scatter(seed: sessionSeed + state.roundIndex, rtl: dir == .rightToLeft) {
                             ForEach(Array(state.colorChoices.enumerated()), id: \.element.id) { i, color in
                                 let right = color.id == state.targetColor.id
-                                ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right, note: "\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)") { pick(color) }
+                                ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right)
                                     .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, i)))
                                     .hintGlow(help.showHint && right)
+                                    // The touch goes outside the glow: inside its redraw a tap gesture stopped taking
+                                    // touches, and the glowing answer wouldn't pop
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { pick(color) }
+                                    .testID("choice")
+                                    .testValue("\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)")
                                     .reaction(reactions(color.id))
                                     .idleBob(i)
                                     .popAway(roundOver && !right, index: i)
@@ -197,8 +203,6 @@ private struct ColorBlob: View {
     let color: Color
     let height: CGFloat
     let popped: Bool
-    var note = ""
-    let onClick: () -> Void
     var body: some View {
         let light = lerp(color, .white, 0.4), dark = lerp(color, .black, 0.25), rim = lerp(color, .black, 0.35)
         Tweened(popped ? 1 : 0) { burst in
@@ -240,9 +244,5 @@ private struct ColorBlob: View {
         }
         .animation(popped ? .easeOut(duration: 0.42) : nil, value: popped)
         .frame(width: height * 0.68, height: height)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onClick)
-        .testID("choice")
-        .testValue(note)
     }
 }
