@@ -82,6 +82,8 @@ jobs:
           xcrun simctl privacy "$SIM" grant photos-add com.naimdor.puki || true
 
       - name: Run the UI tests
+        # (So a hung run still leaves its pictures and results)
+        timeout-minutes: 120
         run: |
           set +e
           cd ios
@@ -97,8 +99,9 @@ jobs:
           if [ -n "${{ inputs.only }}" ]; then ONLY=""; for t in ${{ inputs.only }}; do ONLY="$ONLY -only-testing:$G/test$t"; done; fi
           xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
             -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY \
-            CODE_SIGNING_ALLOWED=NO test-without-building > test.log 2>&1
-          status=$?
+            CODE_SIGNING_ALLOWED=NO test-without-building 2>&1 | tee test.log \
+            | grep --line-buffered -E "Test Case .*(passed|failed)|error: -\[|diag:|trace:|note:" | sed -E 's/^.*Test Case/Test Case/'
+          status=${PIPESTATUS[0]}
           echo "================ results ================"
           grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|diag:|trace:|note:|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -400
           echo "========================================="

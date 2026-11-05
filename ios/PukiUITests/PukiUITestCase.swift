@@ -7,6 +7,7 @@ class PukiUITestCase: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
+        Quiescence.off
         g = Driver(self)
         addUIInterruptionMonitor(withDescription: "permissions") { alert in
             for b in ["Allow", "OK", "Allow While Using App", "Allow Full Access", "Allow Access to All Photos"] where alert.buttons[b].exists {
