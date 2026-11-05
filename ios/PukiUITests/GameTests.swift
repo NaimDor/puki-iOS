@@ -29,6 +29,7 @@ final class GameTests: PukiUITestCase {
     func testAnimals() { play("animals") }
     func testAnimals_English() { play("animals", lang: "en") }
     func testColors() { play("colors") }
+    func testColors_English() { play("colors", lang: "en") }
     func testShapes() { play("shapes") }
     func testShapes_English() { play("shapes", lang: "en") }
     func testCounting() { play("counting") }

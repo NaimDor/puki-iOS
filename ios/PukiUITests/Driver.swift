@@ -207,7 +207,7 @@ final class Driver {
             if app.descendants(matching: .any)["continue"].exists { continue }
             // A debug build marks the answer. A toddler finds it in the end too; going for it now and then keeps a
             // game with a long, glowing hint from taking an hour on a slow simulator (the wrong ones still get tried)
-            if let right = shown.first(where: { $0.value.hasPrefix("right") }), Bool.random() { tap(right); pause(0.6); continue }
+            if let right = shown.first(where: { $0.value.hasPrefix("right|") }), Bool.random() { tap(right); pause(0.6); continue }
             moves.randomElement()!()
             pause(0.6)
         }

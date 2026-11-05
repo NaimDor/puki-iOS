@@ -72,7 +72,7 @@ struct ColorSplashScreen: View {
     @State private var found: [Color] = []  // the session's colors, as splats on the grass
     @State private var rainbow: CGFloat = 0
     @State private var showCard = false
-    @State private var lastPick = ""  // (for the UI tests: what the last touch on a balloon did)
+    @State private var picks: [String: Int] = [:]  // (for the UI tests: how many touches each balloon took)
 
     var body: some View {
         let state = vm.state
@@ -90,7 +90,7 @@ struct ColorSplashScreen: View {
                         Scatter(seed: sessionSeed + state.roundIndex, rtl: dir == .rightToLeft) {
                             ForEach(Array(state.colorChoices.enumerated()), id: \.element.id) { i, color in
                                 let right = color.id == state.targetColor.id
-                                ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right, note: right ? "right \(lastPick)" : lastPick) { pick(color) }
+                                ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right, note: "\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)") { pick(color) }
                                     .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, i)))
                                     .hintGlow(help.showHint && right)
                                     .reaction(reactions(color.id))
@@ -144,9 +144,8 @@ struct ColorSplashScreen: View {
     private func pick(_ color: ColorDef) {
         let target = vm.state.targetColor
         let blob = reactions(color.id)
-        let answer = vm.onColorTapped(color.id)
-        lastPick = "picked \(color.id): \(answer.map { $0 ? "right" : "wrong" } ?? "ignored") (round \(vm.state.roundIndex))"
-        guard let correct = answer else { return }
+        picks[color.id, default: 0] += 1
+        guard let correct = vm.onColorTapped(color.id) else { return }
         if correct {
             app.sfx.play(.pop)
             app.sfx.play(.success, volume: 0.7)

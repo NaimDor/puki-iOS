@@ -77,7 +77,7 @@ jobs:
           cd ios
           G=PukiUITests/GameTests
           case "${{ matrix.part }}" in
-            islands) ONLY=""; for t in Animals Animals_English Colors Shapes Shapes_English Counting Words Words_English Peekaboo Music Dance EndCardGoesHome; do ONLY="$ONLY -only-testing:$G/test$t"; done ;;
+            islands) ONLY=""; for t in Animals Animals_English Colors Colors_English Shapes Shapes_English Counting Words Words_English Peekaboo Music Dance EndCardGoesHome; do ONLY="$ONLY -only-testing:$G/test$t"; done ;;
             my-day) ONLY=""; for t in Dress BrushTeeth Table Tidy Tidy_English Cake CarWash Bath Bedtime; do ONLY="$ONLY -only-testing:$G/test$t"; done ;;
             screens-and-drags) ONLY="-only-testing:PukiUITests/NavigationTests -only-testing:PukiUITests/DragTests" ;;
             *) ONLY="-only-testing:PukiUITests/GrownUpTests -only-testing:PukiUITests/MonkeyTests" ;;
