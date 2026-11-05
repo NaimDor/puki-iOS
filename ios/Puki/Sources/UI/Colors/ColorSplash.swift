@@ -73,6 +73,7 @@ struct ColorSplashScreen: View {
     @State private var rainbow: CGFloat = 0
     @State private var showCard = false
     @State private var picks: [String: Int] = [:]  // (for the UI tests: how many touches each balloon took)
+    @State private var balloons = TouchTargets()
 
     var body: some View {
         let state = vm.state
@@ -91,12 +92,13 @@ struct ColorSplashScreen: View {
                             ForEach(Array(state.colorChoices.enumerated()), id: \.element.id) { i, color in
                                 let right = color.id == state.targetColor.id
                                 ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right)
+                                    // (where it is on the screen, for the touch catcher below; kept off the view state)
+                                    .background(GeometryReader { gp in
+                                        let f = gp.frame(in: .global)
+                                        Color.clear.onAppear { balloons.frames[color.id] = f }.onChange(of: f) { _, nf in balloons.frames[color.id] = nf }
+                                    })
                                     .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, i)))
                                     .hintGlow(help.showHint && right)
-                                    // A button outside the glow: a tap gesture there stopped taking touches,
-                                    // and the glowing answer wouldn't pop
-                                    .contentShape(Rectangle())
-                                    .clickable(squish: false) { pick(color) }
                                     .testID("choice")
                                     .testValue("\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)\(right && help.showHint ? " hint" : "")")
                                     .reaction(reactions(color.id))
@@ -106,6 +108,18 @@ struct ColorSplashScreen: View {
                             }
                         }
                         .frame(width: g.size.width, height: g.size.height)
+                        .allowsHitTesting(false)
+                        // One touch catcher over all the balloons, which finds the one under her finger. A touch
+                        // on the balloon itself sometimes did nothing on a phone (the glowing answer above all:
+                        // UI tests saw it land on the spot and no balloon take it, round after round)
+                        .overlay(
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .gesture(SpatialTapGesture(coordinateSpace: .global).onEnded { v in
+                                    let choices = vm.state.colorChoices
+                                    if let id = balloons.under(v.location, among: Set(choices.map(\.id))), let c = choices.first(where: { $0.id == id }) { pick(c) }
+                                })
+                        )
                     }
                 }
                 .padding(16)

@@ -17,16 +17,22 @@ struct Scatter: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        for (sv, f) in zip(subviews, frames(in: bounds.size, sizes)) {
+            sv.place(at: CGPoint(x: bounds.minX + f.minX, y: bounds.minY + f.minY), anchor: .topLeading, proposal: .init(f.size))
+        }
+    }
+
+    /** Where children of these sizes stand in an area of `size` (from its top left corner). */
+    func frames(in size: CGSize, _ sizes: [CGSize]) -> [CGRect] {
         let tallest = sizes.map(\.height).max() ?? 0
-        let w = bounds.width, h = bounds.height
-        let centers = scatterCenters(subviews.count, seed, aroundCenter, flat: h < tallest * 1.5)
-        for (i, sv) in subviews.enumerated() {
+        let w = size.width, h = size.height
+        let centers = scatterCenters(sizes.count, seed, aroundCenter, flat: h < tallest * 1.5)
+        return sizes.enumerated().map { i, p in
             let (fx0, fy) = centers[i]
             let fx = rtl ? 1 - fx0 : fx0  // mirrors in Hebrew, so the first one is where reading starts
-            let p = sizes[i]
             let x = (w * fx - p.width / 2).coerceIn(0, max(0, w - p.width))
             let y = (h * fy - p.height / 2).coerceIn(0, max(0, h - p.height))
-            sv.place(at: CGPoint(x: bounds.minX + x, y: bounds.minY + y), anchor: .topLeading, proposal: .init(p))
+            return CGRect(x: x, y: y, width: p.width, height: p.height)
         }
     }
 }
@@ -59,6 +65,20 @@ func scatterCenters(_ n: Int, _ seed: Int, _ aroundCenter: Bool, flat: Bool) -> 
         let x: CGFloat = (onLeft ? 0.15 : 0.85) + (k % 2 == 0 ? -0.04 : 0.04) + (rnd.nextFloat() - 0.5) * 0.04
         let y = (CGFloat(k) + 0.5) / CGFloat(m) + (rnd.nextFloat() - 0.5) * 0.1
         return (x, y)
+    }
+}
+
+/**
+ * Where tappable things are on the screen, for one touch catcher over them all: kept in a box, not in view state,
+ * so a bobbing balloon doesn't redraw the screen.
+ */
+final class TouchTargets {
+    var frames: [String: CGRect] = [:]
+
+    /** The one a touch at `p` (global) is on, or nearest to just outside one. */
+    func under(_ p: CGPoint, among ids: Set<String>, slack: CGFloat = 24) -> String? {
+        frames.filter { ids.contains($0.key) && $0.value.insetBy(dx: -slack, dy: -slack).contains(p) }
+            .min { hypot($0.value.midX - p.x, $0.value.midY - p.y) < hypot($1.value.midX - p.x, $1.value.midY - p.y) }?.key
     }
 }
 
