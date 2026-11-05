@@ -109,28 +109,34 @@ extension View {
 }
 
 private struct HintGlow: ViewModifier {
+    // A repeating animation, not a view rebuilt every frame: a TimelineView redraw at 30 fps
+    // kept the glowing answer from taking taps (Colors' right balloon on a phone), and it's
+    // cheaper on a slow tablet
+    @State private var pulse = false
+    @State private var sway = false
     func body(content: Content) -> some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30)) { tl in
-            let phase = CGFloat(tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.9) / 0.9)
-            let a = phase * 2 * .pi
-            let pulse = 0.5 + 0.5 * sin(a)
-            content
-                .background(
-                    GeometryReader { g in
-                        let r = g.size.maxDimension * (0.7 + 0.06 * pulse)
-                        Circle()
-                            .fill(RadialGradient(stops: [
-                                .init(color: Color(argb: 0xFFFFEB3B).opacity(0.9), location: 0),
-                                .init(color: Color(argb: 0xFFFFEB3B).opacity(Double(0.75 + 0.2 * pulse)), location: 0.72),
-                                .init(color: .clear, location: 1),
-                            ], center: .center, startRadius: 0, endRadius: r))
-                            .frame(width: r * 2, height: r * 2)
-                            .position(x: g.size.width / 2, y: g.size.height / 2)
-                    }
-                    .allowsHitTesting(false)
-                )
-                .scaleEffect(1 + 0.06 * sin(a))
-                .rotationEffect(.degrees(Double(sin(a * 2) * 7)))
-        }
+        content
+            .background(
+                GeometryReader { g in
+                    let r = g.size.maxDimension * 0.73
+                    Circle()
+                        .fill(RadialGradient(stops: [
+                            .init(color: Color(argb: 0xFFFFEB3B).opacity(0.9), location: 0),
+                            .init(color: Color(argb: 0xFFFFEB3B).opacity(0.85), location: 0.72),
+                            .init(color: .clear, location: 1),
+                        ], center: .center, startRadius: 0, endRadius: r))
+                        .frame(width: r * 2, height: r * 2)
+                        .scaleEffect(pulse ? 1.04 : 0.96)
+                        .opacity(pulse ? 1 : 0.85)
+                        .position(x: g.size.width / 2, y: g.size.height / 2)
+                }
+                .allowsHitTesting(false)
+            )
+            .scaleEffect(pulse ? 1.06 : 0.94)
+            .rotationEffect(.degrees(sway ? 7 : -7))
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.45).repeatForever(autoreverses: true)) { pulse = true }
+                withAnimation(.easeInOut(duration: 0.225).repeatForever(autoreverses: true)) { sway = true }
+            }
     }
 }

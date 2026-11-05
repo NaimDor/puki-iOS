@@ -93,10 +93,10 @@ struct ColorSplashScreen: View {
                                 ColorBlob(color: color.color, height: balloonHeight, popped: roundOver && right)
                                     .rotationEffect(.degrees(scatterTilt(sessionSeed + state.roundIndex, i)))
                                     .hintGlow(help.showHint && right)
-                                    // The touch goes outside the glow: inside its redraw a tap gesture stopped taking
-                                    // touches, and the glowing answer wouldn't pop
+                                    // A button outside the glow: a tap gesture there stopped taking touches,
+                                    // and the glowing answer wouldn't pop
                                     .contentShape(Rectangle())
-                                    .onTapGesture { pick(color) }
+                                    .clickable(squish: false) { pick(color) }
                                     .testID("choice")
                                     .testValue("\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)")
                                     .reaction(reactions(color.id))
