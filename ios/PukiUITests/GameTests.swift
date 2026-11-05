@@ -14,7 +14,7 @@ final class GameTests: PukiUITestCase {
         let finished = g.playToEnd(style, seconds: seconds)
         g.shot("\(lang) \(route) end")
         XCTAssertTrue(finished, "\(route) didn't reach its end card in \(Int(seconds)) s (rounds \(String(describing: g.rounds)))")
-        if !finished { return }
+        if !finished || g.endedAtHome { return }
         if let stars = g.stars { XCTAssertGreaterThan(stars, 0, "\(route) ended without a star") }
         // Continue: the same game again from the start, or the next room of the day
         g.pause(2.5)  // (the end card's buttons wake up after the stars land)

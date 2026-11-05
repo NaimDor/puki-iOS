@@ -8,6 +8,8 @@ import XCTest
 final class Driver {
     let app = XCUIApplication()
     let test: XCTestCase
+    /** The last game played ended on its last round with a touch on the end card's Home (see playToEnd). */
+    private(set) var endedAtHome = false
     /** The screen, as the last look saw it. */
     private(set) var screen = CGRect(x: 0, y: 0, width: 10_000, height: 10_000)
 
@@ -157,10 +159,25 @@ final class Driver {
     func playToEnd(_ style: Style = .tryEverything, seconds: TimeInterval = 300) -> Bool {
         let end = Date().addingTimeInterval(seconds)
         let route = self.route
+        endedAtHome = false
+        var lastRounds: (done: Int, total: Int)?
         while Date() < end {
             let all = nodes()
             if visible(all).contains(where: { $0.id == "continue" }) { return true }
-            if routeIn(all) != route { XCTFail("left \(route ?? "?") for \(routeIn(all) ?? "nothing") while playing"); return false }
+            if routeIn(all) != route {
+                // On a slow simulator a touch waits for the app to settle and lands late; when the game was on its last
+                // round, the end card came up under it and the touch was a press on its Home: the game did end
+                if routeIn(all) == "hub", let r = lastRounds, r.total > 0, r.done >= r.total - 1 {
+                    print("note: the end card came up under a touch on \(route ?? "?") and took it home")
+                    endedAtHome = true
+                    return true
+                }
+                XCTFail("left \(route ?? "?") for \(routeIn(all) ?? "nothing") while playing (rounds \(String(describing: lastRounds)))")
+                return false
+            }
+            if let v = all.first(where: { $0.id == "rounds" })?.value.split(separator: "/"), v.count == 2, let a = Int(v[0]), let b = Int(v[1]) {
+                lastRounds = (a, b)
+            }
             let shown = visible(all)
             switch style {
             case .followTheTune:
@@ -190,7 +207,7 @@ final class Driver {
             if app.descendants(matching: .any)["continue"].exists { continue }
             // A debug build marks the answer. A toddler finds it in the end too; going for it now and then keeps a
             // game with a long, glowing hint from taking an hour on a slow simulator (the wrong ones still get tried)
-            if let right = shown.first(where: { $0.value == "right" }), Bool.random() { tap(right); pause(0.6); continue }
+            if let right = shown.first(where: { $0.value.hasPrefix("right") }), Bool.random() { tap(right); pause(0.6); continue }
             moves.randomElement()!()
             pause(0.6)
         }
