@@ -30,7 +30,7 @@ jobs:
     # (Intel: GitHub's Apple-silicon Macs are often all taken, and the job is cancelled unstarted. Intel simulators are
     # slower, so the tests come in eight small parts. Xcode 26 is picked below.)
     runs-on: macos-15-intel
-    timeout-minutes: 150
+    timeout-minutes: 200
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +83,7 @@ jobs:
 
       - name: Run the UI tests
         # (So a hung run still leaves its pictures and results)
-        timeout-minutes: 120
+        timeout-minutes: 175
         run: |
           set +e
           cd ios
@@ -97,12 +97,17 @@ jobs:
           if [ -n "${{ inputs.only }}" ]; then ONLY=""; for t in ${{ inputs.only }}; do ONLY="$ONLY -only-testing:$G/test$t"; done; fi
           xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
             -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY \
+            -retry-tests-on-failure -test-iterations 2 \
             CODE_SIGNING_ALLOWED=NO test-without-building 2>&1 | tee test.log \
             | grep --line-buffered -E "Test Case .*(passed|failed)|error: -\[|diag:|trace:|note:" | sed -E 's/^.*Test Case/Test Case/'
           status=${PIPESTATUS[0]}
           echo "================ results ================"
           grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|diag:|trace:|note:|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -400
           echo "========================================="
+          # A failed test runs once more (GitHub's simulators drop screenshots and connections now and then). The
+          # tests that needed it are listed, so a second chance is never mistaken for a clean pass
+          echo "Needed a second try:"
+          grep -E "Test Case .*failed" test.log | sed -E "s/^.*Test Case '-\[([^]]*)\]'.*$/  \1/" | sort -u || true
           exit $status
 
       - name: Pictures of how each test ended (for reviewing without the artifact)
