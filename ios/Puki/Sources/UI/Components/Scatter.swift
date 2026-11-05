@@ -1,8 +1,5 @@
 import SwiftUI
 
-/** How much of the start of a row Puki's corner takes (him and his margins, on a tablet). */
-private let pukiCorner: CGFloat = 150
-
 /**
  * Lays its children out loosely instead of in a row: high and low in turn, nudged a little each round (`seed`)
  * so no two rounds look the same. Order is kept (first child first, in reading direction). With `aroundCenter`
@@ -22,18 +19,12 @@ struct Scatter: Layout {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         let tallest = sizes.map(\.height).max() ?? 0
         let w = bounds.width, h = bounds.height
-        let flat = h < tallest * 1.5
-        let centers = scatterCenters(subviews.count, seed, aroundCenter, flat: flat)
-        // In one row (a phone on its side) the things stand as low as Puki, so his corner at the start of the row is
-        // left free when there's room: he's drawn on top, and a touch on a balloon behind him made him talk instead
-        let room = w - sizes.map(\.width).reduce(0, +) * 1.1
-        let clear = flat && !aroundCenter ? min(pukiCorner, max(0, room)) : 0  // (around a centre, the middle stays put)
+        let centers = scatterCenters(subviews.count, seed, aroundCenter, flat: h < tallest * 1.5)
         for (i, sv) in subviews.enumerated() {
             let (fx0, fy) = centers[i]
-            let lead = clear + (w - clear) * fx0  // from where reading starts
+            let fx = rtl ? 1 - fx0 : fx0  // mirrors in Hebrew, so the first one is where reading starts
             let p = sizes[i]
-            let cx = rtl ? w - lead : lead  // mirrors in Hebrew, so the first one is where reading starts
-            let x = (cx - p.width / 2).coerceIn(0, max(0, w - p.width))
+            let x = (w * fx - p.width / 2).coerceIn(0, max(0, w - p.width))
             let y = (h * fy - p.height / 2).coerceIn(0, max(0, h - p.height))
             sv.place(at: CGPoint(x: bounds.minX + x, y: bounds.minY + y), anchor: .topLeading, proposal: .init(p))
         }

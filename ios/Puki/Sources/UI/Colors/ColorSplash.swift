@@ -106,6 +106,9 @@ struct ColorSplashScreen: View {
                         }
                         .frame(width: g.size.width, height: g.size.height)
                     }
+                    // Clear of Puki, like every game: on a phone on its side the balloons stand as low as he does,
+                    // and the first one, behind him, gave him its touches
+                    .padding(.leading, pukiCorner)
                 }
                 .padding(16)
                 // The colors she's found, splashed on the grass
