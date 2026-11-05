@@ -9,9 +9,19 @@ on:
     branches: [claude/dazzling-faraday-untz5o]
     paths: ["ios/Puki/**", "ios/PukiUITests/**", "ios/project.yml", ".github/workflows/ui-tests.yml"]
   workflow_dispatch:
+    inputs:
+      devices:
+        description: 'Devices, as JSON (["iPhone"])'
+        default: '["iPad", "iPhone"]'
+      parts:
+        description: 'Parts, as JSON (["islands"])'
+        default: '["islands", "my-day", "screens-and-drags", "grown-ups-and-monkey"]'
+      only:
+        description: 'Just these GameTests, by name (Colors Colors_English); empty runs the parts'
+        default: ''
 
 concurrency:
-  group: ui-tests-${{ github.ref }}
+  group: ui-tests-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -24,8 +34,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device: [iPad, iPhone]
-        part: [islands, my-day, screens-and-drags, grown-ups-and-monkey]
+        device: ${{ fromJSON(inputs.devices || '["iPad", "iPhone"]') }}
+        part: ${{ fromJSON(inputs.parts || '["islands", "my-day", "screens-and-drags", "grown-ups-and-monkey"]') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -82,12 +92,13 @@ jobs:
             screens-and-drags) ONLY="-only-testing:PukiUITests/NavigationTests -only-testing:PukiUITests/DragTests" ;;
             *) ONLY="-only-testing:PukiUITests/GrownUpTests -only-testing:PukiUITests/MonkeyTests" ;;
           esac
+          if [ -n "${{ inputs.only }}" ]; then ONLY=""; for t in ${{ inputs.only }}; do ONLY="$ONLY -only-testing:$G/test$t"; done; fi
           xcodebuild -project Puki.xcodeproj -scheme PukiUI -destination "id=$SIM" -derivedDataPath build \
             -resultBundlePath ../ui.xcresult -parallel-testing-enabled NO $ONLY \
             CODE_SIGNING_ALLOWED=NO test-without-building > test.log 2>&1
           status=$?
           echo "================ results ================"
-          grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|diag:|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -400
+          grep -E "Test Case .*(passed|failed)|error: -\[|monkey \(|diag:|trace:|note:|\*\* TEST" test.log | sed -E 's/^.*Test Case/Test Case/' | head -400
           echo "========================================="
           exit $status
 

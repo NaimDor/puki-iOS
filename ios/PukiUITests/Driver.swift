@@ -161,6 +161,7 @@ final class Driver {
         let route = self.route
         endedAtHome = false
         var lastRounds: (done: Int, total: Int)?
+        var traces = 0
         while Date() < end {
             let all = nodes()
             if visible(all).contains(where: { $0.id == "continue" }) { return true }
@@ -207,7 +208,17 @@ final class Driver {
             if app.descendants(matching: .any)["continue"].exists { continue }
             // A debug build marks the answer. A toddler finds it in the end too; going for it now and then keeps a
             // game with a long, glowing hint from taking an hour on a slow simulator (the wrong ones still get tried)
-            if let right = shown.first(where: { $0.value.hasPrefix("right|") }), Bool.random() { tap(right); pause(0.6); continue }
+            if let right = shown.first(where: { $0.value.hasPrefix("right|") }), Bool.random() {
+                tap(right); pause(0.6)
+                // While the answer glows, where the touch went (a touch that did nothing showed up here)
+                if right.value.hasSuffix(" hint"), traces < 12 {
+                    traces += 1
+                    let now = nodes()
+                    let after = now.first { $0.id == "choice" && $0.value.hasPrefix("right|") }?.value ?? "(gone)"
+                    print("trace: tapped right at [\(Int(right.frame.midX)),\(Int(right.frame.midY))] in \(right.frame); touch \(now.first { $0.id == "touch" }?.value ?? "?"); now \(after)")
+                }
+                continue
+            }
             moves.randomElement()!()
             pause(0.6)
         }
@@ -220,12 +231,12 @@ final class Driver {
         let all = nodes()
         let shown = Set(visible(all).map { "\($0.id)@\($0.frame)" })
         var lines = ["diag: \(why); screen \(screen); window \(app.windows.firstMatch.frame)"]
-        for n in all where n.id != "route" {
+        for n in all where n.id != "route" && n.id != "touch" {
             let f = n.frame
             lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value)")
         }
         // Whether a finger at each one's middle reaches it, or something else is on top
-        for id in Set(all.map(\.id)) where id != "route" {
+        for id in Set(all.map(\.id)) where id != "route" && id != "touch" {
             for e in app.descendants(matching: .any).matching(identifier: id).allElementsBoundByIndex where e.exists {
                 let f = e.frame
                 lines.append("diag:   \(id) at [\(Int(f.minX)),\(Int(f.minY))] \((e.value as? String) ?? "") \(e.isHittable ? "hittable" : "covered")")

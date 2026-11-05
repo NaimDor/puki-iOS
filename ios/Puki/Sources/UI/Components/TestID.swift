@@ -58,5 +58,23 @@ struct RouteMarker: View {
             .accessibilityLabel(language == .hebrew ? "he" : "en")
             .accessibilityValue(route)
             .allowsHitTesting(false)
+            #if DEBUG
+            .background(TouchTrace())
+            #endif
     }
 }
+
+#if DEBUG
+/** Where the last touch landed, for working out a touch that did nothing. */
+private struct TouchTrace: View {
+    @ObservedObject private var hub = TouchHub.shared
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .accessibilityElement()
+            .accessibilityIdentifier("touch")
+            .accessibilityValue(hub.trace)
+            .allowsHitTesting(false)
+    }
+}
+#endif

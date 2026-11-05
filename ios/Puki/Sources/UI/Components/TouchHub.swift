@@ -11,6 +11,10 @@ final class TouchHub: ObservableObject {
     /** When the screen was last touched (uptime ms). */
     private(set) var lastTouch: Int64 = uptimeMs()
     @Published private(set) var sparks: [Spark] = []
+    #if DEBUG
+    /** For the UI tests: where the last touch landed and which view UIKit gave it to. */
+    @Published var trace = ""
+    #endif
 
     struct Spark: Identifiable { let id = UUID(); let at: CGPoint; let born: Int64; let seed: Int }
 
@@ -43,6 +47,11 @@ private final class WatchingRecognizer: UIGestureRecognizer, UIGestureRecognizer
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         for t in touches {
             let p = t.location(in: view)
+            #if DEBUG
+            let hit = view?.hitTest(p, with: event)
+            let line = "\(Int(p.x)),\(Int(p.y)) \(hit.map { String(describing: type(of: $0)) } ?? "nothing")"
+            Task { @MainActor in TouchHub.shared.trace = line }
+            #endif
             Task { @MainActor in TouchHub.shared.touched(at: p) }
         }
     }

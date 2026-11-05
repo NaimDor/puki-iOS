@@ -98,7 +98,7 @@ struct ColorSplashScreen: View {
                                     .contentShape(Rectangle())
                                     .clickable(squish: false) { pick(color) }
                                     .testID("choice")
-                                    .testValue("\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)")
+                                    .testValue("\(right ? "right" : "")|\(color.id) picks:\(picks[color.id] ?? 0)\(right && help.showHint ? " hint" : "")")
                                     .reaction(reactions(color.id))
                                     .idleBob(i)
                                     .popAway(roundOver && !right, index: i)
