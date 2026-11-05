@@ -215,7 +215,7 @@ final class Driver {
                     traces += 1
                     let now = nodes()
                     let after = now.first { $0.id == "choice" && $0.value.hasPrefix("right|") }?.value ?? "(gone)"
-                    print("trace: tapped right at [\(Int(right.frame.midX)),\(Int(right.frame.midY))] in \(right.frame); touch \(now.first { $0.id == "touch" }?.value ?? "?"); now \(after)")
+                    print("trace: tapped right at [\(Int(right.frame.midX)),\(Int(right.frame.midY))] in \(right.frame); touch \(now.first { $0.id == "touch" }?.value ?? "?"); catcher \(now.first { $0.id == "caught" }?.value ?? "?"); now \(after)")
                 }
                 continue
             }
@@ -231,12 +231,12 @@ final class Driver {
         let all = nodes()
         let shown = Set(visible(all).map { "\($0.id)@\($0.frame)" })
         var lines = ["diag: \(why); screen \(screen); window \(app.windows.firstMatch.frame)"]
-        for n in all where n.id != "route" && n.id != "touch" {
+        for n in all where n.id != "route" && n.id != "touch" && n.id != "caught" {
             let f = n.frame
             lines.append("diag:   \(shown.contains("\(n.id)@\(f)") ? "+" : "-") \(n.id) [\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height))] \(n.value)")
         }
         // Whether a finger at each one's middle reaches it, or something else is on top
-        for id in Set(all.map(\.id)) where id != "route" && id != "touch" {
+        for id in Set(all.map(\.id)) where id != "route" && id != "touch" && id != "caught" {
             for e in app.descendants(matching: .any).matching(identifier: id).allElementsBoundByIndex where e.exists {
                 let f = e.frame
                 lines.append("diag:   \(id) at [\(Int(f.minX)),\(Int(f.minY))] \((e.value as? String) ?? "") \(e.isHittable ? "hittable" : "covered")")

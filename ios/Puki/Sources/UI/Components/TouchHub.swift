@@ -14,6 +14,8 @@ final class TouchHub: ObservableObject {
     #if DEBUG
     /** For the UI tests: where the last touch landed and which view UIKit gave it to. */
     @Published var trace = ""
+    /** For the UI tests: what the last touch catcher (Colors) made of its last touch. */
+    @Published var caught = ""
     #endif
 
     struct Spark: Identifiable { let id = UUID(); let at: CGPoint; let born: Int64; let seed: Int }

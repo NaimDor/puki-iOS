@@ -21,7 +21,7 @@ final class MonkeyTests: PukiUITestCase {
             let route = all.first { $0.id == "route" }?.value
             if let route { visited.insert(route) }
             if route != lastRoute { lastRoute = route; since = Date() }
-            let shown = g.visible(all).filter { $0.id != "ic_ui_settings" && $0.id != "route" && $0.id != "touch" }
+            let shown = g.visible(all).filter { $0.id != "ic_ui_settings" && $0.id != "route" && $0.id != "touch" && $0.id != "caught" }
             // A while on one screen: home, like a parent would (and check the way back works)
             if Date().timeIntervalSince(since) > 40, route != "hub" {
                 if let back = shown.first(where: { $0.id == "back" }) ?? shown.first(where: { $0.id == "home" }) {

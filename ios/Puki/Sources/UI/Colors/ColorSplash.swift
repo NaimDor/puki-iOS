@@ -119,7 +119,7 @@ struct ColorSplashScreen: View {
                                     let choices = vm.state.colorChoices
                                     let id = balloons.under(v.location, among: Set(choices.map(\.id)))
                                     #if DEBUG
-                                    TouchHub.shared.trace += " caught \(Int(v.location.x)),\(Int(v.location.y)) -> \(id ?? "none") of " +
+                                    TouchHub.shared.caught = "#\(picks.values.reduce(0, +) + 1) \(Int(v.location.x)),\(Int(v.location.y)) -> \(id ?? "none") of " +
                                         choices.map { c in balloons.frames[c.id].map { "\(c.id)@\(Int($0.minX))-\(Int($0.maxX))" } ?? c.id }.joined(separator: " ")
                                     #endif
                                     if let id, let c = choices.first(where: { $0.id == id }) { pick(c) }

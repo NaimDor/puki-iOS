@@ -75,6 +75,14 @@ private struct TouchTrace: View {
             .accessibilityIdentifier("touch")
             .accessibilityValue(hub.trace)
             .allowsHitTesting(false)
+            .background(
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityElement()
+                    .accessibilityIdentifier("caught")
+                    .accessibilityValue(hub.caught)
+                    .allowsHitTesting(false)
+            )
     }
 }
 #endif
