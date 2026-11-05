@@ -253,7 +253,7 @@ final class Driver {
 
     /** The number the parent check asks for now. */
     func parentTarget() -> Int? {
-        guard let t = waitNode("parentTarget", 5) else { return nil }
+        guard let t = waitNode("parentTarget", 12) else { return nil }
         return Driver.words[t.value]
     }
 
