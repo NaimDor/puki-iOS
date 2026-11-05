@@ -126,6 +126,9 @@ private struct ReadyParrot: View {
     }
 
     private func press() {
+        #if DEBUG
+        if !pressed { TouchHub.shared.caught = "parrot (ready) took a touch" }
+        #endif
         if pressed { return }
         pressed = true
         pressStart = uptimeMs()
@@ -205,7 +208,12 @@ struct OfflineParrot: View {
                     .rotationEffect(.degrees(talking ? Double((bob - 0.5) * 14) : 0), anchor: .bottom)  // a little dance while he talks
                     .offset(y: -bob * (talking ? 14 : 4))
                     .contentShape(Rectangle())
-                    .onTapGesture(perform: onTap)
+                    .onTapGesture {
+                        #if DEBUG
+                        TouchHub.shared.caught = "parrot (offline) took a touch"
+                        #endif
+                        onTap()
+                    }
             }
         }
     }
