@@ -1,0 +1,30 @@
+# The product page header and search results art (ios/fastlane/creative), uploaded to the App Asset Library and
+# placed on every language of the version being prepared. Runs when the art or the script changes, or by hand.
+# Uses the same ASC_* secrets as the TestFlight workflow, and never submits for review.
+name: App Store creative art
+
+on:
+  push:
+    branches: [claude/dazzling-faraday-untz5o]
+    paths: ["ios/fastlane/creative/*.png", "ios/scripts/asc_creative.py", ".github/workflows/appstore-creative.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: app-store-listing
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload the header and search results art
+        env:
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q pyjwt cryptography requests
+          "$RUNNER_TEMP/venv/bin/python" ios/scripts/asc_creative.py ios/fastlane/creative
