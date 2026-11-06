@@ -212,10 +212,15 @@ private struct AboutCard: View {
                 .font(PukiFont.bodyMedium).foregroundColor(PukiColors.earthBrown).multilineTextAlignment(.center)
             Text(BilingualText("שאלות? \(Contact.email)", "Questions? \(Contact.email)").resolve(language))
                 .font(PukiFont.bodyMedium).foregroundColor(PukiColors.earthBrown).multilineTextAlignment(.center)
-            Button(BilingualText("רישיונות", "Licenses").resolve(language)) {
-                licenses = Bundle.main.url(forResource: "licenses", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+            HStack(spacing: 12) {
+                // (the store asks for the privacy policy inside the app too; these settings are behind the parent check)
+                Link(BilingualText("מדיניות פרטיות", "Privacy policy").resolve(language), destination: Contact.privacyPolicy)
+                    .buttonStyle(.bordered).tint(PukiColors.earthBrown)
+                Button(BilingualText("רישיונות", "Licenses").resolve(language)) {
+                    licenses = Bundle.main.url(forResource: "licenses", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+                }
+                .buttonStyle(.bordered).tint(PukiColors.earthBrown)
             }
-            .buttonStyle(.bordered).tint(PukiColors.earthBrown)
         }
         .frame(maxWidth: 520)
         .sheet(isPresented: Binding(get: { licenses != nil }, set: { if !$0 { licenses = nil } })) {

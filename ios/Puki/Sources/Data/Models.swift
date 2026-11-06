@@ -75,6 +75,7 @@ struct GameProgress: Equatable {
 enum Contact {
     static let email = "naimslabs@gmail.com"
     static let reportEmail = "naimslabs@gmail.com"
+    static let privacyPolicy = URL(string: "https://naimdor.github.io/puki-iOS/privacy.html")!
 }
 
 /** [count] things to pick from, in a random order: [target] and others from [pool], no doubles. */
