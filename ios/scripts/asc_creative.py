@@ -32,7 +32,7 @@ def strings(x):
 
 
 def ref_data():
-    out, path, params = [], "/v1/appAssetLibraryRefData", {"limit": 200}
+    out, path, params = [], "/v1/appAssetLibraryRefData", None
     while path:
         r = call("GET", path, params=params)
         out += r.get("data", [])
